@@ -96,21 +96,22 @@ def draw() -> bytes:
 # HeapScreen, and the two have to agree; they are named the same on both sides.
 
 SHEET = 256
-PANEL_W, PANEL_H = 176, 184
+PANEL_W, PANEL_H = 176, 166
 
 PANEL_FILL = "#C6C6C6"
 PANEL_LIGHT = "#FFFFFF"
 PANEL_DARK = "#555555"
 BEVEL = 3
 
-WELL = (7, 18, 162, 42)          # x, y, w, h - where the contents are drawn
+WELL = (7, 18, 162, 44)          # x, y, w, h - where the contents are described
 WELL_FILL = "#8B8B8B"
 WELL_DARK = "#373737"
 WELL_LIGHT = "#FFFFFF"
 
 SLOT = 18
-INVENTORY_ROWS = ((8, 100), (8, 118), (8, 136))   # inner top-left of each row
-HOTBAR = (8, 160)
+HEAP_SLOT = (16, 30)                              # inner top-left of the heap's own slot
+INVENTORY_ROWS = ((8, 84), (8, 102), (8, 120))    # inner top-left of each row
+HOTBAR = (8, 142)
 
 
 def _panel(pixels: dict, ox: int, oy: int) -> None:
@@ -143,7 +144,9 @@ def draw_screen() -> bytes:
     _panel(pixels, 0, 0)
     _recess(pixels, *WELL)
 
-    # Slot frames are drawn one pixel out from the sixteen the item occupies.
+    # Slot frames are drawn one pixel out from the sixteen the item occupies. The
+    # heap's own slot sits inside the well, so it is drawn after it.
+    _recess(pixels, HEAP_SLOT[0] - 1, HEAP_SLOT[1] - 1, SLOT, SLOT)
     for row in INVENTORY_ROWS + (HOTBAR,):
         for column in range(9):
             _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)

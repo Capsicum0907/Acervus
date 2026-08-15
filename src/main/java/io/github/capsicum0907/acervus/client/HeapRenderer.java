@@ -3,6 +3,7 @@ package io.github.capsicum0907.acervus.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import io.github.capsicum0907.acervus.AcervusConfig;
+import io.github.capsicum0907.acervus.Counts;
 import io.github.capsicum0907.acervus.HeapBlockEntity;
 
 import net.minecraft.client.Minecraft;
@@ -68,9 +69,9 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
     }
 
     private void drawCount(long count, PoseStack pose, MultiBufferSource buffers, int packedLight) {
-        // Grouped, because the difference between 2000000 and 20000000 is not
-        // something anybody should have to count zeros to see.
-        String text = String.format("%,d", count);
+        // Short: this is read across a room, where a size is wanted and thirteen
+        // digits is a wall. The whole number lives in the screen.
+        String text = Counts.brief(count);
 
         pose.pushPose();
         // Negative Y: the font draws downward, and the pose is already turned to face

@@ -90,15 +90,36 @@ like a race is really one of the rows above.
 
 ## Using one
 
-- **Right-click, empty-handed** — open the screen. What is inside, how much more
-  fits, and buttons for taking a stack or a single one.
-- **Right-click, holding something** — put that stack in.
-- **Sneak + right-click, holding something** — put in every one of them the player
-  is carrying.
-- **Shift-click in the screen** — put a stack in.
+**Right-click it.** The screen has a slot, and the slot behaves like a slot:
 
-"A stack" means whatever a stack of that item is, not sixty-four. Mods that change
-stack sizes are common enough that a literal would be wrong under them.
+| | |
+|---|---|
+| click it | take a stack |
+| right-click it | take half a stack |
+| click it holding something | put that in |
+| shift-click it | move out as much as will fit in the inventory |
+| shift-click something of yours | put all of it in |
+
+None of that is written by this mod. It is the game's own handling of a slot, and
+the reason the heap is presented as one: **it is an item, so it should be handled
+the way items are handled.** An earlier version had buttons instead — take a stack,
+take one — and buttons are a new thing to learn for something the player could
+already do.
+
+Out in the world, without opening anything:
+
+- **Right-click holding something** — put that stack in.
+- **Sneak + right-click holding something** — put in every one of them you are
+  carrying.
+
+"A stack" always means whatever a stack of that item is, never sixty-four. Mods that
+change stack sizes are common enough that a literal would be wrong under them.
+
+**Numbers are written two ways.** A block seen across a room, and the screen at a
+glance, show a size — `2.00B`. Asking for the detail, by hovering the slot, shows
+the number — `2,000,000,000`. Thirteen digits is not a size; it is a wall. Both
+forms live in one place, `Counts`, because a block and its screen disagreeing about
+the same contents is the kind of thing nobody notices and everybody distrusts.
 
 **An emptied heap forgets what it held.** One that remembered would refuse the next
 thing put into it with nothing on the block to say why.
@@ -124,7 +145,8 @@ gradlew runData           # regenerate models, recipes and language
   pipes, that nothing is created under interleaved access from all six sides, and
   that breaking one leaves a single item on the floor
 - [x] **3** — a screen, because a block whose only controls are undocumented
-  gestures is a block nobody can use
+  gestures is a block nobody can use. Built on a real slot rather than buttons, so
+  there is nothing new to learn
 - [ ] **4** — open questions below
 
 ## Open questions
@@ -134,11 +156,14 @@ gradlew runData           # regenerate models, recipes and language
   grounds that how much it holds is a setting, so the recipe decides *when* it
   becomes available rather than how strong it is. If it should feel like a
   commitment, the centre is the place to raise: a diamond, or a shulker box.
-- **Whether left-click should take things out**, the way Storage Drawers does. It
-  reads well, but left-click is also how a block is broken, and a heap that swallows
-  the break is a heap that cannot be picked up. Resolving it means giving breaking
-  another gesture — sneak + left-click — and that is a real cost to weigh against a
-  screen that already does the job.
+- **Whether left-click on the block should take things out**, the way Storage
+  Drawers does. It reads well, but left-click is also how a block is broken, and a
+  heap that swallows the break is a heap that cannot be picked up. Resolving it means
+  giving breaking another gesture — sneak + left-click — and that is a real cost to
+  weigh against a screen that already does the job.
+- Whether the world-side count should abbreviate at a lower threshold than the
+  screen's. They share one rule at the moment, which is simple but means the block
+  is as terse up close as it is from across a room.
 - Whether one heap should be upgradeable in capacity rather than every heap holding
   the configured maximum.
 - Whether a heap should be able to be locked to a kind while empty, so an automated

@@ -2,7 +2,6 @@
   "block.acervus.heap": "Heap",
   "block.acervus.heap.empty": "Empty",
   "block.acervus.heap.holding": "%s x %s",
-  "gui.acervus.room": "%s more will fit",
-  "gui.acervus.take_one": "Take one",
-  "gui.acervus.take_stack": "Take a stack"
+  "gui.acervus.exact": "%s stored",
+  "gui.acervus.room": "%s more will fit"
 }

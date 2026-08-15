@@ -79,9 +79,8 @@ public final class AcervusDataGen {
             add(AcervusRegistry.HEAP.get(), "Heap");
             add("block.acervus.heap.empty", "Empty");
             add("block.acervus.heap.holding", "%s x %s");
-            add("gui.acervus.take_stack", "Take a stack");
-            add("gui.acervus.take_one", "Take one");
             add("gui.acervus.room", "%s more will fit");
+            add("gui.acervus.exact", "%s stored");
         }
     }
 
