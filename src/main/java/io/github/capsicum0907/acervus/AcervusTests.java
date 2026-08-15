@@ -265,6 +265,36 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    /**
+     * Three digits, one decimal, one unit — and the awkward case in the middle.
+     *
+     * <p>Rounding is where a rule like this goes wrong: 999,999,999,999 is not far
+     * enough to be a trillion, but rounded to one decimal it reads as 1000.0 of the
+     * unit below, which is four digits and the wrong unit. It has to grow into the
+     * next one instead.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void writesNumbersShortAndLong(GameTestHelper helper) {
+        brief(0L, "0");
+        brief(999L, "999");
+        brief(1_000L, "1K");
+        brief(1_500L, "1.5K");
+        brief(12_345L, "12.3K");
+        brief(100_000_000L, "100M");
+        brief(2_100_000_000L, "2.1G");
+        brief(999_999_999_999L, "1T");
+        brief(Long.MAX_VALUE, "9.2E");
+
+        check(Counts.exact(2_000_000_000L).equals("2,000,000,000"),
+                "the exact form keeps its commas, and got " + Counts.exact(2_000_000_000L));
+        helper.succeed();
+    }
+
+    private static void brief(long count, String expected) {
+        String written = Counts.brief(count);
+        check(written.equals(expected), count + " should read as " + expected + ", not " + written);
+    }
+
     private static HeapBlockEntity place(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof HeapBlockEntity heap) {

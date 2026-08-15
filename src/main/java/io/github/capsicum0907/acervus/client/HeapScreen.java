@@ -63,33 +63,62 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
         }
 
         graphics.drawString(font, heap.sample().getHoverName(), TEXT_X, NAME_Y, TEXT, false);
-        // Short, because this is read at a glance. The whole number is a hover away.
-        graphics.drawString(font, Counts.brief(heap.count()), TEXT_X, COUNT_Y, TEXT, false);
-        graphics.drawString(font, Component.translatable("gui.acervus.room", Counts.brief(heap.room())),
-                TEXT_X, ROOM_Y, TEXT, false);
+        // Short, because these are read at a glance. The whole number is a hover away.
+        graphics.drawString(font, held(heap), TEXT_X, COUNT_Y, TEXT, false);
+        graphics.drawString(font, free(heap), TEXT_X, ROOM_Y, TEXT, false);
     }
 
     /**
-     * Hovering the heap asks for the detail, so the exact count is added to the item's
-     * own tooltip rather than replacing it — what is in there is still an item, and
-     * everything an item usually says about itself still applies.
+     * Everything shortened can be asked about by pointing at it: the count, the room
+     * left, and the slot. A number that has been abbreviated should always be able to
+     * say what it stands for, or the abbreviation is a loss rather than a summary.
+     *
+     * <p>Over the slot the exact count is <em>added</em> to the item's own tooltip
+     * rather than replacing it — what is in there is still an item, and everything an
+     * item usually says about itself still applies.
      */
     @Override
     protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         HeapBlockEntity heap = heap();
-        if (minecraft == null || heap == null || heap.isEmpty()
-                || !(hoveredSlot instanceof HeapSlot) || !menu.getCarried().isEmpty()) {
+        if (minecraft == null || heap == null || heap.isEmpty() || !menu.getCarried().isEmpty()) {
             super.renderTooltip(graphics, mouseX, mouseY);
             return;
         }
 
-        ItemStack sample = heap.sample();
-        List<Component> lines = new ArrayList<>(getTooltipFromItem(minecraft, sample));
-        lines.add(Component.translatable("gui.acervus.exact", Counts.exact(heap.count()))
-                .withStyle(ChatFormatting.GRAY));
-        lines.add(Component.translatable("gui.acervus.room", Counts.exact(heap.room()))
-                .withStyle(ChatFormatting.DARK_GRAY));
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        int x = mouseX - leftPos;
+        int y = mouseY - topPos;
+        if (over(x, y, held(heap), COUNT_Y)) {
+            graphics.renderTooltip(font, Component.literal(Counts.exact(heap.count())), mouseX, mouseY);
+            return;
+        }
+        if (over(x, y, free(heap), ROOM_Y)) {
+            graphics.renderTooltip(font, Component.literal(Counts.exact(heap.room())), mouseX, mouseY);
+            return;
+        }
+        if (hoveredSlot instanceof HeapSlot) {
+            List<Component> lines = new ArrayList<>(getTooltipFromItem(minecraft, heap.sample()));
+            lines.add(Component.translatable("gui.acervus.exact", Counts.exact(heap.count()))
+                    .withStyle(ChatFormatting.GRAY));
+            lines.add(Component.translatable("gui.acervus.room", Counts.exact(heap.room()))
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+            return;
+        }
+        super.renderTooltip(graphics, mouseX, mouseY);
+    }
+
+    private Component held(HeapBlockEntity heap) {
+        return Component.literal(Counts.brief(heap.count()));
+    }
+
+    private Component free(HeapBlockEntity heap) {
+        return Component.translatable("gui.acervus.room", Counts.brief(heap.room()));
+    }
+
+    /** Measured from what is drawn, so the reachable area is the visible one. */
+    private boolean over(int x, int y, Component line, int top) {
+        return x >= TEXT_X && x < TEXT_X + font.width(line)
+                && y >= top && y < top + font.lineHeight;
     }
 
     private HeapBlockEntity heap() {

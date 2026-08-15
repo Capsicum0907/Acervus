@@ -123,10 +123,22 @@ Out in the world, without opening anything:
 change stack sizes are common enough that a literal would be wrong under them.
 
 **Numbers are written two ways.** A block seen across a room, and the screen at a
-glance, show a size — `2.00B`. Asking for the detail, by hovering the slot, shows
-the number — `2,000,000,000`. Thirteen digits is not a size; it is a wall. Both
-forms live in one place, `Counts`, because a block and its screen disagreeing about
-the same contents is the kind of thing nobody notices and everybody distrusts.
+glance, show a size: at most three digits, at most one decimal, and a unit — `100M`,
+`2.1G`, `999.9T`. Anything shortened can be asked about by pointing at it — the
+count, the room left, the slot — and answers with the number itself,
+`2,000,000,000`. A number that has been abbreviated should always be able to say
+what it stands for, or the abbreviation is a loss rather than a summary.
+
+The units are SI — K, M, G, T, P, E — which covers the whole range of a long in six
+single letters; `Long.MAX_VALUE` is about `9.2E`. The English short scale reads more
+naturally at the low end but runs out at T and continues into spellings nobody
+knows. These are also what AE2 puts on stored item counts, so anyone who has used
+one has already learnt them.
+
+Three digits is also what makes grouping unnecessary in the short form: there is
+never a fourth digit to separate. Both forms live in one place, `Counts`, because a
+block and its screen disagreeing about the same contents is the kind of thing nobody
+notices and everybody distrusts.
 
 **An emptied heap forgets what it held.** One that remembered would refuse the next
 thing put into it with nothing on the block to say why.

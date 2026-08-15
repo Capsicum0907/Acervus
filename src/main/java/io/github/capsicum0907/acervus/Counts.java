@@ -14,11 +14,20 @@ package io.github.capsicum0907.acervus;
  * notices and everybody distrusts.
  */
 public final class Counts {
-    /** Below this, the number is short enough to be its own summary. */
-    private static final long EXACT_BELOW = 10_000L;
+    /** Below the smallest unit the number is already three digits, which is the target. */
+    private static final long SMALLEST_UNIT = 1_000L;
 
-    private static final long[] UNITS = { 1_000_000_000_000L, 1_000_000_000L, 1_000_000L, 1_000L };
-    private static final String[] SUFFIXES = { "T", "B", "M", "K" };
+    /**
+     * SI, largest first, and the whole range of a long is covered by six single
+     * letters — {@code Long.MAX_VALUE} is about 9.2E. The English short scale would
+     * read more naturally at the low end, but it runs out at T and continues into
+     * spellings nobody knows; these are also what AE2 puts on stored item counts, so
+     * anyone who has used one has already learnt them.
+     */
+    private static final long[] UNITS = {
+            1_000_000_000_000_000_000L, 1_000_000_000_000_000L, 1_000_000_000_000L,
+            1_000_000_000L, 1_000_000L, 1_000L };
+    private static final String[] SUFFIXES = { "E", "P", "T", "G", "M", "K" };
 
     private Counts() {
     }
@@ -28,23 +37,39 @@ public final class Counts {
         return String.format("%,d", count);
     }
 
-    /** Three significant figures and a suffix. For anything drawn at a glance. */
+    /**
+     * At most three digits, at most one decimal, and a unit: {@code 100M},
+     * {@code 2.1G}, {@code 999.9T}.
+     *
+     * <p>Three digits is the point of it: a number that fits in a glance. It is also
+     * what makes grouping unnecessary here — there is never a fourth digit to
+     * separate — while {@link #exact} keeps its commas.
+     */
     public static String brief(long count) {
-        if (count < EXACT_BELOW) {
-            return exact(count);
+        if (count < SMALLEST_UNIT) {
+            return Long.toString(count);
         }
-        for (int i = 0; i < UNITS.length; i++) {
-            if (count >= UNITS[i]) {
-                double scaled = (double) count / UNITS[i];
-                // Grouped even here. The largest unit runs out long before a long does
-                // — at capacity there are nine million trillions — and 9223372T is a
-                // number nobody can read.
-                String number = scaled < 10.0 ? String.format("%,.2f", scaled)
-                        : scaled < 100.0 ? String.format("%,.1f", scaled)
-                        : String.format("%,.0f", scaled);
-                return number + SUFFIXES[i];
+        for (int unit = 0; unit < UNITS.length; unit++) {
+            if (count < UNITS[unit]) {
+                continue;
             }
+            // Rounding can push 999.97G up to 1000.0G, which is four digits and the
+            // wrong unit. When it does, the number has grown into the next one.
+            if (tenths((double) count / UNITS[unit]) >= 10_000L && unit > 0) {
+                unit--;
+            }
+            return mantissa((double) count / UNITS[unit]) + SUFFIXES[unit];
         }
-        return exact(count); // unreachable: anything at or above the threshold has a unit
+        return Long.toString(count); // unreachable: anything at or above a unit found one
+    }
+
+    private static long tenths(double value) {
+        return Math.round(value * 10.0);
+    }
+
+    /** One decimal, and no decimal at all when it would be a nought. */
+    private static String mantissa(double value) {
+        long tenths = tenths(value);
+        return tenths % 10 == 0 ? Long.toString(tenths / 10) : (tenths / 10) + "." + (tenths % 10);
     }
 }
