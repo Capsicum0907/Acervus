@@ -54,6 +54,13 @@ describe billions in slots of sixty-four is exactly the shape that goes wrong.
 [InfChest](https://github.com/Kotori316/InfChest) had to ship a mixin to force
 hoppers off that path; not being a container at all is the same fix, made earlier.
 
+**A pickaxe is the quick way to break one, not a condition for it.** A block of
+metal and glass invites `requiresCorrectToolForDrops`, and this one had it — with
+the block in no mining tag, which meant no tool was ever correct and a heap dropped
+nothing at all. Even done properly it is the wrong trade: the contents are not
+replaceable, and forgetting a pickaxe is not a reason to destroy two billion items.
+So the block is in `mineable/pickaxe` for speed and requires nothing for drops.
+
 **What is inside rides on the dropped block.** Not a setting, and not a choice: at
 capacity the contents are two billion items, and spilling those on the floor is
 thirty-one million entities. There is no version of that which ends well. So a heap

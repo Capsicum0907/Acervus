@@ -12,6 +12,7 @@ import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.api.distmarker.Dist;
@@ -19,6 +20,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
@@ -46,6 +48,25 @@ public final class AcervusDataGen {
         generator.addProvider(event.includeClient(), new Language(output));
         generator.addProvider(event.includeServer(), new Recipes(output, event.getLookupProvider()));
         generator.addProvider(event.includeServer(), new TestStructures(output));
+        generator.addProvider(event.includeServer(),
+                new Tags(output, event.getLookupProvider(), event.getExistingFileHelper()));
+    }
+
+    /**
+     * A pickaxe is what breaks a heap quickly. Only quickly — the block deliberately
+     * does not require a correct tool, because failing to drop would mean losing
+     * everything inside it.
+     */
+    private static class Tags extends BlockTagsProvider {
+        Tags(PackOutput output, CompletableFuture<HolderLookup.Provider> registries,
+                ExistingFileHelper existingFileHelper) {
+            super(output, registries, Acervus.MODID, existingFileHelper);
+        }
+
+        @Override
+        protected void addTags(HolderLookup.Provider registries) {
+            tag(BlockTags.MINEABLE_WITH_PICKAXE).add(AcervusRegistry.HEAP.get());
+        }
     }
 
     private static class Models extends BlockStateProvider {

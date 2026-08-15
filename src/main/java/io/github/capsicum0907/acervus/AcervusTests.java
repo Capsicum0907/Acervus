@@ -7,6 +7,7 @@ import io.github.capsicum0907.acervus.data.TestStructures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -16,6 +17,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -239,6 +241,27 @@ public final class AcervusTests {
         check(loose.size() == 1, "breaking a heap should leave one item, not " + loose.size());
         check(loose.get(0).getItem().has(DataComponents.BLOCK_ENTITY_DATA),
                 "and that one should be the heap, carrying what was inside it");
+        helper.succeed();
+    }
+
+    /**
+     * Breaking a heap with the wrong thing must cost time, never the contents.
+     *
+     * <p>A block of metal and glass invites {@code requiresCorrectToolForDrops}, and
+     * this one had it. With the block in no mining tag that meant no tool was ever
+     * correct, so a heap dropped nothing at all — two billion items gone to a
+     * mis-aimed swing. Even done properly it is the wrong trade here: the contents
+     * are not replaceable and a forgotten pickaxe is not a reason to destroy them.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void neverVoidsItselfForWantOfAPickaxe(GameTestHelper helper) {
+        place(helper);
+        BlockState state = helper.getLevel().getBlockState(helper.absolutePos(WHERE));
+
+        check(!state.requiresCorrectToolForDrops(),
+                "a heap must drop whatever it is broken with, or being wrong about the tool destroys everything inside");
+        check(state.is(BlockTags.MINEABLE_WITH_PICKAXE),
+                "and a pickaxe should still be the quick way to break one");
         helper.succeed();
     }
 

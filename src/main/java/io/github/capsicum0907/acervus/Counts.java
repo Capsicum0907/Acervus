@@ -36,9 +36,12 @@ public final class Counts {
         for (int i = 0; i < UNITS.length; i++) {
             if (count >= UNITS[i]) {
                 double scaled = (double) count / UNITS[i];
-                String number = scaled < 10.0 ? String.format("%.2f", scaled)
-                        : scaled < 100.0 ? String.format("%.1f", scaled)
-                        : String.format("%.0f", scaled);
+                // Grouped even here. The largest unit runs out long before a long does
+                // — at capacity there are nine million trillions — and 9223372T is a
+                // number nobody can read.
+                String number = scaled < 10.0 ? String.format("%,.2f", scaled)
+                        : scaled < 100.0 ? String.format("%,.1f", scaled)
+                        : String.format("%,.0f", scaled);
                 return number + SUFFIXES[i];
             }
         }
