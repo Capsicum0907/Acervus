@@ -46,6 +46,20 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
         this.inventoryLabelY = 72;
     }
 
+    /**
+     * {@code renderTooltip} has to be called from here.
+     *
+     * <p>{@code AbstractContainerScreen} defines it and never calls it — every
+     * concrete screen in the game calls it from its own {@code render}, vanilla's
+     * chest included. Leaving it out costs not only anything this screen wanted to
+     * say, but the item names on every slot in it, which is how it was noticed.
+     */
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        renderTooltip(graphics, mouseX, mouseY);
+    }
+
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
