@@ -34,19 +34,32 @@ outside has to be able to; the only care needed is at the three places the game 
 in ints, where the answer is clamped on the way out. Two billion is not far away
 once a factory is running.
 
-**The window has two slots, and they are not symmetric.** One is what a heap gives
-out and the other is what it takes in, because the two questions have different
-honest answers:
+**The window's shape is dictated by the `IItemHandler` contract**, which says two
+things that pull opposite ways and are easy to get the wrong way round:
 
-- *Taking out* must never show a count past a stack, for the reason above.
-- *Putting in* must show the real room left. A great many pipes work out how much
-  fits as `limit − count` rather than by asking, and a single slot that answered
-  "sixty-four, and sixty-four are already there" would look full to them while
-  holding a thousand. The room is reported on a slot that is always empty, so a
-  large number is never attached to an item stack.
+- `getStackInSlot` — "the result's stack size **may** be greater than the itemstack's
+  max size." So a heap should say how much it really has. Rounding it down to a stack
+  is not caution, it is a lie, and it is why an external storage reading one saw
+  sixty-four of something there were a hundred thousand of.
+- `extractItem` — the result "must be less than or equal to `amount` **and**
+  `getMaxStackSize()`." So one extraction is one stack, whatever is asked for. This
+  is not a choice a heap gets to make, and taking it anyway is how blocks of this
+  kind hand oversized stacks to code that cannot hold them.
 
-Both face every side, and every side is handed **the same handler object**. Two
-handlers for one heap would be two places a stale answer could live.
+**That second rule is the whole of the throughput question.** A pipe asks each slot
+once a tick, so one slot means one stack a tick however fast the pipe claims to be —
+an infinity upgrade included. The only lever is having more slots, so the contents
+are divided evenly across `windowSlots` of them (27 by default, giving 1,728 an
+in-game second). Each slot tells the truth about its share and the shares add back
+up to the total exactly.
+
+Shares are worked out afresh on every call, which means a single sweep does not
+quite empty a nearly-empty heap — taking from the first slot shrinks the shares of
+the ones after it. Draining is a few sweeps rather than one, which is what a pipe
+does anyway, and the alternative would be the handler remembering something.
+
+Every side is handed **the same handler object**. Two handlers for one heap would be
+two places a stale answer could live.
 
 **This block is deliberately not a `Container`.** A hopper prefers the container
 path over the item handler when a block offers both, and a container that tries to

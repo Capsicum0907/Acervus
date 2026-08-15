@@ -53,38 +53,80 @@ public final class AcervusTests {
     }
 
     /**
-     * The number inside must never leave. Code on the far side of an item handler was
-     * written for stacks, and hands a count larger than one straight back to something
-     * that rounds it down — which is where storage blocks of this kind lose items.
+     * The two halves of the item handler contract, which pull opposite ways.
+     *
+     * <p>{@code getStackInSlot} <em>may</em> exceed a stack, so a heap should say how
+     * much it really has — rounding it down is not caution but a lie, and it is what
+     * made an external storage read a hundred thousand as sixty-four.
+     * {@code extractItem} <em>must not</em> exceed a stack, whatever it is asked for,
+     * and that is not a choice a heap gets to make.
      */
     @GameTest(template = TestStructures.FLOOR)
-    public static void neverHandsOutMoreThanAStack(GameTestHelper helper) {
+    public static void obeysBothHalvesOfTheContract(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
         heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
         IItemHandler handler = handler(helper, null);
 
-        check(handler.getStackInSlot(0).getCount() <= Items.DIAMOND.getDefaultMaxStackSize(),
-                "the window should show at most a stack, not " + handler.getStackInSlot(0).getCount());
-        check(handler.getSlotLimit(0) <= Items.DIAMOND.getDefaultMaxStackSize(),
-                "the slot limit should be a stack, not " + handler.getSlotLimit(0));
+        long shown = 0;
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            shown += handler.getStackInSlot(slot).getCount();
+        }
+        check(shown == MANY, "the slots should add up to the " + MANY + " inside, not " + shown);
+
         check(handler.extractItem(0, Integer.MAX_VALUE, false).getCount()
                         <= Items.DIAMOND.getDefaultMaxStackSize(),
-                "asking for everything should still give back one stack");
+                "asking for everything must still give back at most one stack");
         helper.succeed();
     }
 
-    /** The path a hopper and every mod's pipes actually take. */
+    /**
+     * Throughput is slots times a stack, and there is no other lever. One extraction
+     * is one stack by contract, so a pipe asking each slot once a tick moves exactly
+     * as much as a heap has slots — which is why the slot count is a setting.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void movesOneStackPerSlotPerSweep(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
+        IItemHandler handler = handler(helper, null);
+
+        int swept = 0;
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            swept += handler.extractItem(slot, Integer.MAX_VALUE, false).getCount();
+        }
+
+        int expected = handler.getSlots() * Items.DIAMOND.getDefaultMaxStackSize();
+        check(swept == expected, "one sweep should move " + expected + ", not " + swept);
+        check(heap.count() == MANY - swept, "and the heap should be short exactly that many");
+        helper.succeed();
+    }
+
+    /**
+     * The path a hopper and every mod's pipes actually take: in through one slot, out
+     * across all of them. A stack put in is divided between the slots, so getting it
+     * back is a sweep rather than a single call — which is exactly what a pipe does.
+     */
     @GameTest(template = TestStructures.FLOOR)
     public static void fillsAndDrainsThroughTheHandler(GameTestHelper helper) {
         place(helper);
         IItemHandler handler = handler(helper, null);
 
-        ItemStack left = handler.insertItem(HeapItemHandler.PUT, new ItemStack(Items.DIAMOND, 64), false);
+        ItemStack left = handler.insertItem(0, new ItemStack(Items.DIAMOND, 64), false);
         check(left.isEmpty(), "the handler should have taken the whole stack");
 
-        ItemStack out = handler.extractItem(HeapItemHandler.TAKE, 64, false);
-        check(out.getCount() == 64, "the handler should have given back 64, not " + out.getCount());
-        check(out.is(Items.DIAMOND), "the handler should have given back what went in");
+        // Shares are worked out afresh on every call, so a sweep that takes from slot 0
+        // leaves smaller shares for the slots after it. Draining is therefore a few
+        // sweeps rather than one — which is what a pipe does anyway — and what has to
+        // be true is that it finishes and that nothing is left behind.
+        int out = 0;
+        for (int sweep = 0; sweep < 8 && out < 64; sweep++) {
+            for (int slot = 0; slot < handler.getSlots(); slot++) {
+                ItemStack taken = handler.extractItem(slot, 64, false);
+                check(taken.isEmpty() || taken.is(Items.DIAMOND), "and should give back what went in");
+                out += taken.getCount();
+            }
+        }
+        check(out == 64, "sweeping should give back all 64, and gave back " + out);
         helper.succeed();
     }
 
@@ -99,10 +141,10 @@ public final class AcervusTests {
         heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
         IItemHandler handler = handler(helper, null);
 
-        int space = handler.getSlotLimit(HeapItemHandler.PUT)
-                - handler.getStackInSlot(HeapItemHandler.PUT).getCount();
+        int space = handler.getSlotLimit(0)
+                - handler.getStackInSlot(0).getCount();
         check(space > 64, "a heap with room left should show it, not " + space);
-        check(handler.insertItem(HeapItemHandler.PUT, new ItemStack(Items.DIAMOND, 64), false).isEmpty(),
+        check(handler.insertItem(0, new ItemStack(Items.DIAMOND, 64), false).isEmpty(),
                 "and should still take a stack");
         helper.succeed();
     }
@@ -114,7 +156,7 @@ public final class AcervusTests {
 
         check(heap.insert(new ItemStack(Items.GOLD_INGOT, 10), false) == 0,
                 "a heap holding diamonds should refuse gold");
-        check(!handler(helper, null).isItemValid(HeapItemHandler.PUT, new ItemStack(Items.GOLD_INGOT)),
+        check(!handler(helper, null).isItemValid(0, new ItemStack(Items.GOLD_INGOT)),
                 "and should say so before being asked to take it");
         helper.succeed();
     }
@@ -144,14 +186,14 @@ public final class AcervusTests {
             IItemHandler out = sides[(round * 5 + 3) % sides.length];
 
             ItemStack offer = new ItemStack(Items.DIAMOND, 64);
-            int refusedIfAsked = in.insertItem(HeapItemHandler.PUT, offer, true).getCount();
-            int refused = in.insertItem(HeapItemHandler.PUT, offer, false).getCount();
+            int refusedIfAsked = in.insertItem(0, offer, true).getCount();
+            int refused = in.insertItem(0, offer, false).getCount();
             check(refused == refusedIfAsked, "simulating an insert must not change its answer");
             check(offer.getCount() == 64, "inserting must not shrink the stack it was handed");
             put += 64 - refused;
 
-            int peeked = out.extractItem(HeapItemHandler.TAKE, 32, true).getCount();
-            int taken = out.extractItem(HeapItemHandler.TAKE, 32, false).getCount();
+            int peeked = out.extractItem(0, 32, true).getCount();
+            int taken = out.extractItem(0, 32, false).getCount();
             check(taken == peeked, "simulating an extract must not change its answer");
             got += taken;
         }
