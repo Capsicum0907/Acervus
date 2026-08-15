@@ -20,16 +20,6 @@ public final class AcervusConfig {
                     "better default than the largest one that fits.")
             .defineInRange("capacity", 2_000_000_000L, 64L, Long.MAX_VALUE);
 
-    public static final ModConfigSpec.IntValue WINDOW_SLOTS = BUILDER
-            .comment("How many slots a heap shows to hoppers and pipes.",
-                    "This is the throughput dial, and the reason it exists is a rule that is not",
-                    "ours: an item handler may never hand out more than one stack per extraction.",
-                    "A pipe that asks each slot once per tick therefore moves one stack per slot",
-                    "per tick, and nothing a heap does can raise that except having more slots.",
-                    "The contents are divided evenly between them, so what a slot says is still",
-                    "true and the slots still add up to the total.")
-            .defineInRange("windowSlots", 27, 1, 64);
-
     public static final ModConfigSpec.BooleanValue SHOWS_CONTENTS = BUILDER
             .comment("Whether a heap draws what it holds, and how many.",
                     "Off is for servers that would rather not pay for the drawing.")

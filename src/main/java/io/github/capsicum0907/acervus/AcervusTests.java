@@ -53,59 +53,46 @@ public final class AcervusTests {
     }
 
     /**
-     * The two halves of the item handler contract, which pull opposite ways.
+     * A heap says how much it really holds, and gives out as much as it is asked for.
      *
-     * <p>{@code getStackInSlot} <em>may</em> exceed a stack, so a heap should say how
-     * much it really has — rounding it down is not caution but a lie, and it is what
-     * made an external storage read a hundred thousand as sixty-four.
-     * {@code extractItem} <em>must not</em> exceed a stack, whatever it is asked for,
-     * and that is not a choice a heap gets to make.
+     * <p>Both halves are what makes the ecosystem work, and one of them is a
+     * deliberate departure from the {@code IItemHandler} javadoc. Reporting the true
+     * count is explicitly allowed and is the difference between an external storage
+     * reading a hundred thousand and reading sixty-four. Handing out more than a
+     * stack is <em>not</em> allowed by the written contract and is what every mod
+     * that moves large amounts relies on anyway — InfChest's own handler is
+     * {@code totalCount().min(amount)} with no stack clamp, which is why a pipe with
+     * an unlimited upgrade can empty one.
      */
     @GameTest(template = TestStructures.FLOOR)
-    public static void obeysBothHalvesOfTheContract(GameTestHelper helper) {
+    public static void tellsTheTruthAndGivesWhatIsAsked(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
         heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
         IItemHandler handler = handler(helper, null);
 
-        long shown = 0;
-        for (int slot = 0; slot < handler.getSlots(); slot++) {
-            shown += handler.getStackInSlot(slot).getCount();
-        }
-        check(shown == MANY, "the slots should add up to the " + MANY + " inside, not " + shown);
+        check(handler.getStackInSlot(0).getCount() == MANY,
+                "a heap should report all " + MANY + ", not " + handler.getStackInSlot(0).getCount());
 
-        check(handler.extractItem(0, Integer.MAX_VALUE, false).getCount()
-                        <= Items.DIAMOND.getDefaultMaxStackSize(),
-                "asking for everything must still give back at most one stack");
+        ItemStack out = handler.extractItem(0, MANY, false);
+        check(out.getCount() == MANY, "and should hand over all " + MANY + ", not " + out.getCount());
+        check(heap.isEmpty(), "leaving nothing behind");
         helper.succeed();
     }
 
-    /**
-     * Throughput is slots times a stack, and there is no other lever. One extraction
-     * is one stack by contract, so a pipe asking each slot once a tick moves exactly
-     * as much as a heap has slots — which is why the slot count is a setting.
-     */
+    /** Asking for a stack still gets exactly a stack: the amount is what bounds it. */
     @GameTest(template = TestStructures.FLOOR)
-    public static void movesOneStackPerSlotPerSweep(GameTestHelper helper) {
+    public static void givesNoMoreThanWasAskedFor(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
         heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
-        IItemHandler handler = handler(helper, null);
 
-        int swept = 0;
-        for (int slot = 0; slot < handler.getSlots(); slot++) {
-            swept += handler.extractItem(slot, Integer.MAX_VALUE, false).getCount();
-        }
+        ItemStack out = handler(helper, null).extractItem(0, 64, false);
 
-        int expected = handler.getSlots() * Items.DIAMOND.getDefaultMaxStackSize();
-        check(swept == expected, "one sweep should move " + expected + ", not " + swept);
-        check(heap.count() == MANY - swept, "and the heap should be short exactly that many");
+        check(out.getCount() == 64, "asking for 64 should give 64, not " + out.getCount());
+        check(heap.count() == MANY - 64, "and take exactly that many out of the heap");
         helper.succeed();
     }
 
-    /**
-     * The path a hopper and every mod's pipes actually take: in through one slot, out
-     * across all of them. A stack put in is divided between the slots, so getting it
-     * back is a sweep rather than a single call — which is exactly what a pipe does.
-     */
+    /** The path a hopper and every mod's pipes actually take. */
     @GameTest(template = TestStructures.FLOOR)
     public static void fillsAndDrainsThroughTheHandler(GameTestHelper helper) {
         place(helper);
@@ -114,19 +101,9 @@ public final class AcervusTests {
         ItemStack left = handler.insertItem(0, new ItemStack(Items.DIAMOND, 64), false);
         check(left.isEmpty(), "the handler should have taken the whole stack");
 
-        // Shares are worked out afresh on every call, so a sweep that takes from slot 0
-        // leaves smaller shares for the slots after it. Draining is therefore a few
-        // sweeps rather than one — which is what a pipe does anyway — and what has to
-        // be true is that it finishes and that nothing is left behind.
-        int out = 0;
-        for (int sweep = 0; sweep < 8 && out < 64; sweep++) {
-            for (int slot = 0; slot < handler.getSlots(); slot++) {
-                ItemStack taken = handler.extractItem(slot, 64, false);
-                check(taken.isEmpty() || taken.is(Items.DIAMOND), "and should give back what went in");
-                out += taken.getCount();
-            }
-        }
-        check(out == 64, "sweeping should give back all 64, and gave back " + out);
+        ItemStack out = handler.extractItem(0, 64, false);
+        check(out.getCount() == 64, "the handler should have given back 64, not " + out.getCount());
+        check(out.is(Items.DIAMOND), "the handler should have given back what went in");
         helper.succeed();
     }
 

@@ -80,14 +80,27 @@ public class HeapBlockEntity extends BlockEntity {
         return handler;
     }
 
-    /** What a heap will show the outside world at once: a stack of it, at most. */
+    /** One stack of what is inside, at most. What a person sees in the screen. */
     public ItemStack stack() {
-        if (isEmpty()) {
+        return portion(sample.isEmpty() ? 0 : sample.getMaxStackSize());
+    }
+
+    /**
+     * Everything inside, as one stack. What automation is shown, because an item
+     * handler is allowed to report more than a stack and a heap that did not would be
+     * telling every pipe and every storage network that it holds sixty-four.
+     */
+    public ItemStack contents() {
+        return portion(Integer.MAX_VALUE);
+    }
+
+    private ItemStack portion(long most) {
+        if (isEmpty() || most <= 0) {
             return ItemStack.EMPTY;
         }
         ItemStack shown = sample.copy();
-        // Clamped on the way out, which is the only place the width of the total matters.
-        shown.setCount((int) Math.min(count, sample.getMaxStackSize()));
+        // An item stack counts in an int however wide the total is.
+        shown.setCount((int) Math.min(Math.min(count, most), Integer.MAX_VALUE));
         return shown;
     }
 
@@ -139,13 +152,15 @@ public class HeapBlockEntity extends BlockEntity {
     }
 
     /**
-     * @return what was taken out, never more than one stack of it
+     * @return what was taken out: as much as was asked for, if there is that much.
+     *         Not clamped to a stack — see {@link HeapItemHandler} for why not, and
+     *         call it with a stack's worth when a stack is what is wanted.
      */
     public ItemStack extract(int amount, boolean simulate) {
         if (isEmpty() || amount <= 0) {
             return ItemStack.EMPTY;
         }
-        int taken = (int) Math.min(Math.min(amount, count), sample.getMaxStackSize());
+        int taken = (int) Math.min(Math.min(amount, count), Integer.MAX_VALUE);
         ItemStack out = sample.copyWithCount(taken);
         if (simulate) {
             return out;

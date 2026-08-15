@@ -91,7 +91,9 @@ public class HeapMenu extends AbstractContainerMenu {
      * heap or the room runs out.
      */
     private ItemStack outward(HeapBlockEntity heap) {
-        ItemStack taken = heap.extract(Integer.MAX_VALUE, false);
+        // A stack's worth, explicitly: extraction is no longer clamped to one, so
+        // asking for everything here would empty the heap into a full inventory.
+        ItemStack taken = heap.extract(heap.sample().getMaxStackSize(), false);
         if (taken.isEmpty()) {
             return ItemStack.EMPTY;
         }

@@ -34,32 +34,38 @@ outside has to be able to; the only care needed is at the three places the game 
 in ints, where the answer is clamped on the way out. Two billion is not far away
 once a factory is running.
 
-**The window's shape is dictated by the `IItemHandler` contract**, which says two
-things that pull opposite ways and are easy to get the wrong way round:
+**The window is one slot that tells the truth.** It reports the whole count, and
+taking from it takes as much as was asked for. Both halves matter, and one of them
+is a deliberate departure from what the `IItemHandler` javadoc says:
 
 - `getStackInSlot` — "the result's stack size **may** be greater than the itemstack's
-  max size." So a heap should say how much it really has. Rounding it down to a stack
-  is not caution, it is a lie, and it is why an external storage reading one saw
-  sixty-four of something there were a hundred thousand of.
+  max size." Kept. Rounding it down to a stack is not caution, it is a lie: it is why
+  an external storage reading an InfChest reports sixty-four of something there are a
+  hundred thousand of.
 - `extractItem` — the result "must be less than or equal to `amount` **and**
-  `getMaxStackSize()`." So one extraction is one stack, whatever is asked for. This
-  is not a choice a heap gets to make, and taking it anyway is how blocks of this
-  kind hand oversized stacks to code that cannot hold them.
+  `getMaxStackSize()`." **Not kept.** Only `amount` bounds what comes out.
 
-**That second rule is the whole of the throughput question.** A pipe asks each slot
-once a tick, so one slot means one stack a tick however fast the pipe claims to be —
-an infinity upgrade included. The only lever is having more slots, so the contents
-are divided evenly across `windowSlots` of them (27 by default, giving 1,728 an
-in-game second). Each slot tells the truth about its share and the shares add back
-up to the total exactly.
+Breaking the second one is not an oversight, it is the convention. InfChest's own
+handler is `totalCount().min(amount)` with no stack clamp, and that is exactly why a
+pipe with an unlimited upgrade can empty one; keeping the clause instead caps a heap
+at one stack per call, which against a pipe that asks once a tick is one stack a
+tick. There is no honest way to buy that back — dividing the contents across more
+slots does it, but it makes a heap present itself as a chest, and nothing else in
+this corner of the ecosystem works that way.
 
-Shares are worked out afresh on every call, which means a single sweep does not
-quite empty a nearly-empty heap — taking from the first slot shrinks the shares of
-the ones after it. Draining is a few sweeps rather than one, which is what a pipe
-does anyway, and the alternative would be the handler remembering something.
+**None of that is enforced by anything.** `IItemHandler` is an interface with
+javadoc, and no code checks the returned size; `ItemStack` counts in a plain int, so
+two billion in one stack is simply legal. What is real is narrower and worth knowing
+exactly:
 
-Every side is handed **the same handler object**. Two handlers for one heap would be
-two places a stale answer could live.
+| | |
+|---|---|
+| enforced | `ItemStack.count` is an int — 2,147,483,647 and no further |
+| enforced | vanilla container slots clamp to `getMaxStackSize()` **when storing**, so an oversized stack put into an ordinary chest loses the excess |
+| not enforced | everything in the javadoc above |
+
+So the guardrail is absent rather than present, and the guarantee has to come from
+discipline instead. Which is why the next section is the one that matters.
 
 **This block is deliberately not a `Container`.** A hopper prefers the container
 path over the item handler when a block offers both, and a container that tries to
@@ -101,6 +107,9 @@ answered here and then pinned by a test rather than argued:
 | an insert that quietly shrinks the stack it was handed, so the caller keeps it *and* the heap gains it | the offered stack is never touched; only the remainder is returned |
 | per-side handlers that each remember their own version | there is one handler, and it remembers nothing |
 | a break that spills the contents while the dropped block also carries them | the block is not a container, so there is nothing to spill |
+
+Every side is also handed **the same handler object**. Two handlers for one heap
+would be two places a stale answer could live.
 
 The last of those is the one [InfChest shipped](https://github.com/Kotori316/InfChest/commit/52aec050)
 and fixed in 21.8.1, and it is the reason `spillsNothingWhenBroken` destroys a real
