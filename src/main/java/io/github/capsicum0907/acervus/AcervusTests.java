@@ -295,6 +295,28 @@ public final class AcervusTests {
         check(written.equals(expected), count + " should read as " + expected + ", not " + written);
     }
 
+    /**
+     * An empty heap is not committed by being right-clicked.
+     *
+     * <p>A pipe deciding what an empty heap is for is the point of a pipe. A player
+     * who right-clicked to look inside, and found the block silently committed to
+     * whatever was in their hand, has been caught by the same rule rather than served
+     * by it — so the two ask different questions.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anEmptyHeapWaitsForAPipeNotAGlance(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        ItemStack anything = new ItemStack(Items.DIAMOND);
+
+        check(!heap.holds(anything), "an empty heap holds nothing, so it is not what a player is carrying");
+        check(heap.accepts(anything), "but it still takes whatever a pipe offers it");
+
+        heap.insert(anything, false);
+        check(heap.holds(new ItemStack(Items.DIAMOND)), "once it holds something, that is what it holds");
+        check(!heap.holds(new ItemStack(Items.GOLD_INGOT)), "and not anything else");
+        helper.succeed();
+    }
+
     private static HeapBlockEntity place(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof HeapBlockEntity heap) {

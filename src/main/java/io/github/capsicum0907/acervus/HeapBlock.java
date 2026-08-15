@@ -54,14 +54,22 @@ public class HeapBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    /** With something in hand: put it in. Sneaking puts in every one the player has. */
+    /**
+     * Holding what the heap already holds: put it in. Sneaking puts in every one the
+     * player has. Holding anything else — or nothing — falls through to the screen.
+     *
+     * <p>The question is {@link HeapBlockEntity#holds}, not {@code accepts}. An empty
+     * heap accepts anything, and a player who right-clicked to look inside would
+     * silently commit it to whatever was in their hand. Deciding what an empty heap
+     * is for is a thing to do deliberately, in the screen or through a pipe.
+     */
     @Override
     protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof HeapBlockEntity heap)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        if (!heap.accepts(held)) {
+        if (!heap.holds(held)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (level.isClientSide) {
@@ -116,7 +124,7 @@ public class HeapBlock extends BaseEntityBlock {
     private static int insertEveryMatch(Player player, HeapBlockEntity heap) {
         int total = 0;
         for (ItemStack stack : player.getInventory().items) {
-            if (heap.accepts(stack)) {
+            if (heap.holds(stack)) {
                 total += insertOne(stack, heap);
             }
         }

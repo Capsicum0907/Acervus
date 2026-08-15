@@ -91,11 +91,28 @@ public class HeapBlockEntity extends BlockEntity {
         return shown;
     }
 
+    /**
+     * Whether this could go in. An empty heap accepts anything, which is what lets a
+     * pipe or a hopper decide what it is for.
+     */
     public boolean accepts(ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
         }
         return isEmpty() || ItemStack.isSameItemSameComponents(sample, stack);
+    }
+
+    /**
+     * Whether this is <em>already</em> what the heap holds — a stricter question than
+     * {@link #accepts}, and the one a person should be asked.
+     *
+     * <p>The difference is the empty heap. Automation deciding what an empty heap is
+     * for is the point of automation; a player who right-clicked to look inside and
+     * silently committed the block to whatever happened to be in their hand has been
+     * caught by it instead.
+     */
+    public boolean holds(ItemStack stack) {
+        return !isEmpty() && !stack.isEmpty() && ItemStack.isSameItemSameComponents(sample, stack);
     }
 
     /**

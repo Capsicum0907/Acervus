@@ -115,9 +115,15 @@ already do.
 
 Out in the world, without opening anything:
 
-- **Right-click holding something** — put that stack in.
-- **Sneak + right-click holding something** — put in every one of them you are
-  carrying.
+- **Right-click holding what it already holds** — put that stack in.
+- **Sneak + right-click holding what it already holds** — put in every one of them
+  you are carrying.
+
+Holding anything else, or nothing, opens the screen. The question is whether the
+heap *already holds* this, not whether it *would take* it: an empty heap would take
+anything, and a player who right-clicked to look inside would have committed the
+block to whatever was in their hand. Deciding what an empty heap is for belongs in
+the screen, or to a pipe — a pipe deciding is the point of a pipe.
 
 "A stack" always means whatever a stack of that item is, never sixty-four. Mods that
 change stack sizes are common enough that a literal would be wrong under them.
