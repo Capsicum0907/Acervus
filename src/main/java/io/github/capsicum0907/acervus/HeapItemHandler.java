@@ -1,26 +1,41 @@
 package io.github.capsicum0907.acervus;
 
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
  * The window a heap shows to hoppers, pipes and anything else that moves items.
  *
- * <p><b>One slot, holding at most one stack.</b> The count inside a heap runs to
- * billions, but an item stack handed across this boundary is read by code that was
- * written for sixty-four — vanilla's and every other mod's alike — and most of it
- * rounds anything larger back down at the far end. That is where storage blocks of
- * this kind normally break, so the large number never crosses: it stays inside, and
- * what leaves is an ordinary stack that nothing has to be taught about.
+ * <p><b>Two slots, and they are not symmetric.</b> One is what a heap gives out and
+ * the other is what it takes in, because the two questions have different honest
+ * answers.
  *
- * <p>Insertion is not limited the same way, because the number going in is bounded
- * by whatever the inserter was holding, which is already a stack at most.
+ * <ul>
+ * <li><b>Taking out</b> must never show a count past a stack. Code on the far side
+ *     of this boundary was written for sixty-four — vanilla's and every mod's alike
+ *     — and hands anything larger to something that rounds it down. That is where
+ *     blocks of this kind lose items.
+ * <li><b>Putting in</b> must show the real room left. A great many pipes work out
+ *     how much fits as {@code limit - count} rather than by asking, and a slot that
+ *     answered "sixty-four, and sixty-four are already there" would look full to
+ *     them while holding a thousand. The room is reported on a slot that is always
+ *     empty, so a large number is never attached to an item stack.
+ * </ul>
  *
- * <p>The same window is offered on every side. A heap has no front, and sides that
- * only take or only give would be a second thing to explain for no gain.
+ * <p><b>Nothing is remembered here.</b> Every method reads the block entity when it
+ * is called. A handler that cached even one field would be a second copy of the
+ * truth, and two of them — one per side, say — would be two copies that disagree.
+ * That is the shape most duplication bugs in storage blocks actually have.
+ *
+ * <p>Both slots face every side. A heap has no front.
  */
 public class HeapItemHandler implements IItemHandler {
+    /** What a heap gives out: at most one stack of what is inside. */
+    public static final int TAKE = 0;
+
+    /** What a heap takes in: always shown empty, and reporting the room that is left. */
+    public static final int PUT = 1;
+
     private final HeapBlockEntity heap;
 
     public HeapItemHandler(HeapBlockEntity heap) {
@@ -29,41 +44,43 @@ public class HeapItemHandler implements IItemHandler {
 
     @Override
     public int getSlots() {
-        return 1;
+        return 2;
     }
 
     @Override
     public ItemStack getStackInSlot(int slot) {
-        return heap.stack();
+        return slot == TAKE ? heap.stack() : ItemStack.EMPTY;
     }
 
     @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-        int taken = heap.insert(stack, simulate);
-        if (taken >= stack.getCount()) {
-            return ItemStack.EMPTY;
+        if (slot != PUT) {
+            return stack;
         }
-        return stack.copyWithCount(stack.getCount() - taken);
+        int taken = heap.insert(stack, simulate);
+        return taken >= stack.getCount() ? ItemStack.EMPTY : stack.copyWithCount(stack.getCount() - taken);
     }
 
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
-        return heap.extract(amount, simulate);
+        return slot == TAKE ? heap.extract(amount, simulate) : ItemStack.EMPTY;
     }
 
-    /**
-     * A stack of whatever is inside, or a stack of the largest thing that could be,
-     * while it is empty. Reporting the heap's real capacity here would be reporting a
-     * number the caller is about to try to build an item stack out of.
-     */
     @Override
     public int getSlotLimit(int slot) {
-        ItemStack sample = heap.sample();
-        return sample.isEmpty() ? Item.ABSOLUTE_MAX_STACK_SIZE : sample.getMaxStackSize();
+        if (slot == TAKE) {
+            ItemStack sample = heap.sample();
+            return sample.isEmpty() ? net.minecraft.world.item.Item.ABSOLUTE_MAX_STACK_SIZE
+                    : sample.getMaxStackSize();
+        }
+        // The room left can be wider than an int. Clamping here is safe because a
+        // caller only ever uses this to decide whether a stack fits, and a stack
+        // always does when the answer is this large.
+        return (int) Math.min(heap.room(), Integer.MAX_VALUE);
     }
 
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
-        return heap.accepts(stack);
+        return slot == PUT && heap.accepts(stack);
     }
 }

@@ -24,7 +24,9 @@ import zlib
 SIZE = 16
 FRAME = 2  # how many pixels deep the metal border runs
 
-OUT = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures/block/heap.png"
+ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures"
+OUT = ASSETS / "block/heap.png"
+GUI_OUT = ASSETS / "gui/heap.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
 METAL = {(x, y) for (x, y) in ALL
@@ -88,10 +90,91 @@ def draw() -> bytes:
     return _png(pixels)
 
 
+# --- the screen ------------------------------------------------------------
+# A panel in the game's own idiom: flat fill, a light bevel on the top and left,
+# a dark one on the bottom and right. Every measurement below is also a constant in
+# HeapScreen, and the two have to agree; they are named the same on both sides.
+
+SHEET = 256
+PANEL_W, PANEL_H = 176, 184
+
+PANEL_FILL = "#C6C6C6"
+PANEL_LIGHT = "#FFFFFF"
+PANEL_DARK = "#555555"
+BEVEL = 3
+
+WELL = (7, 18, 162, 42)          # x, y, w, h - where the contents are drawn
+WELL_FILL = "#8B8B8B"
+WELL_DARK = "#373737"
+WELL_LIGHT = "#FFFFFF"
+
+SLOT = 18
+INVENTORY_ROWS = ((8, 100), (8, 118), (8, 136))   # inner top-left of each row
+HOTBAR = (8, 160)
+
+
+def _panel(pixels: dict, ox: int, oy: int) -> None:
+    for x in range(PANEL_W):
+        for y in range(PANEL_H):
+            if x < BEVEL or y < BEVEL:
+                colour = PANEL_LIGHT
+            elif x >= PANEL_W - BEVEL or y >= PANEL_H - BEVEL:
+                colour = PANEL_DARK
+            else:
+                colour = PANEL_FILL
+            pixels[(ox + x, oy + y)] = _rgb(colour) + (255,)
+
+
+def _recess(pixels: dict, x: int, y: int, w: int, h: int) -> None:
+    """A sunken area: dark along the top and left, light along the bottom and right."""
+    for dx in range(w):
+        for dy in range(h):
+            if dx == 0 or dy == 0:
+                colour = WELL_DARK
+            elif dx == w - 1 or dy == h - 1:
+                colour = WELL_LIGHT
+            else:
+                colour = WELL_FILL
+            pixels[(x + dx, y + dy)] = _rgb(colour) + (255,)
+
+
+def draw_screen() -> bytes:
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    _panel(pixels, 0, 0)
+    _recess(pixels, *WELL)
+
+    # Slot frames are drawn one pixel out from the sixteen the item occupies.
+    for row in INVENTORY_ROWS + (HOTBAR,):
+        for column in range(9):
+            _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)
+
+    raw = bytearray()
+    for y in range(SHEET):
+        raw.append(0)
+        for x in range(SHEET):
+            raw.extend(pixels.get((x, y), (0, 0, 0, 0)))
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        body = kind + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
+
+    header = struct.pack(">IIBBBBB", SHEET, SHEET, 8, 6, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", header)
+        + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
+        + chunk(b"IEND", b"")
+    )
+
+
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_bytes(draw())
     print(f"wrote {OUT}")
+
+    GUI_OUT.parent.mkdir(parents=True, exist_ok=True)
+    GUI_OUT.write_bytes(draw_screen())
+    print(f"wrote {GUI_OUT}")
 
 
 if __name__ == "__main__":

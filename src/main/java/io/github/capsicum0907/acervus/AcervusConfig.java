@@ -11,12 +11,14 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class AcervusConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.IntValue CAPACITY = BUILDER
+    public static final ModConfigSpec.LongValue CAPACITY = BUILDER
             .comment("How many of one item a heap holds.",
-                    "The ceiling is what an int can count, because that is what an item stack",
-                    "counts with; asking for more would be asking for a number the game cannot",
-                    "hand back.")
-            .defineInRange("capacity", 2_000_000_000, 64, Integer.MAX_VALUE);
+                    "A long, not an int. The count never leaves the block as a number — what",
+                    "leaves is an item stack of at most one stack — so nothing outside has to be",
+                    "able to hold it, and there is no reason to stop at two billion.",
+                    "The default stops there anyway, because a number people can picture is a",
+                    "better default than the largest one that fits.")
+            .defineInRange("capacity", 2_000_000_000L, 64L, Long.MAX_VALUE);
 
     public static final ModConfigSpec.BooleanValue SHOWS_CONTENTS = BUILDER
             .comment("Whether a heap draws what it holds, and how many.",

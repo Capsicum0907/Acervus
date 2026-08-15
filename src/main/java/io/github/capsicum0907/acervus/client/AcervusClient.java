@@ -3,13 +3,18 @@ package io.github.capsicum0907.acervus.client;
 import io.github.capsicum0907.acervus.AcervusRegistry;
 
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
-/** The client half: one renderer, registered once. */
+/** The client half: what draws the block, and what draws its screen. */
 public final class AcervusClient {
     private AcervusClient() {
     }
 
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(AcervusRegistry.HEAP_ENTITY.get(), HeapRenderer::new);
+    }
+
+    public static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(AcervusRegistry.HEAP_MENU.get(), HeapScreen::new);
     }
 }

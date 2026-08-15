@@ -32,6 +32,7 @@ public class Acervus {
         AcervusRegistry.BLOCKS.register(modEventBus);
         AcervusRegistry.ITEMS.register(modEventBus);
         AcervusRegistry.BLOCK_ENTITIES.register(modEventBus);
+        AcervusRegistry.MENUS.register(modEventBus);
 
         modEventBus.addListener(Acervus::registerCapabilities);
         modEventBus.addListener(Acervus::addToCreativeTab);
@@ -45,11 +46,12 @@ public class Acervus {
      * anything else, so getting it right once is the whole of the integration.
      *
      * <p>Registered without regard to side — a heap offers the same window in every
-     * direction.
+     * direction — and handing back the block's one handler rather than a fresh one
+     * per ask, so six sides cannot become six opinions about the same contents.
      */
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, AcervusRegistry.HEAP_ENTITY.get(),
-                (heap, side) -> new HeapItemHandler(heap));
+                (heap, side) -> heap.handler());
     }
 
     private static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
@@ -63,6 +65,7 @@ public class Acervus {
     public static class Client {
         public Client(IEventBus modEventBus, ModContainer modContainer) {
             modEventBus.addListener(AcervusClient::registerRenderers);
+            modEventBus.addListener(AcervusClient::registerScreens);
         }
     }
 }

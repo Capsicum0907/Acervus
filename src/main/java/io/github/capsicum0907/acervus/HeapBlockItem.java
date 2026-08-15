@@ -38,7 +38,7 @@ public class HeapBlockItem extends BlockItem {
         }
 
         ItemStack sample = ItemStack.parse(registries, tag.getCompound("Sample")).orElse(ItemStack.EMPTY);
-        int count = tag.getInt("Count");
+        long count = tag.getLong("Count");
         if (sample.isEmpty() || count <= 0) {
             lines.add(Component.translatable("block.acervus.heap.empty").withStyle(ChatFormatting.GRAY));
             return;

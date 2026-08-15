@@ -67,7 +67,7 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
         pose.popPose();
     }
 
-    private void drawCount(int count, PoseStack pose, MultiBufferSource buffers, int packedLight) {
+    private void drawCount(long count, PoseStack pose, MultiBufferSource buffers, int packedLight) {
         // Grouped, because the difference between 2000000 and 20000000 is not
         // something anybody should have to count zeros to see.
         String text = String.format("%,d", count);

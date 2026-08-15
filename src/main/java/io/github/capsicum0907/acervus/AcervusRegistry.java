@@ -3,12 +3,14 @@ package io.github.capsicum0907.acervus;
 import java.util.function.Supplier;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -39,6 +41,13 @@ public final class AcervusRegistry {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HeapBlockEntity>> HEAP_ENTITY =
             BLOCK_ENTITIES.register("heap", blockEntityType(HeapBlockEntity::new, HEAP));
+
+    public static final DeferredRegister<MenuType<?>> MENUS =
+            DeferredRegister.create(Registries.MENU, Acervus.MODID);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<HeapMenu>> HEAP_MENU =
+            MENUS.register("heap", () -> IMenuTypeExtension.create(
+                    (id, inventory, buffer) -> new HeapMenu(id, inventory, buffer.readBlockPos())));
 
     private AcervusRegistry() {
     }

@@ -5,7 +5,9 @@ import java.util.List;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -76,24 +78,28 @@ public class HeapBlock extends BaseEntityBlock {
         return ItemInteractionResult.SUCCESS;
     }
 
-    /** Empty-handed: take a stack out. Sneaking takes a single one. */
+    /**
+     * Empty-handed: open the screen.
+     *
+     * <p>Taking things out lives there rather than out here. A block whose only way
+     * of being used is a gesture nobody was told about is a block nobody can use —
+     * which is what this one was until the screen existed.
+     */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
-        if (!(level.getBlockEntity(pos) instanceof HeapBlockEntity heap) || heap.isEmpty()) {
+        if (!(level.getBlockEntity(pos) instanceof HeapBlockEntity)) {
             return InteractionResult.PASS;
         }
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-
-        int wanted = player.isSecondaryUseActive() ? 1 : Integer.MAX_VALUE;
-        ItemStack out = heap.extract(wanted, false);
-        if (out.isEmpty()) {
-            return InteractionResult.CONSUME;
+        if (player instanceof ServerPlayer server) {
+            server.openMenu(new SimpleMenuProvider(
+                            (id, inventory, viewer) -> new HeapMenu(id, inventory, pos),
+                            state.getBlock().getName()),
+                    buffer -> buffer.writeBlockPos(pos));
         }
-        ItemHandlerHelper.giveItemToPlayer(player, out);
-        say(level, pos, SoundEvents.ITEM_PICKUP, 1.1F);
         return InteractionResult.SUCCESS;
     }
 

@@ -5,14 +5,17 @@ import java.util.List;
 import io.github.capsicum0907.acervus.data.TestStructures;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -56,7 +59,7 @@ public final class AcervusTests {
     public static void neverHandsOutMoreThanAStack(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
         heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
-        IItemHandler handler = handler(helper);
+        IItemHandler handler = handler(helper, null);
 
         check(handler.getStackInSlot(0).getCount() <= Items.DIAMOND.getDefaultMaxStackSize(),
                 "the window should show at most a stack, not " + handler.getStackInSlot(0).getCount());
@@ -72,14 +75,33 @@ public final class AcervusTests {
     @GameTest(template = TestStructures.FLOOR)
     public static void fillsAndDrainsThroughTheHandler(GameTestHelper helper) {
         place(helper);
-        IItemHandler handler = handler(helper);
+        IItemHandler handler = handler(helper, null);
 
-        ItemStack left = handler.insertItem(0, new ItemStack(Items.DIAMOND, 64), false);
+        ItemStack left = handler.insertItem(HeapItemHandler.PUT, new ItemStack(Items.DIAMOND, 64), false);
         check(left.isEmpty(), "the handler should have taken the whole stack");
 
-        ItemStack out = handler.extractItem(0, 64, false);
+        ItemStack out = handler.extractItem(HeapItemHandler.TAKE, 64, false);
         check(out.getCount() == 64, "the handler should have given back 64, not " + out.getCount());
         check(out.is(Items.DIAMOND), "the handler should have given back what went in");
+        helper.succeed();
+    }
+
+    /**
+     * A great many pipes work out how much fits as {@code limit - count} instead of
+     * asking. If the only slot showed a full stack, a heap holding a thousand would
+     * look full to them and quietly stop accepting.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void staysOpenToPipesWhenPastAStack(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
+        IItemHandler handler = handler(helper, null);
+
+        int space = handler.getSlotLimit(HeapItemHandler.PUT)
+                - handler.getStackInSlot(HeapItemHandler.PUT).getCount();
+        check(space > 64, "a heap with room left should show it, not " + space);
+        check(handler.insertItem(HeapItemHandler.PUT, new ItemStack(Items.DIAMOND, 64), false).isEmpty(),
+                "and should still take a stack");
         helper.succeed();
     }
 
@@ -90,8 +112,51 @@ public final class AcervusTests {
 
         check(heap.insert(new ItemStack(Items.GOLD_INGOT, 10), false) == 0,
                 "a heap holding diamonds should refuse gold");
-        check(!handler(helper).isItemValid(0, new ItemStack(Items.GOLD_INGOT)),
+        check(!handler(helper, null).isItemValid(HeapItemHandler.PUT, new ItemStack(Items.GOLD_INGOT)),
                 "and should say so before being asked to take it");
+        helper.succeed();
+    }
+
+    /**
+     * Nothing is created and nothing is lost, however many sides are working at once.
+     *
+     * <p>Storage blocks of this kind duplicate for three reasons, and this pins all
+     * three: a simulated answer that differs from the real one, an insert that
+     * quietly modifies the stack it was handed — so the caller keeps it *and* the
+     * heap gains it — and per-side handlers that each remember their own version of
+     * the contents. Every side is asked for its handler separately here, and the
+     * total is checked against what went in.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void createsNothingUnderInterleavedAccess(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        IItemHandler[] sides = new IItemHandler[Direction.values().length];
+        for (Direction side : Direction.values()) {
+            sides[side.ordinal()] = handler(helper, side);
+        }
+
+        int put = 0;
+        int got = 0;
+        for (int round = 0; round < 200; round++) {
+            IItemHandler in = sides[round % sides.length];
+            IItemHandler out = sides[(round * 5 + 3) % sides.length];
+
+            ItemStack offer = new ItemStack(Items.DIAMOND, 64);
+            int refusedIfAsked = in.insertItem(HeapItemHandler.PUT, offer, true).getCount();
+            int refused = in.insertItem(HeapItemHandler.PUT, offer, false).getCount();
+            check(refused == refusedIfAsked, "simulating an insert must not change its answer");
+            check(offer.getCount() == 64, "inserting must not shrink the stack it was handed");
+            put += 64 - refused;
+
+            int peeked = out.extractItem(HeapItemHandler.TAKE, 32, true).getCount();
+            int taken = out.extractItem(HeapItemHandler.TAKE, 32, false).getCount();
+            check(taken == peeked, "simulating an extract must not change its answer");
+            got += taken;
+        }
+
+        check(heap.count() == put - got,
+                "the heap should hold " + (put - got) + " after " + put + " in and " + got
+                        + " out, but holds " + heap.count());
         helper.succeed();
     }
 
@@ -133,6 +198,50 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    /**
+     * An emptied heap has to have something to say. An update packet carrying an empty
+     * tag is thrown away before the block entity sees it, so a heap that wrote nothing
+     * when empty would keep being drawn holding what it no longer holds — which is
+     * exactly what it did until this was pinned.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void tellsTheClientItIsEmpty(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.DIAMOND, 1), false);
+        heap.extract(1, false);
+
+        check(!heap.getUpdateTag(helper.getLevel().registryAccess()).isEmpty(),
+                "an empty heap must still send something, or the client keeps the old picture");
+        helper.succeed();
+    }
+
+    /**
+     * Breaking a heap must leave one thing on the floor, not two answers to the same
+     * question.
+     *
+     * <p>This is the duplication bug InfChest shipped and had to fix in 21.8.1: its
+     * block entity's superclass dropped the inventory when the block was removed,
+     * while the dropped chest was also carrying everything, so breaking one gave both
+     * copies. The heap avoids it by not being a container in the first place — but
+     * "avoids it by construction" is exactly the kind of claim that stops being true
+     * quietly, so it is pinned here rather than argued.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void spillsNothingWhenBroken(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
+
+        BlockPos pos = helper.absolutePos(WHERE);
+        helper.getLevel().destroyBlock(pos, true);
+
+        List<ItemEntity> loose = helper.getLevel()
+                .getEntitiesOfClass(ItemEntity.class, new AABB(pos).inflate(4.0));
+        check(loose.size() == 1, "breaking a heap should leave one item, not " + loose.size());
+        check(loose.get(0).getItem().has(DataComponents.BLOCK_ENTITY_DATA),
+                "and that one should be the heap, carrying what was inside it");
+        helper.succeed();
+    }
+
     private static HeapBlockEntity place(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof HeapBlockEntity heap) {
@@ -141,9 +250,9 @@ public final class AcervusTests {
         throw new GameTestAssertException("placing a heap should have made a heap block entity");
     }
 
-    private static IItemHandler handler(GameTestHelper helper) {
+    private static IItemHandler handler(GameTestHelper helper, Direction side) {
         IItemHandler handler = helper.getLevel().getCapability(
-                Capabilities.ItemHandler.BLOCK, helper.absolutePos(WHERE), null);
+                Capabilities.ItemHandler.BLOCK, helper.absolutePos(WHERE), side);
         if (handler == null) {
             throw new GameTestAssertException("a heap should offer an item handler to hoppers and pipes");
         }
