@@ -2,8 +2,6 @@ package io.github.capsicum0907.acervus;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,9 +10,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 /**
@@ -178,14 +174,8 @@ public class HorreumMenu extends AbstractContainerMenu {
         }
 
         private static NonNullList<ItemStack> read(Player player, InteractionHand hand) {
-            NonNullList<ItemStack> heaps =
-                    NonNullList.withSize(HorreumBlockEntity.SLOTS, ItemStack.EMPTY);
-            ContainerHelper.loadAllItems(
-                    player.getItemInHand(hand)
-                            .getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
-                            .copyTag().getCompound("Heaps"),
-                    heaps, player.level().registryAccess());
-            return heaps;
+            return HorreumBlockEntity.readHeaps(
+                    player.getItemInHand(hand), player.level().registryAccess());
         }
 
         @Override
@@ -203,10 +193,8 @@ public class HorreumMenu extends AbstractContainerMenu {
             if (player.level().isClientSide) {
                 return;
             }
-            net.minecraft.nbt.CompoundTag inside = new net.minecraft.nbt.CompoundTag();
-            ContainerHelper.saveAllItems(inside, heaps, true, player.level().registryAccess());
-            BlockItem.setBlockEntityData(player.getItemInHand(hand),
-                    AcervusRegistry.HORREUM_ENTITY.get(), inside);
+            HorreumBlockEntity.writeHeaps(player.getItemInHand(hand), heaps,
+                    player.level().registryAccess());
         }
 
         @Override

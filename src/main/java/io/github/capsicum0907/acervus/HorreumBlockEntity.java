@@ -11,8 +11,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -111,6 +114,44 @@ public class HorreumBlockEntity extends BlockEntity {
         return found;
     }
 
+    /**
+     * The heaps written onto a rack item, and read back off one.
+     *
+     * <p><b>Both, here, and nowhere else.</b> Four places were spelling the shape out
+     * for themselves — the block entity, the tooltip text, the tooltip picture and the
+     * carried rack's screen — and the carried one spelled it differently: it wrote the
+     * item list as the whole component instead of nesting it under {@code Heaps}. One
+     * write and the other three could no longer find anything, so taking one heap out
+     * of a rack in your bag appeared to destroy the other eleven. They were still
+     * there; nothing could read them.
+     *
+     * <p>The same mistake the count made once, when it was {@code Count} on one heap
+     * and {@code Amount} on three. A shape known in more than one place is a shape that
+     * will disagree with itself.
+     */
+    public static NonNullList<ItemStack> readHeaps(ItemStack rack, HolderLookup.Provider registries) {
+        NonNullList<ItemStack> heaps = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
+        ContainerHelper.loadAllItems(
+                rack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
+                        .copyTag().getCompound(HEAPS),
+                heaps, registries);
+        return heaps;
+    }
+
+    /** Through {@code setBlockEntityData}, which names the block entity; see {@link Held#write}. */
+    public static void writeHeaps(ItemStack rack, NonNullList<ItemStack> heaps,
+            HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        tag.put(HEAPS, saved(heaps, registries));
+        BlockItem.setBlockEntityData(rack, AcervusRegistry.HORREUM_ENTITY.get(), tag);
+    }
+
+    private static CompoundTag saved(NonNullList<ItemStack> heaps, HolderLookup.Provider registries) {
+        CompoundTag inside = new CompoundTag();
+        ContainerHelper.saveAllItems(inside, heaps, true, registries);
+        return inside;
+    }
+
     /** Whether that item may go in a rack slot at all. */
     public static boolean isHeap(ItemStack stack) {
         if (stack.isEmpty()) {
@@ -151,9 +192,7 @@ public class HorreumBlockEntity extends BlockEntity {
         // Written even when every slot is empty, for the reason given in
         // HeapBlockEntity#saveAdditional: an empty update tag is discarded before it
         // reaches the client, so emptying would never be heard about.
-        CompoundTag inside = new CompoundTag();
-        ContainerHelper.saveAllItems(inside, heaps, true, registries);
-        tag.put(HEAPS, inside);
+        tag.put(HEAPS, saved(heaps, registries));
     }
 
     @Override

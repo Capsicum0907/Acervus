@@ -9,6 +9,7 @@ import io.github.capsicum0907.acervus.data.TestStructures;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.NonNullList;
 import net.minecraft.stats.Stat;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -1342,6 +1343,53 @@ public final class AcervusTests {
                 .loadInto(placed, registries);
         check(CarriedHeap.of(registries, placed.heap(5)).count() == MANY,
                 "and putting it back down should give back all " + MANY);
+        helper.succeed();
+    }
+
+    /**
+     * Taking one heap out of a carried rack leaves the other eleven where they were.
+     *
+     * <p>It did not. The carried rack wrote its heaps as the whole component instead of
+     * nesting them under {@code Heaps} the way the block entity does, so one write made
+     * the other three readers - the block, the tooltip text and the tooltip picture -
+     * find nothing at all. The heaps were never destroyed; nothing could read them.
+     *
+     * <p>So this writes with one and reads with the others, which is the only shape of
+     * test that would have caught it.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void takingOneHeapOutOfACarriedRackKeepsTheRest(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack rack = new ItemStack(AcervusRegistry.HORREUM_ITEM.get());
+
+        NonNullList<ItemStack> heaps = NonNullList.withSize(HorreumBlockEntity.SLOTS, ItemStack.EMPTY);
+        for (int slot = 0; slot < 3; slot++) {
+            ItemStack heap = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+            CarriedHeap.of(registries, heap).insert(new ItemStack(Items.DIAMOND, 100 + slot), false);
+            heaps.set(slot, heap);
+        }
+        HorreumBlockEntity.writeHeaps(rack, heaps, registries);
+        player.getInventory().setItem(player.getInventory().selected, rack);
+
+        HorreumMenu menu = HorreumMenu.inHand(1, player.getInventory(), InteractionHand.MAIN_HAND);
+        ItemStack taken = menu.slots.get(0).remove(1);
+
+        check(CarriedHeap.of(registries, taken).count() == 100, "the heap taken out should hold 100");
+        NonNullList<ItemStack> left = HorreumBlockEntity.readHeaps(rack, registries);
+        check(left.get(0).isEmpty(), "its slot should be empty now");
+        check(CarriedHeap.of(registries, left.get(1)).count() == 101
+                        && CarriedHeap.of(registries, left.get(2)).count() == 102,
+                "and the other two should still be there, holding 101 and 102");
+
+        // Read back the way a placed rack reads it, which is the reader that stopped
+        // finding anything.
+        HorreumBlockEntity placed = rack(helper);
+        rack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
+                .loadInto(placed, registries);
+        check(CarriedHeap.of(registries, placed.heap(2)).count() == 102,
+                "and a block loading the same item should find them too");
+        saves(rack, registries, "a carried rack a heap was taken out of");
         helper.succeed();
     }
 

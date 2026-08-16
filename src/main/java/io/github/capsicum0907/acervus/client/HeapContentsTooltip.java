@@ -13,8 +13,6 @@ import io.github.capsicum0907.acervus.HorreumBlockEntity;
 import io.github.capsicum0907.acervus.Mods;
 
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,11 +21,9 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.fluids.FluidStack;
 
@@ -59,9 +55,17 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
      * <p>Public only so the gas package can build one — it is the one kind of contents
      * this class must not read for itself.
      */
-    public record Row(ItemStack item, FluidStack fluid, ResourceLocation sprite, int tint,
-            Component name, String amount) {
+    public record Row(ItemStack item, FluidStack fluid, ResourceLocation sprite, boolean onAtlas,
+            int tint, Component name, String amount) {
     }
+
+    /**
+     * Energy's own icon, and the one thing here that is not stitched onto the block
+     * atlas — it belongs to a tooltip rather than to a block, so it is blitted straight.
+     */
+    private static final ResourceLocation BOLT =
+            ResourceLocation.fromNamespaceAndPath(io.github.capsicum0907.acervus.Acervus.MODID,
+                    "textures/gui/energy_icon.png");
 
     private final List<Row> rows;
 
@@ -83,13 +87,7 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
         HolderLookup.Provider registries = client.level.registryAccess();
 
         if (stack.getItem() == AcervusRegistry.HORREUM_ITEM.get()) {
-            NonNullList<ItemStack> heaps =
-                    NonNullList.withSize(HorreumBlockEntity.SLOTS, ItemStack.EMPTY);
-            ContainerHelper.loadAllItems(
-                    stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
-                            .copyTag().getCompound("Heaps"),
-                    heaps, registries);
-            for (ItemStack heap : heaps) {
+            for (ItemStack heap : HorreumBlockEntity.readHeaps(stack, registries)) {
                 Row row = row(heap, registries);
                 if (row != null) {
                     rows.add(row);
@@ -116,18 +114,18 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
 
         if (kind == AcervusRegistry.HEAP_ITEM.get()) {
             CarriedHeap held = CarriedHeap.of(registries, heap);
-            return held.isEmpty() ? null : new Row(held.sample(), FluidStack.EMPTY, null, 0,
+            return held.isEmpty() ? null : new Row(held.sample(), FluidStack.EMPTY, null, false, 0,
                     held.sample().getHoverName(), Counts.exact(held.count()));
         }
         if (kind == AcervusRegistry.FLUID_HEAP_ITEM.get()) {
             HeldFluidHeap held = HeldFluidHeap.of(registries, heap);
-            return held.isEmpty() ? null : new Row(ItemStack.EMPTY, held.sample(), null, 0,
+            return held.isEmpty() ? null : new Row(ItemStack.EMPTY, held.sample(), null, false, 0,
                     held.contentName(), held.brief(held.amount()));
         }
         if (kind == AcervusRegistry.ENERGY_HEAP_ITEM.get()) {
             HeldEnergyHeap held = HeldEnergyHeap.of(registries, heap);
-            return held.isEmpty() ? null : new Row(ItemStack.EMPTY, FluidStack.EMPTY, null, 0,
-                    Component.translatable("gui.acervus.energy"), held.brief(held.amount()));
+            return held.isEmpty() ? null : new Row(ItemStack.EMPTY, FluidStack.EMPTY, BOLT, false,
+                    0xFFFFFFFF, Component.translatable("gui.acervus.energy"), held.brief(held.amount()));
         }
         if (Mods.mekanism() && kind == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get()) {
             return io.github.capsicum0907.acervus.gas.GasRow.of(registries, heap);
@@ -188,6 +186,11 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
 
         ResourceLocation texture = row.sprite();
         int tint = row.tint();
+        if (texture != null && !row.onAtlas()) {
+            graphics.blit(texture, x, y, 0, 0, ICON, ICON, ICON, ICON);
+            return;
+        }
+
         FluidStack fluid = row.fluid();
         if (!fluid.isEmpty()) {
             // A fluid's sprite is only reachable from the client, which is here.

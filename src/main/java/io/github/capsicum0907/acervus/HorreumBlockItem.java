@@ -5,14 +5,10 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -58,10 +54,7 @@ public class HorreumBlockItem extends BlockItem {
         if (registries == null) {
             return;
         }
-        CompoundTag tag = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
-        NonNullList<ItemStack> heaps =
-                NonNullList.withSize(HorreumBlockEntity.SLOTS, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag.getCompound("Heaps"), heaps, registries);
+        NonNullList<ItemStack> heaps = HorreumBlockEntity.readHeaps(stack, registries);
 
         int held = 0;
         for (ItemStack heap : heaps) {

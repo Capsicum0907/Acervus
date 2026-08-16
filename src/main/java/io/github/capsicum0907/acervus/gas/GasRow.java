@@ -30,7 +30,7 @@ public final class GasRow {
         }
         ChemicalStack sample = held.sample();
         return new HeapContentsTooltip.Row(ItemStack.EMPTY, FluidStack.EMPTY,
-                sample.getChemical().getIcon(), sample.getChemicalTint(),
+                sample.getChemical().getIcon(), true, sample.getChemicalTint(),
                 held.contentName(), held.brief(held.amount()));
     }
 }

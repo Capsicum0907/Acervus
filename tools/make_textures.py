@@ -34,6 +34,7 @@ READOUT_OUT = ASSETS / "gui/readout.png"
 READOUT_PLAIN_OUT = ASSETS / "gui/readout_plain.png"
 RACK_OUT = ASSETS / "block/horreum.png"
 RACK_GUI_OUT = ASSETS / "gui/horreum.png"
+BOLT_OUT = ASSETS / "gui/energy_icon.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
 METAL = {(x, y) for (x, y) in ALL
@@ -195,6 +196,46 @@ CHEMICAL_GLASS = "#8FCF8A"
 CHEMICAL_SHEEN = "#D6F2D2"
 
 
+# Energy has no item and no sprite of its own, so its tooltip row had a hole where
+# every other row has a picture. Drawn rather than described, because the shape is the
+# point: nobody needs to be told what a lightning bolt means.
+BOLT = """
+................
+.......###......
+......###.......
+.....###........
+....######......
+...######.......
+......###.......
+.....###........
+....###.........
+...###..........
+..###...........
+................
+................
+................
+................
+................
+"""
+
+BOLT_BODY = "#F5DC9A"
+BOLT_EDGE = "#D8A24A"
+
+
+def draw_bolt() -> bytes:
+    """Sixteen by sixteen, transparent but for the bolt. Blitted straight rather than
+    stitched onto the block atlas: it belongs to a tooltip, not to a block."""
+    rows = [line for line in BOLT.strip("\n").split("\n")]
+    lit = {(x, y) for y, line in enumerate(rows) for x, cell in enumerate(line) if cell == "#"}
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    for (x, y) in lit:
+        # An edge is any lit pixel with an unlit neighbour above or to the left, which
+        # gives the bolt a rim without anyone placing one.
+        edge = (x - 1, y) not in lit or (x, y - 1) not in lit
+        pixels[(x, y)] = _rgb(BOLT_EDGE if edge else BOLT_BODY) + (255,)
+    return _png(pixels)
+
+
 def draw_rack() -> bytes:
     """The rack block: the same frame as a heap, filled in rather than glazed, with a
     grid of niches for the heaps it holds. It is the one block of the set you cannot
@@ -291,6 +332,9 @@ def main() -> None:
 
     RACK_GUI_OUT.write_bytes(draw_rack_screen())
     print(f"wrote {RACK_GUI_OUT}")
+
+    BOLT_OUT.write_bytes(draw_bolt())
+    print(f"wrote {BOLT_OUT}")
 
 
 if __name__ == "__main__":
