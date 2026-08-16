@@ -43,6 +43,37 @@ public class ChemicalHeapBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
+    /** Server side only. */
+    @Override
+    public <T extends net.minecraft.world.level.block.entity.BlockEntity>
+            net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(
+                    net.minecraft.world.level.Level level, BlockState state,
+                    net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
+        return level.isClientSide ? null
+                : createTickerHelper(type, GasHeap.BLOCK_ENTITY.get(), ChemicalHeapBlockEntity::serverTick);
+    }
+
+    /** Empty-handed: open the readout. */
+    @Override
+    protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state,
+            net.minecraft.world.level.Level level, BlockPos pos, Player player,
+            net.minecraft.world.phys.BlockHitResult hit) {
+        if (!(level.getBlockEntity(pos) instanceof io.github.capsicum0907.acervus.Heaped)) {
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+        if (level.isClientSide) {
+            return net.minecraft.world.InteractionResult.SUCCESS;
+        }
+        if (player instanceof net.minecraft.server.level.ServerPlayer server) {
+            server.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                            (id, inventory, viewer) ->
+                                    new io.github.capsicum0907.acervus.ReadoutMenu(id, inventory, pos),
+                            state.getBlock().getName()),
+                    buffer -> buffer.writeBlockPos(pos));
+        }
+        return net.minecraft.world.InteractionResult.SUCCESS;
+    }
+
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         ItemStack dropped = new ItemStack(this);

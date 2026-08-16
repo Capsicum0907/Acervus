@@ -14,7 +14,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -51,6 +54,34 @@ public class FluidHeapBlock extends BaseEntityBlock {
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    /** Server side only. */
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
+            BlockEntityType<T> type) {
+        return level.isClientSide ? null
+                : createTickerHelper(type, AcervusRegistry.FLUID_HEAP_ENTITY.get(),
+                        FluidHeapBlockEntity::serverTick);
+    }
+
+    /** Empty-handed: open the readout. */
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
+            BlockHitResult hit) {
+        if (!(level.getBlockEntity(pos) instanceof Heaped)) {
+            return InteractionResult.PASS;
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (player instanceof net.minecraft.server.level.ServerPlayer server) {
+            server.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                            (id, inventory, viewer) -> new ReadoutMenu(id, inventory, pos),
+                            state.getBlock().getName()),
+                    buffer -> buffer.writeBlockPos(pos));
+        }
+        return InteractionResult.SUCCESS;
     }
 
     @Override

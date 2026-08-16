@@ -30,6 +30,7 @@ FLUID_OUT = ASSETS / "block/fluid_heap.png"
 ENERGY_OUT = ASSETS / "block/energy_heap.png"
 CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
 GUI_OUT = ASSETS / "gui/heap.png"
+READOUT_OUT = ASSETS / "gui/readout.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
 METAL = {(x, y) for (x, y) in ALL
@@ -185,6 +186,39 @@ CHEMICAL_GLASS = "#8FCF8A"
 CHEMICAL_SHEEN = "#D6F2D2"
 
 
+# The readout panel: one bar, one slot for a container, and the player's inventory.
+BAR = (8, 20, 160, 10)      # x, y, w, h - the fill is drawn in code, in the resource's colour
+VESSEL_SLOT = (80, 38)
+
+
+def draw_readout() -> bytes:
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    _panel(pixels, 0, 0)
+    _recess(pixels, *BAR)
+    _recess(pixels, VESSEL_SLOT[0] - 1, VESSEL_SLOT[1] - 1, SLOT, SLOT)
+    for row in INVENTORY_ROWS + (HOTBAR,):
+        for column in range(9):
+            _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)
+
+    raw = bytearray()
+    for y in range(SHEET):
+        raw.append(0)
+        for x in range(SHEET):
+            raw.extend(pixels.get((x, y), (0, 0, 0, 0)))
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        body = kind + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
+
+    header = struct.pack(">IIBBBBB", SHEET, SHEET, 8, 6, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", header)
+        + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
+        + chunk(b"IEND", b"")
+    )
+
+
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_bytes(draw())
@@ -202,6 +236,9 @@ def main() -> None:
     GUI_OUT.parent.mkdir(parents=True, exist_ok=True)
     GUI_OUT.write_bytes(draw_screen())
     print(f"wrote {GUI_OUT}")
+
+    READOUT_OUT.write_bytes(draw_readout())
+    print(f"wrote {READOUT_OUT}")
 
 
 if __name__ == "__main__":

@@ -5,7 +5,9 @@ import java.util.List;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -56,6 +58,25 @@ public class EnergyHeapBlock extends BaseEntityBlock {
         return level.isClientSide ? null
                 : createTickerHelper(type, AcervusRegistry.ENERGY_HEAP_ENTITY.get(),
                         EnergyHeapBlockEntity::serverTick);
+    }
+
+    /** Empty-handed: open the readout. */
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
+            BlockHitResult hit) {
+        if (!(level.getBlockEntity(pos) instanceof Heaped)) {
+            return InteractionResult.PASS;
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (player instanceof net.minecraft.server.level.ServerPlayer server) {
+            server.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                            (id, inventory, viewer) -> new ReadoutMenu(id, inventory, pos),
+                            state.getBlock().getName()),
+                    buffer -> buffer.writeBlockPos(pos));
+        }
+        return InteractionResult.SUCCESS;
     }
 
     /** What is inside rides on the dropped block, for the reasons in {@link HeapBlock#getDrops}. */

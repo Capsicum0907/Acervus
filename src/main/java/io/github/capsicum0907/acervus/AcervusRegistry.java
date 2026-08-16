@@ -86,6 +86,11 @@ public final class AcervusRegistry {
             MENUS.register("heap", () -> IMenuTypeExtension.create(
                     (id, inventory, buffer) -> new HeapMenu(id, inventory, buffer.readBlockPos())));
 
+    /** One menu for the three heaps whose contents are not items. */
+    public static final DeferredHolder<MenuType<?>, MenuType<ReadoutMenu>> READOUT_MENU =
+            MENUS.register("readout", () -> IMenuTypeExtension.create(
+                    (id, inventory, buffer) -> new ReadoutMenu(id, inventory, buffer.readBlockPos())));
+
     private AcervusRegistry() {
     }
 

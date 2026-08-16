@@ -47,6 +47,12 @@ public final class GasHeap {
                     ResourceLocation.fromNamespaceAndPath(MEKANISM, "chemical_handler"),
                     IChemicalHandler.class);
 
+    /** The item-level twin of the same capability, for a tank held in the hand. */
+    public static final net.neoforged.neoforge.capabilities.ItemCapability<IChemicalHandler, Void>
+            CHEMICAL_ITEM = net.neoforged.neoforge.capabilities.ItemCapability.createVoid(
+                    ResourceLocation.fromNamespaceAndPath(MEKANISM, "chemical_handler"),
+                    IChemicalHandler.class);
+
     public static final DeferredBlock<ChemicalHeapBlock> BLOCK = AcervusRegistry.BLOCKS.register(
             "chemical_heap",
             () -> new ChemicalHeapBlock(BlockBehaviour.Properties.of()

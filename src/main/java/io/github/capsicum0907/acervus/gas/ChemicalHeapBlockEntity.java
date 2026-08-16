@@ -27,7 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * in a package of its own: nothing outside it mentions a chemical, so a game without
  * Mekanism never loads a class that would be missing one.
  */
-public class ChemicalHeapBlockEntity extends BlockEntity {
+public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.capsicum0907.acervus.Heaped, io.github.capsicum0907.acervus.HasVessel {
     private static final String SAMPLE = "Sample";
     private static final String AMOUNT = "Amount";
 
@@ -120,6 +120,67 @@ public class ChemicalHeapBlockEntity extends BlockEntity {
         return out;
     }
 
+    private final io.github.capsicum0907.acervus.Vessel vessel = new io.github.capsicum0907.acervus.Vessel();
+
+    @Override
+    public io.github.capsicum0907.acervus.Vessel vessel() {
+        return vessel;
+    }
+
+    /** A tank in the slot is filled from the heap, or emptied into it. */
+    public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state,
+            ChemicalHeapBlockEntity heap) {
+        if (level.isClientSide || heap.vessel.isEmpty()) {
+            return;
+        }
+        mekanism.api.chemical.IChemicalHandler container =
+                heap.vessel.held().getCapability(GasHeap.CHEMICAL_ITEM);
+        if (container == null) {
+            return;
+        }
+
+        for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
+            ChemicalStack inside = container.getChemicalInTank(tank);
+            if (!inside.isEmpty() && heap.accepts(inside)) {
+                long moved = heap.insert(inside, false);
+                if (moved > 0) {
+                    container.extractChemical(tank, moved, mekanism.api.Action.EXECUTE);
+                    return;
+                }
+            }
+            if (!heap.isEmpty()) {
+                ChemicalStack offer = heap.extract(container.getChemicalTankCapacity(tank), true);
+                ChemicalStack left = container.insertChemical(tank, offer, mekanism.api.Action.EXECUTE);
+                long given = offer.getAmount() - left.getAmount();
+                if (given > 0) {
+                    heap.extract(given, false);
+                    return;
+                }
+            }
+        }
+    }
+
+    @Override
+    public net.minecraft.network.chat.Component contentName() {
+        return sample.isEmpty() ? net.minecraft.network.chat.Component.empty()
+                : sample.getChemical().getTextComponent();
+    }
+
+    @Override
+    public String brief(long value) {
+        return io.github.capsicum0907.acervus.Counts.brief(value);
+    }
+
+    @Override
+    public String exact(long value) {
+        return io.github.capsicum0907.acervus.Counts.exact(value);
+    }
+
+    @Override
+    public int tint() {
+        return 0xFF8FCF8A;
+    }
+
     private void changed() {
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -131,6 +192,7 @@ public class ChemicalHeapBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, amount);
+        vessel.save(tag, registries);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
         }
@@ -143,6 +205,7 @@ public class ChemicalHeapBlockEntity extends BlockEntity {
                 ? ChemicalStack.parseOptional(registries, tag.getCompound(SAMPLE))
                 : ChemicalStack.EMPTY;
         amount = sample.isEmpty() ? 0L : tag.getLong(AMOUNT);
+        vessel.load(tag, registries);
     }
 
     @Override

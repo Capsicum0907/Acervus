@@ -2,6 +2,7 @@ package io.github.capsicum0907.acervus;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -26,7 +27,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
  * one has no sample, cannot be locked to a kind, and never refuses anything except
  * for being full.
  */
-public class EnergyHeapBlockEntity extends BlockEntity {
+public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVessel {
     /** The same name every heap uses; see {@link HeapBlockEntity} for why. */
     private static final String AMOUNT = "Amount";
     private static final String LEGACY_STORED = "Stored";
@@ -86,6 +87,70 @@ public class EnergyHeapBlockEntity extends BlockEntity {
         return Math.max(given, 0);
     }
 
+    /** Energy has no kinds, so there is nothing to name. */
+    @Override
+    public Component contentName() {
+        return Component.empty();
+    }
+
+    @Override
+    public long amount() {
+        return stored;
+    }
+
+    @Override
+    public String brief(long value) {
+        return Counts.brief(value) + " FE";
+    }
+
+    @Override
+    public String exact(long value) {
+        return Counts.exact(value) + " FE";
+    }
+
+    @Override
+    public int tint() {
+        return 0xFFD8A24A;
+    }
+
+    private final Vessel vessel = new Vessel();
+
+    @Override
+    public Vessel vessel() {
+        return vessel;
+    }
+
+    /**
+     * Whatever is in the vessel is charged from the heap, or drained into it.
+     *
+     * <p>Charging is the common case and is tried first. A battery that cannot take
+     * any more, but can give, is emptied into the heap instead — so one slot covers
+     * both directions without the player choosing.
+     */
+    private void tickVessel() {
+        if (vessel.isEmpty()) {
+            return;
+        }
+        IEnergyStorage container = vessel.held().getCapability(Capabilities.EnergyStorage.ITEM);
+        if (container == null) {
+            return;
+        }
+        int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
+        if (container.canReceive()) {
+            int given = container.receiveEnergy((int) Math.min(rate, stored), false);
+            if (given > 0) {
+                give(given, false);
+                return;
+            }
+        }
+        if (container.canExtract()) {
+            int taken = container.extractEnergy((int) Math.min(rate, room()), false);
+            if (taken > 0) {
+                receive(taken, false);
+            }
+        }
+    }
+
     /**
      * Offering what it holds to whatever is touching it, once a tick.
      *
@@ -100,7 +165,13 @@ public class EnergyHeapBlockEntity extends BlockEntity {
      * heap.
      */
     public static void serverTick(Level level, BlockPos pos, BlockState state, EnergyHeapBlockEntity heap) {
-        if (!AcervusConfig.ENERGY_PUSHES.get() || heap.isEmpty() || !(level instanceof ServerLevel server)) {
+        if (!(level instanceof ServerLevel server)) {
+            return;
+        }
+        // The vessel first, and unconditionally: a battery in the slot is a person
+        // asking, and turning pushing off is about cables rather than about them.
+        heap.tickVessel();
+        if (!AcervusConfig.ENERGY_PUSHES.get() || heap.isEmpty()) {
             return;
         }
 
@@ -146,12 +217,14 @@ public class EnergyHeapBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, stored);
+        vessel.save(tag, registries);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         stored = tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_STORED);
+        vessel.load(tag, registries);
     }
 
     @Override

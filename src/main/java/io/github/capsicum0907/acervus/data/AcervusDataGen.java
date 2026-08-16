@@ -126,6 +126,7 @@ public final class AcervusDataGen {
                 add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "Gas Heap");
             }
             add("gui.acervus.room", "%s more will fit");
+            add("gui.acervus.vessel", "Put a container here");
             add("gui.acervus.exact", "%s stored");
         }
     }
