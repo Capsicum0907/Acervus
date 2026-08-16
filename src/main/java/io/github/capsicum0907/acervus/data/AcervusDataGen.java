@@ -22,6 +22,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.common.conditions.ItemExistsCondition;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.common.data.LanguageProvider;
@@ -219,7 +220,26 @@ public final class AcervusDataGen {
 
             // A bottle rather than a cauldron: the same ingredients cannot make two
             // different blocks, and a bottle is the vanilla thing that holds a vapour.
+            //
+            // Two different questions, asked at two different times, and both have to be
+            // answered or the recipe is wrong in one direction or the other:
+            //
+            //   - The guard: is Mekanism here NOW, while this runs? Naming the block at
+            //     all loads the class that holds it, and that class cannot exist without
+            //     Mekanism. So the file is only written when datagen is run with Mekanism
+            //     in run/mods -- and, because of --all, a datagen run WITHOUT it would
+            //     delete the committed file rather than leave it alone.
+            //   - The condition: does the item exist in the game the recipe is being
+            //     loaded into? The file ships in the jar always, Mekanism or not, and
+            //     without it the recipe names an item nobody registered. That is not
+            //     silently skipped: it is an ERROR in the log every launch.
+            //
+            // The condition asks after our own item rather than after Mekanism, for the
+            // same reason the pickaxe tag uses addOptional -- the thing that must exist
+            // is ours, and naming somebody else's mod would only be a guess at why.
             if (Mods.mekanism()) {
+                RecipeOutput whenGasHeapExists = output.withConditions(
+                        new ItemExistsCondition(Acervus.MODID, "chemical_heap"));
                 ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS,
                                 io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get())
                         .pattern("GIG")
@@ -229,7 +249,7 @@ public final class AcervusDataGen {
                         .define('I', Items.IRON_INGOT)
                         .define('C', Items.GLASS_BOTTLE)
                         .unlockedBy("has_glass_bottle", has(Items.GLASS_BOTTLE))
-                        .save(output);
+                        .save(whenGasHeapExists);
             }
         }
     }

@@ -13,6 +13,8 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.stats.Stat;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
@@ -1395,6 +1397,38 @@ public final class AcervusTests {
         check(CarriedHeap.of(registries, placed.heap(2)).count() == 102,
                 "and a block loading the same item should find them too");
         saves(rack, registries, "a carried rack a heap was taken out of");
+        helper.succeed();
+    }
+
+    /**
+     * Every item this mod registers can be crafted.
+     *
+     * <p>Written the way round that survives the mod growing: it asks the item registry
+     * what belongs to Acervus rather than naming five things by hand, so an item added
+     * later and forgotten fails here instead of being noticed in a playthrough.
+     *
+     * <p>It reads recipes as the game loaded them, not as datagen wrote them, which is
+     * the difference that matters for the gas heap. Its recipe file ships whether
+     * Mekanism does or not; without Mekanism the item does not exist, so both sides of
+     * this comparison lose it together and the test still passes. What it cannot see is
+     * a recipe file that was <em>refused</em> - that leaves no trace in the game, only
+     * an error in the log.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void everyItemHasARecipe(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+
+        List<Item> craftable = helper.getLevel().getServer().getRecipeManager().getRecipes().stream()
+                .map(held -> held.value().getResultItem(registries).getItem())
+                .toList();
+
+        for (Item item : BuiltInRegistries.ITEM) {
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
+            if (!Acervus.MODID.equals(id.getNamespace())) {
+                continue;
+            }
+            check(craftable.contains(item), id + " has no recipe");
+        }
         helper.succeed();
     }
 

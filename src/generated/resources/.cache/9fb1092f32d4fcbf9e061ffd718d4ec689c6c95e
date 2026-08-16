@@ -1,10 +1,10 @@
-// 1.21.1	2026-08-16T23:56:53.3326057	Recipes
-14023af2004e9ced41de7f5f03dbe700aa857545 data/acervus/advancement/recipes/decorations/chemical_heap.json
+// 1.21.1	2026-08-17T02:42:07.3013095	Recipes
+61e3b8bfd080d08e325885f9d75becf08f66c0fe data/acervus/advancement/recipes/decorations/chemical_heap.json
 a56baf9d976d0860388d2cca19f725772bf22876 data/acervus/advancement/recipes/decorations/energy_heap.json
 24a84a8ae6a30aea6e5390fb0c36c1819ac3dc65 data/acervus/advancement/recipes/decorations/fluid_heap.json
 0e14ea9f5c1d311ab61170256b5945cb2e87a69f data/acervus/advancement/recipes/decorations/horreum.json
 bc274e1408a63a3a2124ae29ba2827e0e69ccf51 data/acervus/advancement/recipes/decorations/item_heap.json
-81af0b3b849bcf38aaf17b9bd08b2fbf0bd3c064 data/acervus/recipe/chemical_heap.json
+17c7e719de90325b5d613264c002a1b6b4a1a034 data/acervus/recipe/chemical_heap.json
 c67b03a6903ef5491e15a299b4b0523227e6ecb5 data/acervus/recipe/energy_heap.json
 6cd0653a4faf207baf818ef9defc9f3132caaab6 data/acervus/recipe/fluid_heap.json
 17a0b517a4aba10dc351fb3165f9014174519ae3 data/acervus/recipe/horreum.json
