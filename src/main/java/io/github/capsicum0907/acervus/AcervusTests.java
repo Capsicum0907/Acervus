@@ -627,6 +627,35 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    /**
+     * An energy heap gives what it holds to what is next to it, without being asked.
+     *
+     * <p>Pushing is the Forge Energy convention and not a preference: a store offers,
+     * a machine waits. Reasoning from "a heap is a container, so let things come and
+     * take" produced a block that filled happily and never gave anything back to
+     * anything — which passed every test about extraction, because every one of them
+     * did the asking itself.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anEnergyHeapOffersItselfToItsNeighbours(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.ENERGY_HEAP.get());
+        helper.setBlock(WHERE.above(), AcervusRegistry.ENERGY_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof EnergyHeapBlockEntity from)
+                || !(helper.getBlockEntity(WHERE.above()) instanceof EnergyHeapBlockEntity into)) {
+            throw new GameTestAssertException("placing two energy heaps should have made two");
+        }
+        from.receive(1_000_000, false);
+
+        EnergyHeapBlockEntity.serverTick(helper.getLevel(),
+                helper.absolutePos(WHERE), helper.getBlockState(WHERE), from);
+
+        check(into.stored() > 0, "the heap above should have been given something, and has nothing");
+        check(from.stored() + into.stored() == 1_000_000,
+                "and the two together should still hold 1,000,000, not "
+                        + (from.stored() + into.stored()));
+        helper.succeed();
+    }
+
     private static HeapBlockEntity place(GameTestHelper helper) {
         return place(helper, WHERE);
     }

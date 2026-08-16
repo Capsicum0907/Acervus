@@ -40,6 +40,20 @@ public final class AcervusConfig {
                     "than on the block.")
             .defineInRange("energyCapacity", 1_000_000_000_000L, 1_000L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.BooleanValue ENERGY_PUSHES = BUILDER
+            .comment("Whether an energy heap offers what it holds to the blocks touching it.",
+                    "On, because that is how Forge Energy actually moves: a store pushes and a",
+                    "machine waits. Items and fluids are the other way round - a hopper pulls, a",
+                    "pump pulls - so this setting has no counterpart on the other heaps.",
+                    "Off makes it a strictly passive store, for anything that does come and take.")
+            .define("energyPushes", true);
+
+    public static final ModConfigSpec.LongValue ENERGY_PUSH_RATE = BUILDER
+            .comment("How much a heap offers each neighbour per tick.",
+                    "Capped at about two billion per neighbour per tick regardless, because that",
+                    "is what one call can carry.")
+            .defineInRange("energyPushRate", 1_000_000_000L, 1L, Long.MAX_VALUE);
+
     public static final ModConfigSpec.BooleanValue SHOWS_CONTENTS = BUILDER
             .comment("Whether a heap draws what it holds, and how many.",
                     "Off is for servers that would rather not pay for the drawing.")

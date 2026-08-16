@@ -1,14 +1,20 @@
 package io.github.capsicum0907.acervus;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 
 /**
  * What an energy heap holds: a number, and nothing else.
@@ -77,6 +83,55 @@ public class EnergyHeapBlockEntity extends BlockEntity {
         }
         return Math.max(given, 0);
     }
+
+    /**
+     * Offering what it holds to whatever is touching it, once a tick.
+     *
+     * <p>An energy heap pushes; the item and fluid heaps do not. That is not an
+     * inconsistency, it is the ecosystem: a hopper comes and takes items, a pump comes
+     * and takes fluid, and a machine that wants power sits there waiting to be given
+     * some. A store that only answered when asked would sit full beside a furnace that
+     * never asked — which is exactly what this one did until it was watched.
+     *
+     * <p>The neighbours are looked up through a cache rather than every tick, because
+     * a capability lookup is a map search and this happens twenty times a second per
+     * heap.
+     */
+    public static void serverTick(Level level, BlockPos pos, BlockState state, EnergyHeapBlockEntity heap) {
+        if (!AcervusConfig.ENERGY_PUSHES.get() || heap.isEmpty() || !(level instanceof ServerLevel server)) {
+            return;
+        }
+
+        int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
+        for (Direction side : Direction.values()) {
+            IEnergyStorage neighbour = heap.neighbour(server, side);
+            if (neighbour == null || !neighbour.canReceive()) {
+                continue;
+            }
+            int offered = (int) Math.min(Math.min(rate, heap.stored), Integer.MAX_VALUE);
+            int taken = neighbour.receiveEnergy(offered, false);
+            if (taken > 0) {
+                heap.give(taken, false);
+            }
+            if (heap.isEmpty()) {
+                return;
+            }
+        }
+    }
+
+    private IEnergyStorage neighbour(ServerLevel level, Direction side) {
+        BlockCapabilityCache<IEnergyStorage, Direction> cache = neighbours[side.ordinal()];
+        if (cache == null) {
+            cache = BlockCapabilityCache.create(Capabilities.EnergyStorage.BLOCK, level,
+                    getBlockPos().relative(side), side.getOpposite());
+            neighbours[side.ordinal()] = cache;
+        }
+        return cache.getCapability();
+    }
+
+    @SuppressWarnings("unchecked")
+    private final BlockCapabilityCache<IEnergyStorage, Direction>[] neighbours =
+            new BlockCapabilityCache[Direction.values().length];
 
     private void changed() {
         setChanged();
