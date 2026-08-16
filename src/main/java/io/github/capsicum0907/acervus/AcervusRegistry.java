@@ -84,7 +84,17 @@ public final class AcervusRegistry {
 
     public static final DeferredHolder<MenuType<?>, MenuType<HeapMenu>> HEAP_MENU =
             MENUS.register("heap", () -> IMenuTypeExtension.create(
-                    (id, inventory, buffer) -> new HeapMenu(id, inventory, buffer.readBlockPos())));
+                    (id, inventory, buffer) -> HeapMenu.at(id, inventory, buffer.readBlockPos())));
+
+    /**
+     * The same menu and the same screen, over the heap in a hand rather than the one in
+     * the world. Two types because the two carry different things across the wire — a
+     * position, or which hand — and one type cannot read both.
+     */
+    public static final DeferredHolder<MenuType<?>, MenuType<HeapMenu>> CARRIED_HEAP_MENU =
+            MENUS.register("carried_heap", () -> IMenuTypeExtension.create(
+                    (id, inventory, buffer) -> HeapMenu.inHand(id, inventory,
+                            buffer.readEnum(net.minecraft.world.InteractionHand.class))));
 
     /** One menu for the three heaps whose contents are not items. */
     public static final DeferredHolder<MenuType<?>, MenuType<ReadoutMenu>> READOUT_MENU =

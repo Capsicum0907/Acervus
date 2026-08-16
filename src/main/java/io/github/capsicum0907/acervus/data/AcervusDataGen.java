@@ -131,6 +131,7 @@ public final class AcervusDataGen {
             add("gui.acervus.flow.in", "In");
             add("gui.acervus.flow.out", "Out");
             add("gui.acervus.exact", "%s stored");
+            add("gui.acervus.intake_only", "Deposit only");
         }
     }
 

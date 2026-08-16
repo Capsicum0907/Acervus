@@ -15,8 +15,11 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -53,6 +56,9 @@ public final class AcervusTests {
 
     /** Far past a stack, and past a shulker box, so nothing accidental can pass. */
     private static final int MANY = 5_000;
+
+    /** The first hotbar slot in a heap menu: the heap's own slot, then three rows. */
+    private static final int HOTBAR_FIRST = 1 + 27;
 
     private AcervusTests() {
     }
@@ -680,9 +686,9 @@ public final class AcervusTests {
 
         Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
 
-        check(Carried.amount(player.getInventory().getItem(0)) == 110,
+        check(carriedCount(player, 0) == 110,
                 "a carried heap should be holding 110, not "
-                        + Carried.amount(player.getInventory().getItem(0)));
+                        + carriedCount(player, 0));
         check(dropped.isRemoved(), "and nothing should be left lying on the ground");
         check(!player.getInventory().contains(new ItemStack(Items.DIAMOND)),
                 "and no diamond should have reached a slot as well as the heap");
@@ -698,7 +704,7 @@ public final class AcervusTests {
 
         Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
 
-        check(Carried.amount(player.getInventory().getItem(0)) == 100,
+        check(carriedCount(player, 0) == 100,
                 "a heap of diamonds should not have taken dirt");
         check(dropped.getItem().getCount() == 10, "and the dirt should still be there for the player");
         helper.succeed();
@@ -719,7 +725,7 @@ public final class AcervusTests {
 
         Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
 
-        check(Carried.amount(player.getInventory().getItem(0)) == 0,
+        check(carriedCount(player, 0) == 0,
                 "an empty carried heap should still be empty");
         check(dropped.getItem().getCount() == 10, "and the diamonds should still be on the ground");
         helper.succeed();
@@ -740,8 +746,8 @@ public final class AcervusTests {
 
         int absorbed = Carried.absorb(player, new ItemStack(Items.DIAMOND, 10));
 
-        long total = Carried.amount(player.getInventory().getItem(0))
-                + Carried.amount(player.getInventory().getItem(1));
+        long total = carriedCount(player, 0)
+                + carriedCount(player, 1);
         check(absorbed == 10, "ten diamonds should have been taken, not " + absorbed);
         check(total == 210, "and the two heaps together should hold 210, not " + total);
         helper.succeed();
@@ -774,7 +780,7 @@ public final class AcervusTests {
 
         Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
 
-        check(Carried.amount(player.getInventory().getItem(0)) == 100,
+        check(carriedCount(player, 0) == 100,
                 "a heap should not have taken an item that was thrown a moment ago");
         helper.succeed();
     }
@@ -798,7 +804,7 @@ public final class AcervusTests {
 
             Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
 
-            long inHeap = Carried.amount(player.getInventory().getItem(0));
+            long inHeap = carriedCount(player, 0);
             check(inHeap == 105, "the heap should have filled to 105, not " + inHeap);
             check(!dropped.isRemoved(), "and the rest should still be lying there to pick up");
             check(dropped.getItem().getCount() == 5,
@@ -860,6 +866,138 @@ public final class AcervusTests {
         check(heap.getCapability(Capabilities.ItemHandler.ITEM) == null,
                 "a heap in item form must offer no item handler; taking needs the block placed");
         helper.succeed();
+    }
+
+    /**
+     * What arrived in a slot some other way is swept up too.
+     *
+     * <p>Walking over something is only one of the ways items reach a player.
+     * {@code /give}, a crafting result and a shift-click out of a chest all put things
+     * straight into a slot, and a heap that collected one and not the others would be
+     * a rule with no shape.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theSweepTakesWhatArrivedInASlot(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        player.getInventory().setItem(20, new ItemStack(Items.DIAMOND, 33));
+
+        Carried.sweep(player);
+
+        check(carriedCount(player, 0) == 133,
+                "the heap should have swept up all 33, and holds " + carriedCount(player, 0));
+        check(player.getInventory().getItem(20).isEmpty(), "leaving the slot free");
+        helper.succeed();
+    }
+
+    /**
+     * What is in the hand is left alone.
+     *
+     * <p>It is the one place to keep something a heap would otherwise claim, and it
+     * has to exist: without it, carrying a heap of cobblestone would mean never being
+     * able to hold a cobblestone.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theSweepLeavesWhatIsInHand(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().selected = 3;
+        player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        player.getInventory().setItem(3, new ItemStack(Items.DIAMOND, 33));
+
+        Carried.sweep(player);
+
+        check(carriedCount(player, 0) == 100, "the heap should have taken nothing from the hand");
+        check(player.getInventory().getItem(3).getCount() == 33, "and the hand should still be full");
+        helper.succeed();
+    }
+
+    /**
+     * The screen over a held heap shows it and takes deposits, and gives nothing back.
+     *
+     * <p>Every way out is closed, not just the obvious one: the slot refuses to be
+     * picked up from, refuses to be shift-clicked out of, and hands back nothing when
+     * asked directly. One of those left open would be the whole rule undone.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theScreenOverAHeldHeapOnlyTakes(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(player.getInventory().selected,
+                carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        HeapMenu menu = HeapMenu.inHand(1, player.getInventory(), InteractionHand.MAIN_HAND);
+        Slot heap = menu.slots.get(0);
+
+        check(heap.getItem().getCount() == 64, "the slot should show a stack of what is inside");
+        check(!heap.mayPickup(player), "and must refuse to be taken from");
+        check(heap.remove(64).isEmpty(), "and hand back nothing when asked outright");
+        check(menu.quickMoveStack(player, 0).isEmpty(), "and nothing when shift-clicked");
+        check(carriedCount(player, player.getInventory().selected) == 100,
+                "with all 100 still inside");
+        helper.succeed();
+    }
+
+    /** And the heap itself cannot be moved out from under its own screen. */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theHeldHeapIsFrozenWhileItsScreenIsOpen(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().selected = 4;
+        player.getInventory().setItem(4, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        HeapMenu menu = HeapMenu.inHand(1, player.getInventory(), InteractionHand.MAIN_HAND);
+
+        Slot held = menu.slots.get(HOTBAR_FIRST + 4);
+        check(held.getItem().getItem() == AcervusRegistry.HEAP_ITEM.get(),
+                "the frozen slot should be the heap's own");
+        check(!held.mayPickup(player), "which must not be picked up while its screen is open");
+        check(!held.mayPlace(new ItemStack(Items.DIRT)), "nor swapped for something else");
+        check(menu.quickMoveStack(player, HOTBAR_FIRST + 4).isEmpty(),
+                "and must not be shift-clicked into itself");
+        helper.succeed();
+    }
+
+    /**
+     * An empty held heap can be committed on purpose, which walking over things never
+     * does. The screen is where a decision is made; a step is not a decision.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theScreenCommitsAnEmptyHeldHeap(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        int hand = player.getInventory().selected;
+        player.getInventory().setItem(hand, new ItemStack(AcervusRegistry.HEAP_ITEM.get()));
+        HeapMenu menu = HeapMenu.inHand(1, player.getInventory(), InteractionHand.MAIN_HAND);
+
+        ItemStack left = menu.slots.get(0).safeInsert(new ItemStack(Items.DIAMOND, 10), 10);
+
+        check(left.isEmpty(), "all ten should have gone in, and " + left.getCount() + " came back");
+        check(carriedCount(player, hand) == 10, "leaving the heap holding ten");
+        helper.succeed();
+    }
+
+    /**
+     * What a carried heap collected is there when it is put back down.
+     *
+     * <p>This is the round trip the rest of the carrying tests do not make: they read
+     * the item's own numbers back, which would agree with themselves even if the shape
+     * written were one no block could load. {@code CustomData#loadInto} is the same
+     * call {@code BlockItem} makes when the block is placed.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void whatWasCollectedSurvivesBeingPutDown(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        Carried.onPickup(new ItemEntityPickupEvent.Pre(player, drop(helper, new ItemStack(Items.DIAMOND, 10))));
+
+        HeapBlockEntity placed = place(helper, OTHER);
+        player.getInventory().getItem(0)
+                .getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
+                .loadInto(placed, helper.getLevel().registryAccess());
+
+        check(placed.count() == 110, "the placed heap should hold 110, not " + placed.count());
+        check(placed.sample().is(Items.DIAMOND), "and should hold diamonds");
+        helper.succeed();
+    }
+
+    /** What the heap in that inventory slot is holding. */
+    private static long carriedCount(Player player, int slot) {
+        return CarriedHeap.of(player, player.getInventory().getItem(slot)).count();
     }
 
     /** A heap item holding what a real heap would hold, written the way a broken one is. */

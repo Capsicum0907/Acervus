@@ -1,5 +1,7 @@
 package io.github.capsicum0907.acervus;
 
+import java.util.function.Supplier;
+
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -11,9 +13,9 @@ import net.minecraft.world.inventory.Slot;
  *
  * <p>The point is that nothing new has to be learnt. Clicking takes a stack,
  * right-clicking takes half, clicking with something in hand puts it in,
- * shift-clicking moves as much as fits — all of that is the game's own handling of
- * a slot, and none of it is written here. What is written here is only the
- * translation between "a slot holding up to a stack" and "a heap holding billions".
+ * shift-clicking moves as much as fits — all of that is the game's own handling of a
+ * slot, and none of it is written here. What is written here is only the translation
+ * between "a slot holding up to a stack" and "a heap holding billions".
  *
  * <p>That translation is one rule: <b>the slot shows a window, and setting it means
  * changing the total by the difference.</b> Every path the game has into a slot
@@ -25,54 +27,66 @@ import net.minecraft.world.inventory.Slot;
  * the answer is a stack, so taking behaves as it does everywhere. Asked about a
  * particular stack it is deciding how much will fit, and the answer is the room the
  * heap has — a plain stack there is what makes a heap of five thousand look full.
+ *
+ * <p>The heap is fetched rather than held. A block can be broken and an item can
+ * leave the hand while its screen is open, and either leaves {@link Pile#NONE} behind
+ * — a heap that is not there answers exactly like an empty one, which is what stops
+ * every method below from needing a null check.
  */
 public class HeapSlot extends Slot {
     /** The parent constructor needs a container; nothing ever reads it. */
     private static final SimpleContainer UNUSED = new SimpleContainer(0);
 
-    private final HeapBlockEntity heap;
+    private final Supplier<Pile> heap;
 
-    public HeapSlot(HeapBlockEntity heap, int x, int y) {
+    public HeapSlot(Supplier<Pile> heap, int x, int y) {
         super(UNUSED, 0, x, y);
         this.heap = heap;
     }
 
+    private Pile heap() {
+        return heap.get();
+    }
+
     @Override
     public ItemStack getItem() {
-        return heap.stack();
+        return heap().stack();
     }
 
     @Override
     public boolean hasItem() {
-        return !heap.isEmpty();
+        return !heap().isEmpty();
     }
 
     @Override
     public boolean mayPlace(ItemStack stack) {
+        Pile heap = heap();
         return heap.accepts(stack) && heap.room() > 0;
     }
 
+    /** A heap that does not give cannot be clicked out of, or shift-clicked out of. */
     @Override
     public boolean mayPickup(Player player) {
-        return !heap.isEmpty();
+        Pile heap = heap();
+        return heap.gives() && !heap.isEmpty();
     }
 
     /** How much comes out at once: a stack, whatever a stack of that item is. */
     @Override
     public int getMaxStackSize() {
-        ItemStack sample = heap.sample();
+        ItemStack sample = heap().sample();
         return sample.isEmpty() ? Item.ABSOLUTE_MAX_STACK_SIZE : sample.getMaxStackSize();
     }
 
     /** How much will go in: everything the heap has room for. */
     @Override
     public int getMaxStackSize(ItemStack stack) {
-        return clamped(getItem().getCount() + heap.room());
+        return clamped(getItem().getCount() + heap().room());
     }
 
     @Override
     public ItemStack remove(int amount) {
-        return heap.extract(amount, false);
+        return heap().extract(amount, false);
     }
 
     /**
@@ -81,6 +95,7 @@ public class HeapSlot extends Slot {
      */
     @Override
     public void set(ItemStack stack) {
+        Pile heap = heap();
         if (stack.isEmpty() || !heap.accepts(stack)) {
             return;
         }
@@ -103,14 +118,14 @@ public class HeapSlot extends Slot {
         if (stack.isEmpty() || !mayPlace(stack)) {
             return stack;
         }
-        int taken = heap.insert(stack.copyWithCount(Math.min(increment, stack.getCount())), false);
+        int taken = heap().insert(stack.copyWithCount(Math.min(increment, stack.getCount())), false);
         stack.shrink(taken);
         return stack;
     }
 
     @Override
     public void setChanged() {
-        heap.setChanged();
+        heap().setChanged();
     }
 
     /** Nothing to count: this slot is not part of any crafting. */

@@ -22,6 +22,7 @@ public final class AcervusClient {
 
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(AcervusRegistry.HEAP_MENU.get(), HeapScreen::new);
+        event.register(AcervusRegistry.CARRIED_HEAP_MENU.get(), HeapScreen::new);
         event.register(AcervusRegistry.READOUT_MENU.get(), ReadoutScreen::new);
     }
 }

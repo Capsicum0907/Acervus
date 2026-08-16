@@ -47,6 +47,7 @@ public class Acervus {
         // while loading. A carried heap has no block entity to tick, so the only moment
         // it can act is the moment something is walked over.
         NeoForge.EVENT_BUS.addListener(Carried::onPickup);
+        NeoForge.EVENT_BUS.addListener(Carried::onTick);
 
         LOGGER.info("Acervus {} loaded.", modContainer.getModInfo().getVersion());
     }

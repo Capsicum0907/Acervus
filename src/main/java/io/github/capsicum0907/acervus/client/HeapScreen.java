@@ -5,9 +5,9 @@ import java.util.List;
 
 import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.Counts;
-import io.github.capsicum0907.acervus.HeapBlockEntity;
 import io.github.capsicum0907.acervus.HeapMenu;
 import io.github.capsicum0907.acervus.HeapSlot;
+import io.github.capsicum0907.acervus.Pile;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -37,7 +37,13 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
     private static final int COUNT_Y = 38;
     private static final int ROOM_Y = 50;
 
+    /** Under the three readings, clear of the inventory label at 72. */
+    private static final int NOTE_Y = 62;
+
     private static final int TEXT = 0x404040;
+
+    /** Quieter than the readings: it is a standing fact, not a number that changes. */
+    private static final int NOTE = 0x808080;
 
     public HeapScreen(HeapMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -69,8 +75,14 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         super.renderLabels(graphics, mouseX, mouseY);
 
-        HeapBlockEntity heap = heap();
-        if (heap == null || heap.isEmpty()) {
+        Pile heap = heap();
+        // Said whenever it is true, empty or not: a slot that will not give anything
+        // back looks broken unless the screen says that is what it is.
+        if (!heap.gives()) {
+            graphics.drawString(font, Component.translatable("gui.acervus.intake_only"),
+                    TEXT_X, NOTE_Y, NOTE, false);
+        }
+        if (heap.isEmpty()) {
             graphics.drawString(font, Component.translatable("block.acervus.heap.empty"),
                     TEXT_X, NAME_Y, TEXT, false);
             return;
@@ -93,8 +105,8 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
      */
     @Override
     protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        HeapBlockEntity heap = heap();
-        if (minecraft == null || heap == null || heap.isEmpty() || !menu.getCarried().isEmpty()) {
+        Pile heap = heap();
+        if (minecraft == null || heap.isEmpty() || !menu.getCarried().isEmpty()) {
             super.renderTooltip(graphics, mouseX, mouseY);
             return;
         }
@@ -121,11 +133,11 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
         super.renderTooltip(graphics, mouseX, mouseY);
     }
 
-    private Component held(HeapBlockEntity heap) {
+    private Component held(Pile heap) {
         return Component.literal(Counts.brief(heap.count()));
     }
 
-    private Component free(HeapBlockEntity heap) {
+    private Component free(Pile heap) {
         return Component.translatable("gui.acervus.room", Counts.brief(heap.room()));
     }
 
@@ -135,7 +147,8 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
                 && y >= top && y < top + font.lineHeight;
     }
 
-    private HeapBlockEntity heap() {
-        return minecraft == null || minecraft.player == null ? null : menu.heap(minecraft.player);
+    /** Never null — see {@link Pile#NONE}, which a heap that has gone answers with. */
+    private Pile heap() {
+        return menu.pile();
     }
 }

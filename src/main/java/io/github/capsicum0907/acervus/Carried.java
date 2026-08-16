@@ -1,41 +1,32 @@
 package io.github.capsicum0907.acervus;
 
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
- * A heap that is being carried rather than placed.
+ * A heap that is being carried collects.
  *
- * <p>The contents already ride on the item — that is how a heap survives being mined
- * — so a heap in a pocket is a full heap with nothing that reads it. This is that
- * reading, and it is deliberately one-way: <b>a carried heap takes, and does not
- * give</b>.
+ * <p>Two ways in, because items reach a player two ways. One is walked over and
+ * intercepted before the inventory ever sees it; the other is already in a slot —
+ * from {@code /give}, from a crafting result, from a chest — and is swept up
+ * afterwards. Together they mean the same thing to a player: <b>what a heap holds
+ * does not take up slots any more.</b>
  *
- * <p>The asymmetry is the whole design. Emptying a pocket into one while mining is
- * what makes carrying it worth a slot; drawing two billion of anything back out of a
- * pocket is a different item entirely, one that makes every other slot pointless.
- * Taking still requires putting the block down, which is a deliberate act in a place.
+ * <p>Nothing comes back out. {@link CarriedHeap} is where that rule lives and why.
  *
  * <p>Only a heap that <em>already holds</em> something takes anything, the same
  * distinction {@link HeapBlockEntity#holds} draws against {@code accepts}: an empty
- * heap in a bag would otherwise commit itself to whatever the player happened to walk
- * over first, which is a decision made by accident.
+ * heap would otherwise commit itself to whatever was walked over first, which is a
+ * decision made by accident. Committing an empty one is what its screen is for.
  */
 public final class Carried {
-    private static final String SAMPLE = "Sample";
-    private static final String AMOUNT = "Amount";
-    private static final String LEGACY_COUNT = "Count";
-
     private Carried() {
     }
 
@@ -87,8 +78,56 @@ public final class Carried {
     }
 
     /**
+     * Everything that reached a slot some other way — {@code /give}, a crafting
+     * result, a shift-click out of a chest — swept into the heaps carrying it.
+     *
+     * <p>Not while a container is open. The player is moving things about on purpose
+     * then, and one of the things they may be moving them out of is a heap; a sweep
+     * running underneath would put it straight back.
+     */
+    public static void onTick(PlayerTickEvent.Post event) {
+        Player player = event.getEntity();
+        if (player.level().isClientSide || !AcervusConfig.ABSORBS_WHEN_CARRIED.get()
+                || player.containerMenu != player.inventoryMenu) {
+            return;
+        }
+        sweep(player);
+    }
+
+    /**
+     * Absorbs what is in the player's own storage slots.
+     *
+     * <p><b>Not what is in their hand.</b> That is the one place to keep something a
+     * heap would otherwise claim, and it needs to exist: without it, carrying a heap
+     * of cobblestone would mean never being able to hold a cobblestone. Worn armour is
+     * left alone for the same reason.
+     */
+    public static void sweep(Player player) {
+        if (!carriesAHeap(player)) {
+            return;
+        }
+        Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < Inventory.INVENTORY_SIZE; slot++) {
+            if (slot == inventory.selected) {
+                continue;
+            }
+            ItemStack stack = inventory.getItem(slot);
+            int taken = absorb(player, stack);
+            if (taken > 0) {
+                stack.shrink(taken);
+                inventory.setChanged();
+            }
+        }
+    }
+
+    /**
      * Puts as much of {@code incoming} as will fit into the heaps this player is
      * carrying, without taking it out of the stack.
+     *
+     * <p>Every slot is searched for a heap, the hands and the armour included — a heap
+     * held in the hand collecting is what anyone would expect of one. Which slots are
+     * looked at as a <em>source</em> is a separate question, answered in
+     * {@link #sweep}.
      *
      * @return how many were taken, which is none unless some heap already holds them
      */
@@ -96,13 +135,12 @@ public final class Carried {
         if (incoming.isEmpty()) {
             return 0;
         }
-        HolderLookup.Provider registries = player.level().registryAccess();
         Inventory inventory = player.getInventory();
 
         int absorbed = 0;
         int left = incoming.getCount();
         for (int slot = 0; slot < inventory.getContainerSize() && left > 0; slot++) {
-            int taken = absorb(inventory.getItem(slot), incoming, left, registries);
+            int taken = absorb(player, inventory.getItem(slot), incoming, left);
             absorbed += taken;
             left -= taken;
         }
@@ -114,51 +152,33 @@ public final class Carried {
      *               cannot promise the same items twice
      * @return how many this heap took
      */
-    private static int absorb(ItemStack heap, ItemStack incoming, int wanted, HolderLookup.Provider registries) {
+    private static int absorb(Player player, ItemStack heap, ItemStack incoming, int wanted) {
         // One heap, not a stack of them. Several heaps in a slot are one set of
         // components between them, so adding to "the" heap would add to all of them —
         // the same duplication a shulker box avoids by not stacking at all.
         if (!isHeap(heap) || heap.getCount() != 1) {
             return 0;
         }
-        ItemStack sample = sample(heap, registries);
-        if (sample.isEmpty() || !ItemStack.isSameItemSameComponents(sample, incoming)) {
+        CarriedHeap pile = CarriedHeap.of(player, heap);
+        if (!pile.holds(incoming)) {
             return 0;
         }
-
-        long held = amount(heap);
-        int taken = (int) Math.min(Math.max(0L, AcervusConfig.CAPACITY.get() - held), wanted);
-        if (taken <= 0) {
-            return 0;
-        }
-
-        CompoundTag tag = data(heap);
-        tag.putLong(AMOUNT, held + taken);
-        tag.remove(LEGACY_COUNT);
-        heap.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(tag));
-        return taken;
+        return pile.insert(incoming.copyWithCount(wanted), false);
     }
 
     public static boolean isHeap(ItemStack stack) {
         return stack.getItem() == AcervusRegistry.HEAP_ITEM.get();
     }
 
-    /** What this carried heap holds, with a count of one, or empty. */
-    public static ItemStack sample(ItemStack heap, HolderLookup.Provider registries) {
-        CompoundTag tag = data(heap);
-        if (!tag.contains(SAMPLE)) {
-            return ItemStack.EMPTY;
+    /** One pass before the nested one, so a player carrying no heap costs almost nothing. */
+    private static boolean carriesAHeap(Player player) {
+        Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            if (isHeap(inventory.getItem(slot))) {
+                return true;
+            }
         }
-        return ItemStack.parse(registries, tag.getCompound(SAMPLE)).orElse(ItemStack.EMPTY);
+        return false;
     }
 
-    /** How much it holds. The old key is read when the new one is absent, as everywhere else. */
-    public static long amount(ItemStack heap) {
-        CompoundTag tag = data(heap);
-        return tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
-    }
-
-    private static CompoundTag data(ItemStack heap) {
-        return heap.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
-    }
 }

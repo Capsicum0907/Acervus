@@ -35,7 +35,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * the shape that goes wrong. InfChest had to add a mixin to force hoppers off that
  * path; not being a container at all is the same fix, made earlier.
  */
-public class HeapBlockEntity extends BlockEntity {
+public class HeapBlockEntity extends BlockEntity implements Pile {
     private static final String SAMPLE = "Sample";
 
     /**

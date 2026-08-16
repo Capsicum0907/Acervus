@@ -104,7 +104,7 @@ public class HeapBlock extends BaseEntityBlock {
         }
         if (player instanceof ServerPlayer server) {
             server.openMenu(new SimpleMenuProvider(
-                            (id, inventory, viewer) -> new HeapMenu(id, inventory, pos),
+                            (id, inventory, viewer) -> HeapMenu.at(id, inventory, pos),
                             state.getBlock().getName()),
                     buffer -> buffer.writeBlockPos(pos));
         }

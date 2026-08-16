@@ -174,12 +174,25 @@ thing put into it with nothing on the block to say why.
 ### Carrying one
 
 A heap keeps its contents when it is broken, so a heap in an inventory is a full
-heap that nothing was reading. Now something does: **a carried heap takes items
-straight out of the air.** Walk over what it already holds and it goes into the
-heap instead of into a slot, sound and animation and all.
+heap that nothing was reading. Now something does: **a carried heap collects.**
 
-**It only takes.** Nothing comes back out of a heap until it is placed again, and
-that asymmetry is the whole design rather than an unfinished half of it:
+- **Walk over what it already holds** and it goes into the heap instead of into a
+  slot, sound and animation and all — before the inventory ever sees it, so a full
+  inventory is no obstacle.
+- **Anything that arrives in a slot another way** — `/give`, a crafting result, a
+  shift-click out of a chest — is swept up a moment later. What a heap holds stops
+  taking up slots at all.
+- **Sneak and right-click the air** to open the one in your hand: the block's own
+  screen, same slot and same numbers.
+
+**What is in your hand is left alone**, and that is the escape hatch: it is the one
+place to keep something a heap would otherwise claim. Worn armour is left alone for
+the same reason, and nothing is swept while a container is open — you are moving
+things about on purpose then, and one of them may be a heap.
+
+**It only takes.** Nothing comes back out of a heap until it is placed again — the
+screen over a held one says *Deposit only* and means it — and that asymmetry is the
+whole design rather than an unfinished half of it:
 
 - Taking is what makes it worth a slot. A stone heap in the hotbar turns a mining
   trip into one slot that never fills, which is the job this mod exists to do.
@@ -198,7 +211,17 @@ The rules, and why each one is there:
 | items just thrown, or held for someone else, are **left alone** | the same two conditions vanilla checks, checked one step earlier |
 | there is **no handler on the item** | so no pipe, backpack or other mod can find a way to drain one from a slot either |
 
+The one exception is the screen: **an empty held heap can be committed there on
+purpose.** Opening it and putting something in is a decision; walking over a flower
+is not, which is why only the deliberate path may pick what an empty heap is for.
+
 Off with `absorbsWhenCarried = false` under `[item]`.
+
+The screen is the block's, not a second one. `Pile` is what a heap of items is —
+the arithmetic, with no opinion about where it is kept — and `HeapBlockEntity` and
+`CarriedHeap` are the two places it can be kept. The slot, the menu and the screen
+were written against the block; they are written against `Pile` now, so the same
+three work over either and `gives()` is the single method that separates them.
 
 ## Build
 
@@ -223,7 +246,8 @@ gradlew runData           # regenerate models, recipes and language
 - [x] **3** — a screen, because a block whose only controls are undocumented
   gestures is a block nobody can use. Built on a real slot rather than buttons, so
   there is nothing new to learn
-- [x] **4** — a carried heap takes what is picked up, and only takes
+- [x] **4** — a carried heap collects: what is walked over, what arrives in a slot,
+  and a screen of its own on sneak + right-click. It only ever takes
 - [ ] **5** — open questions below
 
 ## Open questions

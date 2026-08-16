@@ -7,9 +7,15 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
 /**
@@ -25,27 +31,52 @@ public class HeapBlockItem extends BlockItem {
         super(block, properties);
     }
 
+    /**
+     * Sneak and right-click the air to look inside the one you are holding.
+     *
+     * <p>The air, because right-clicking a block is how a heap is placed and that must
+     * keep working; {@code useOn} runs first and only a miss reaches here. Sneaking,
+     * because a plain right-click with a heap in hand already means something on the
+     * heap in front of you.
+     *
+     * <p>The screen it opens is the block's own — same slot, same numbers — with one
+     * difference the screen states outright: nothing comes out. See {@link CarriedHeap}.
+     */
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack held = player.getItemInHand(hand);
+        if (!player.isShiftKeyDown()) {
+            return InteractionResultHolder.pass(held);
+        }
+        if (player instanceof ServerPlayer server) {
+            server.openMenu(new SimpleMenuProvider(
+                            (id, inventory, viewer) -> HeapMenu.inHand(id, inventory, hand),
+                            held.getHoverName()),
+                    buffer -> buffer.writeEnum(hand));
+        }
+        return InteractionResultHolder.sidedSuccess(held, level.isClientSide());
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, context, lines, flag);
 
         HolderLookup.Provider registries = context.registries();
-        CompoundTag tag = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA,
-                net.minecraft.world.item.component.CustomData.EMPTY).copyTag();
-        if (registries == null || !tag.contains("Sample")) {
-            lines.add(Component.translatable("block.acervus.heap.empty").withStyle(ChatFormatting.GRAY));
+        if (registries == null) {
             return;
         }
-
-        ItemStack sample = ItemStack.parse(registries, tag.getCompound("Sample")).orElse(ItemStack.EMPTY);
-        long count = tag.contains("Amount") ? tag.getLong("Amount") : tag.getLong("Count");
-        if (sample.isEmpty() || count <= 0) {
+        // Read through the same class the slot and the screen read through, rather than
+        // off the tag here: three readings of one field is three places for the key to
+        // be spelt differently, which is what happened to the count once already.
+        CarriedHeap heap = CarriedHeap.of(registries, stack);
+        long count = heap.count();
+        if (heap.isEmpty()) {
             lines.add(Component.translatable("block.acervus.heap.empty").withStyle(ChatFormatting.GRAY));
             return;
         }
 
         lines.add(Component.translatable("block.acervus.heap.holding",
-                        sample.getHoverName(), Component.literal(String.format("%,d", count)))
+                        heap.sample().getHoverName(), Component.literal(String.format("%,d", count)))
                 .withStyle(ChatFormatting.GRAY));
 
         // Said only while it is true, because it is a thing the item is quietly doing
