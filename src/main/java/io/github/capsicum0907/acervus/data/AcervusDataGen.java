@@ -67,7 +67,8 @@ public final class AcervusDataGen {
         protected void addTags(HolderLookup.Provider registries) {
             tag(BlockTags.MINEABLE_WITH_PICKAXE)
                     .add(AcervusRegistry.HEAP.get())
-                    .add(AcervusRegistry.FLUID_HEAP.get());
+                    .add(AcervusRegistry.FLUID_HEAP.get())
+                    .add(AcervusRegistry.ENERGY_HEAP.get());
         }
     }
 
@@ -80,6 +81,7 @@ public final class AcervusDataGen {
         protected void registerStatesAndModels() {
             glassBox(AcervusRegistry.HEAP);
             glassBox(AcervusRegistry.FLUID_HEAP);
+            glassBox(AcervusRegistry.ENERGY_HEAP);
         }
 
         /**
@@ -106,9 +108,11 @@ public final class AcervusDataGen {
         protected void addTranslations() {
             add(AcervusRegistry.HEAP.get(), "Heap");
             add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
+            add(AcervusRegistry.ENERGY_HEAP.get(), "Energy Heap");
             add("block.acervus.heap.empty", "Empty");
             add("block.acervus.heap.holding", "%s x %s");
             add("block.acervus.fluid_heap.holding", "%s, %s");
+            add("block.acervus.energy_heap.holding", "%s FE");
             add("gui.acervus.room", "%s more will fit");
             add("gui.acervus.exact", "%s stored");
         }
@@ -146,6 +150,16 @@ public final class AcervusDataGen {
                     .define('I', Items.IRON_INGOT)
                     .define('C', Blocks.CAULDRON)
                     .unlockedBy("has_cauldron", has(Blocks.CAULDRON))
+                    .save(output);
+
+            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.ENERGY_HEAP.get())
+                    .pattern("GIG")
+                    .pattern("ICI")
+                    .pattern("GIG")
+                    .define('G', Blocks.GLASS)
+                    .define('I', Items.IRON_INGOT)
+                    .define('C', Blocks.REDSTONE_BLOCK)
+                    .unlockedBy("has_redstone_block", has(Blocks.REDSTONE_BLOCK))
                     .save(output);
         }
     }

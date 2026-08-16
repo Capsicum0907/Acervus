@@ -30,6 +30,16 @@ public final class AcervusConfig {
                     "and repeating one fills a heap as far as this says.")
             .defineInRange("fluidCapacity", 1_000_000_000_000L, 1_000L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.LongValue ENERGY_CAPACITY = BUILDER
+            .comment("How much Forge Energy a heap holds.",
+                    "The default is a trillion, which is the order of magnitude somebody with a",
+                    "working reactor actually reaches - two billion, which is all an int can",
+                    "say, is a few minutes of one.",
+                    "Moving it is limited to about two billion per call for that same reason,",
+                    "and for the same reason as the others that is a limit on one call rather",
+                    "than on the block.")
+            .defineInRange("energyCapacity", 1_000_000_000_000L, 1_000L, Long.MAX_VALUE);
+
     public static final ModConfigSpec.BooleanValue SHOWS_CONTENTS = BUILDER
             .comment("Whether a heap draws what it holds, and how many.",
                     "Off is for servers that would rather not pay for the drawing.")

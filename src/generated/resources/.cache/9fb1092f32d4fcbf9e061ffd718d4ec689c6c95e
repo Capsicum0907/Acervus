@@ -1,5 +1,7 @@
-// 1.21.1	2026-08-16T10:26:30.7246009	Recipes
+// 1.21.1	2026-08-16T10:35:40.4728823	Recipes
+a56baf9d976d0860388d2cca19f725772bf22876 data/acervus/advancement/recipes/decorations/energy_heap.json
 24a84a8ae6a30aea6e5390fb0c36c1819ac3dc65 data/acervus/advancement/recipes/decorations/fluid_heap.json
 a278fea96d236949d5642f8a9e9ded7dbf3ff936 data/acervus/advancement/recipes/decorations/heap.json
+c67b03a6903ef5491e15a299b4b0523227e6ecb5 data/acervus/recipe/energy_heap.json
 6cd0653a4faf207baf818ef9defc9f3132caaab6 data/acervus/recipe/fluid_heap.json
 8a174a8ea07af438a94fc809c345b1df9449e1db data/acervus/recipe/heap.json

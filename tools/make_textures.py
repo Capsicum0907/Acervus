@@ -27,6 +27,7 @@ FRAME = 2  # how many pixels deep the metal border runs
 ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures"
 OUT = ASSETS / "block/heap.png"
 FLUID_OUT = ASSETS / "block/fluid_heap.png"
+ENERGY_OUT = ASSETS / "block/energy_heap.png"
 GUI_OUT = ASSETS / "gui/heap.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
@@ -173,8 +174,12 @@ def draw_screen() -> bytes:
     )
 
 
+# One frame, three glasses. The colour is the only thing that says which resource a
+# heap is for, which is the intent: they are the same machine.
 FLUID_GLASS = "#7FB8C8"
 FLUID_SHEEN = "#C8E8F0"
+ENERGY_GLASS = "#D8A24A"
+ENERGY_SHEEN = "#F5DC9A"
 
 
 def main() -> None:
@@ -184,6 +189,9 @@ def main() -> None:
 
     FLUID_OUT.write_bytes(draw(FLUID_GLASS, FLUID_SHEEN))
     print(f"wrote {FLUID_OUT}")
+
+    ENERGY_OUT.write_bytes(draw(ENERGY_GLASS, ENERGY_SHEEN))
+    print(f"wrote {ENERGY_OUT}")
 
     GUI_OUT.parent.mkdir(parents=True, exist_ok=True)
     GUI_OUT.write_bytes(draw_screen())

@@ -23,6 +23,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -560,6 +561,69 @@ public final class AcervusTests {
         check(heap.insert(new FluidStack(Fluids.LAVA, 1_000), false) == 0,
                 "a heap holding water should refuse lava");
         check(heap.holds(new FluidStack(Fluids.WATER, 1)), "and should know what it does hold");
+        helper.succeed();
+    }
+
+    /**
+     * An energy heap holds far past what {@code IEnergyStorage} can report, and every
+     * number it reports saturates rather than wrapping.
+     *
+     * <p>This is the strictest of the three: an item handler is allowed to report more
+     * than a stack and a fluid handler at least measures the same unit it moves, but
+     * every single number in the energy interface is an int, including the two that
+     * only describe. So a heap holding a trillion reads as two billion of two billion
+     * — full — to anything that only knows how to ask, while still accepting and
+     * giving out correctly.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anEnergyHeapSaturatesRatherThanWraps(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.ENERGY_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof EnergyHeapBlockEntity heap)) {
+            throw new GameTestAssertException("placing an energy heap should have made one");
+        }
+        IEnergyStorage cell = helper.getLevel().getCapability(
+                Capabilities.EnergyStorage.BLOCK, helper.absolutePos(WHERE), null);
+        if (cell == null) {
+            throw new GameTestAssertException("an energy heap should offer energy storage to cables");
+        }
+
+        long received = 0;
+        for (int time = 0; time < 3; time++) {
+            received += cell.receiveEnergy(Integer.MAX_VALUE, false);
+        }
+
+        check(heap.stored() == received, "the heap should hold every unit taken in");
+        check(received > Integer.MAX_VALUE, "three full fills should be past what an int counts");
+        check(cell.getEnergyStored() == Integer.MAX_VALUE,
+                "what it reports should saturate, and reads " + cell.getEnergyStored());
+        check(cell.getEnergyStored() >= 0, "and must never come back negative");
+
+        long given = 0;
+        for (int time = 0; time < 5 && !heap.isEmpty(); time++) {
+            given += cell.extractEnergy(Integer.MAX_VALUE, false);
+        }
+        check(given == received, "and it should give back all " + received + ", not " + given);
+        helper.succeed();
+    }
+
+    /** Simulating must not move anything, at either end. */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anEnergyHeapSimulatesWithoutMoving(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.ENERGY_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof EnergyHeapBlockEntity heap)) {
+            throw new GameTestAssertException("placing an energy heap should have made one");
+        }
+        heap.receive(1_000_000, false);
+
+        IEnergyStorage cell = helper.getLevel().getCapability(
+                Capabilities.EnergyStorage.BLOCK, helper.absolutePos(WHERE), null);
+        for (int round = 0; round < 100; round++) {
+            cell.receiveEnergy(1_000, true);
+            cell.extractEnergy(1_000, true);
+        }
+
+        check(heap.stored() == 1_000_000,
+                "a hundred simulated rounds should have left 1,000,000, not " + heap.stored());
         helper.succeed();
     }
 

@@ -64,6 +64,21 @@ public final class AcervusRegistry {
             FLUID_HEAP_ENTITY = BLOCK_ENTITIES.register("fluid_heap",
                     fluidHeapType(FluidHeapBlockEntity::new, FLUID_HEAP));
 
+    /** The same block again, for the resource that has no identity at all. */
+    public static final DeferredBlock<EnergyHeapBlock> ENERGY_HEAP = BLOCKS.register("energy_heap",
+            () -> new EnergyHeapBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
+
+    public static final DeferredItem<BlockItem> ENERGY_HEAP_ITEM = ITEMS.register("energy_heap",
+            () -> new EnergyHeapBlockItem(ENERGY_HEAP.get(), new net.minecraft.world.item.Item.Properties()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EnergyHeapBlockEntity>>
+            ENERGY_HEAP_ENTITY = BLOCK_ENTITIES.register("energy_heap",
+                    energyHeapType(EnergyHeapBlockEntity::new, ENERGY_HEAP));
+
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(Registries.MENU, Acervus.MODID);
 
@@ -83,6 +98,12 @@ public final class AcervusRegistry {
     @SuppressWarnings("DataFlowIssue")
     private static Supplier<BlockEntityType<FluidHeapBlockEntity>> fluidHeapType(
             BlockEntityType.BlockEntitySupplier<FluidHeapBlockEntity> factory, Supplier<? extends Block> block) {
+        return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    private static Supplier<BlockEntityType<EnergyHeapBlockEntity>> energyHeapType(
+            BlockEntityType.BlockEntitySupplier<EnergyHeapBlockEntity> factory, Supplier<? extends Block> block) {
         return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
     }
 }

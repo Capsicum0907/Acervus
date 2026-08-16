@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "acervus:block/energy_heap"
+    }
+  }
+}

@@ -1,4 +1,6 @@
 {
+  "block.acervus.energy_heap": "Energy Heap",
+  "block.acervus.energy_heap.holding": "%s FE",
   "block.acervus.fluid_heap": "Fluid Heap",
   "block.acervus.fluid_heap.holding": "%s, %s",
   "block.acervus.heap": "Heap",
