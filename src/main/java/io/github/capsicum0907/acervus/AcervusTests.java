@@ -336,6 +336,79 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    /**
+     * Nothing handed out is the heap's own copy of anything.
+     *
+     * <p>This is the shape that duplicates by the billion rather than by the stack.
+     * If a returned stack points at internal state, then every {@code grow} a pipe
+     * performs on it lands inside the block — and a pipe does that many times a tick,
+     * so the count runs away at a rate no single call could explain. InfChest's
+     * handler ends with {@code item.setCount(...); return item;} under a comment
+     * saying it is "safe to modify as item is already copied", which is a comment one
+     * writes after finding out.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void handsOutNothingItStillOwns(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
+        IItemHandler handler = handler(helper, null);
+
+        ItemStack shown = handler.getStackInSlot(0);
+        shown.setCount(Integer.MAX_VALUE);
+        check(heap.count() == MANY, "mauling what getStackInSlot returned must not reach inside");
+
+        ItemStack taken = handler.extractItem(0, 64, false);
+        taken.grow(1_000_000);
+        check(heap.count() == MANY - 64, "nor must mauling what extractItem returned");
+
+        ItemStack offered = new ItemStack(Items.DIAMOND, 64);
+        handler.insertItem(0, offered, false);
+        check(offered.getCount() == 64, "and inserting must leave the caller's stack alone");
+        helper.succeed();
+    }
+
+    /** Asking what would happen must not make it happen, at either end. */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void simulatingChangesNothing(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
+        IItemHandler handler = handler(helper, null);
+
+        for (int round = 0; round < 100; round++) {
+            handler.extractItem(0, Integer.MAX_VALUE, true);
+            handler.insertItem(0, new ItemStack(Items.DIAMOND, 64), true);
+            handler.getStackInSlot(0);
+        }
+
+        check(heap.count() == MANY,
+                "a hundred simulated rounds should have left " + MANY + ", not " + heap.count());
+        helper.succeed();
+    }
+
+    /**
+     * A pipe that pulls out of a heap and puts straight back into it. The loop that
+     * turns a small mistake into billions a second, run against itself.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void survivesPullingIntoItself(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.DIAMOND, MANY), false);
+        IItemHandler handler = handler(helper, null);
+
+        for (int round = 0; round < 500; round++) {
+            int peeked = handler.extractItem(0, 64, true).getCount();
+            ItemStack taken = handler.extractItem(0, 64, false);
+            check(taken.getCount() == peeked, "the simulated answer must be the real one");
+
+            ItemStack back = handler.insertItem(0, taken, false);
+            check(back.isEmpty(), "and it must all go back in");
+        }
+
+        check(heap.count() == MANY,
+                "five hundred round trips should have left " + MANY + ", not " + heap.count());
+        helper.succeed();
+    }
+
     private static HeapBlockEntity place(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof HeapBlockEntity heap) {
