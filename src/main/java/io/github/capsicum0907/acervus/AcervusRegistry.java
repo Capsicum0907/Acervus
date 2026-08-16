@@ -49,6 +49,21 @@ public final class AcervusRegistry {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HeapBlockEntity>> HEAP_ENTITY =
             BLOCK_ENTITIES.register("heap", blockEntityType(HeapBlockEntity::new, HEAP));
 
+    /** The same block, for a resource that is measured rather than counted. */
+    public static final DeferredBlock<FluidHeapBlock> FLUID_HEAP = BLOCKS.register("fluid_heap",
+            () -> new FluidHeapBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
+
+    public static final DeferredItem<BlockItem> FLUID_HEAP_ITEM = ITEMS.register("fluid_heap",
+            () -> new FluidHeapBlockItem(FLUID_HEAP.get(), new net.minecraft.world.item.Item.Properties()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FluidHeapBlockEntity>>
+            FLUID_HEAP_ENTITY = BLOCK_ENTITIES.register("fluid_heap",
+                    fluidHeapType(FluidHeapBlockEntity::new, FLUID_HEAP));
+
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(Registries.MENU, Acervus.MODID);
 
@@ -62,6 +77,12 @@ public final class AcervusRegistry {
     @SuppressWarnings("DataFlowIssue") // the vanilla builder wants a data fixer type it never uses
     private static Supplier<BlockEntityType<HeapBlockEntity>> blockEntityType(
             BlockEntityType.BlockEntitySupplier<HeapBlockEntity> factory, Supplier<? extends Block> block) {
+        return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    private static Supplier<BlockEntityType<FluidHeapBlockEntity>> fluidHeapType(
+            BlockEntityType.BlockEntitySupplier<FluidHeapBlockEntity> factory, Supplier<? extends Block> block) {
         return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
     }
 }

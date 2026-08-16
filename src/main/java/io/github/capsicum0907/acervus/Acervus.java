@@ -52,11 +52,14 @@ public class Acervus {
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, AcervusRegistry.HEAP_ENTITY.get(),
                 (heap, side) -> heap.handler());
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, AcervusRegistry.FLUID_HEAP_ENTITY.get(),
+                (heap, side) -> heap.handler());
     }
 
     private static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(AcervusRegistry.HEAP_ITEM);
+            event.accept(AcervusRegistry.FLUID_HEAP_ITEM);
         }
     }
 

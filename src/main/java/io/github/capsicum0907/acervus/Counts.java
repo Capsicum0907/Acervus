@@ -63,6 +63,31 @@ public final class Counts {
         return Long.toString(count); // unreachable: anything at or above a unit found one
     }
 
+    /** A thousand millibuckets to the bucket, which is the only reason this exists. */
+    private static final long PER_BUCKET = 1_000L;
+
+    /**
+     * A quantity of fluid, said in buckets.
+     *
+     * <p>Millibuckets are what the game's plumbing counts in, and they cost three
+     * digits of every number for nothing: the same int that counts two billion items
+     * counts two million buckets. The unit is not ours to change, but which unit is
+     * <em>shown</em> is, and a player counts buckets.
+     *
+     * <p>Below a bucket there is nothing to round to, so those are said as they are.
+     */
+    public static String buckets(long millibuckets) {
+        if (millibuckets < PER_BUCKET) {
+            return millibuckets + " mB";
+        }
+        return brief(millibuckets / PER_BUCKET) + " B";
+    }
+
+    /** Every millibucket of it, for when the detail was asked for. */
+    public static String exactBuckets(long millibuckets) {
+        return exact(millibuckets / PER_BUCKET) + " B " + (millibuckets % PER_BUCKET) + " mB";
+    }
+
     private static long tenths(double value) {
         return Math.round(value * 10.0);
     }

@@ -20,6 +20,16 @@ public final class AcervusConfig {
                     "better default than the largest one that fits.")
             .defineInRange("capacity", 2_000_000_000L, 64L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.LongValue FLUID_CAPACITY = BUILDER
+            .comment("How much of one fluid a heap holds, in millibuckets.",
+                    "A thousand to the bucket, so the default is a billion buckets.",
+                    "Higher than the item default on purpose: fluids are the thing that runs out",
+                    "of room first in practice.",
+                    "Filling and draining are limited to about two billion millibuckets per call,",
+                    "because that is what a fluid stack counts in - but a call is not a lifetime,",
+                    "and repeating one fills a heap as far as this says.")
+            .defineInRange("fluidCapacity", 1_000_000_000_000L, 1_000L, Long.MAX_VALUE);
+
     public static final ModConfigSpec.BooleanValue SHOWS_CONTENTS = BUILDER
             .comment("Whether a heap draws what it holds, and how many.",
                     "Off is for servers that would rather not pay for the drawing.")

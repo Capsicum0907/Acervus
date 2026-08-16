@@ -65,7 +65,9 @@ public final class AcervusDataGen {
 
         @Override
         protected void addTags(HolderLookup.Provider registries) {
-            tag(BlockTags.MINEABLE_WITH_PICKAXE).add(AcervusRegistry.HEAP.get());
+            tag(BlockTags.MINEABLE_WITH_PICKAXE)
+                    .add(AcervusRegistry.HEAP.get())
+                    .add(AcervusRegistry.FLUID_HEAP.get());
         }
     }
 
@@ -76,16 +78,21 @@ public final class AcervusDataGen {
 
         @Override
         protected void registerStatesAndModels() {
-            DeferredBlock<?> heap = AcervusRegistry.HEAP;
-            String name = heap.getId().getPath();
+            glassBox(AcervusRegistry.HEAP);
+            glassBox(AcervusRegistry.FLUID_HEAP);
+        }
 
-            // translucent, because the middle of the texture is see-through and the
-            // default render type would draw those pixels as fully opaque.
+        /**
+         * translucent, because the middle of the texture is see-through and the
+         * default render type would draw those pixels as fully opaque.
+         */
+        private void glassBox(DeferredBlock<?> block) {
+            String name = block.getId().getPath();
             ModelFile model = models()
                     .cubeAll(name, modLoc("block/" + name))
                     .renderType("minecraft:translucent");
 
-            simpleBlock(heap.get(), model);
+            simpleBlock(block.get(), model);
             itemModels().withExistingParent(name, modLoc("block/" + name));
         }
     }
@@ -98,8 +105,10 @@ public final class AcervusDataGen {
         @Override
         protected void addTranslations() {
             add(AcervusRegistry.HEAP.get(), "Heap");
+            add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
             add("block.acervus.heap.empty", "Empty");
             add("block.acervus.heap.holding", "%s x %s");
+            add("block.acervus.fluid_heap.holding", "%s, %s");
             add("gui.acervus.room", "%s more will fit");
             add("gui.acervus.exact", "%s stored");
         }
@@ -125,6 +134,18 @@ public final class AcervusDataGen {
                     .define('I', Items.IRON_INGOT)
                     .define('C', Blocks.CHEST)
                     .unlockedBy("has_chest", has(Blocks.CHEST))
+                    .save(output);
+
+            // The same frame around a cauldron instead of a chest: the pair should read
+            // as one machine holding two kinds of thing.
+            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.FLUID_HEAP.get())
+                    .pattern("GIG")
+                    .pattern("ICI")
+                    .pattern("GIG")
+                    .define('G', Blocks.GLASS)
+                    .define('I', Items.IRON_INGOT)
+                    .define('C', Blocks.CAULDRON)
+                    .unlockedBy("has_cauldron", has(Blocks.CAULDRON))
                     .save(output);
         }
     }

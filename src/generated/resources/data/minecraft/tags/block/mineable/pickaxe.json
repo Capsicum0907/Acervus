@@ -1,5 +1,6 @@
 {
   "values": [
-    "acervus:heap"
+    "acervus:heap",
+    "acervus:fluid_heap"
   ]
 }

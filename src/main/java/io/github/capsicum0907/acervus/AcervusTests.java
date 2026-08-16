@@ -14,6 +14,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
@@ -22,6 +23,8 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
@@ -502,6 +505,62 @@ public final class AcervusTests {
         } finally {
             AcervusConfig.CAPACITY.set(was);
         }
+    }
+
+    /**
+     * A fluid heap holds far past what a fluid stack can count, and says so as far as
+     * it can.
+     *
+     * <p>Everything at the edge here is an int — the stack, the tank capacity, fill
+     * and drain alike — so unlike the item side there is no allowance to report more.
+     * What matters is that the ceiling bounds what is <em>said</em> and not what is
+     * <em>held</em>: a call is not a lifetime, and repeating one fills a heap as far
+     * as its capacity goes.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aFluidHeapFillsPastWhatItCanSay(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap)) {
+            throw new GameTestAssertException("placing a fluid heap should have made one");
+        }
+        IFluidHandler tank = helper.getLevel().getCapability(
+                Capabilities.FluidHandler.BLOCK, helper.absolutePos(WHERE), null);
+        if (tank == null) {
+            throw new GameTestAssertException("a fluid heap should offer a fluid handler to pipes");
+        }
+
+        long poured = 0;
+        for (int time = 0; time < 3; time++) {
+            poured += tank.fill(new FluidStack(Fluids.WATER, Integer.MAX_VALUE), IFluidHandler.FluidAction.EXECUTE);
+        }
+
+        check(heap.amount() == poured, "the heap should hold every drop poured in, and holds " + heap.amount());
+        check(poured > Integer.MAX_VALUE, "and three full fills should have gone past what an int counts");
+        check(tank.getFluidInTank(0).getAmount() == Integer.MAX_VALUE,
+                "what it says should saturate rather than wrap, and reads "
+                        + tank.getFluidInTank(0).getAmount());
+
+        long drained = 0;
+        for (int time = 0; time < 5 && !heap.isEmpty(); time++) {
+            drained += tank.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE).getAmount();
+        }
+        check(drained == poured, "and draining should give back all " + poured + ", not " + drained);
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aFluidHeapRefusesASecondFluid(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap)) {
+            throw new GameTestAssertException("placing a fluid heap should have made one");
+        }
+
+        heap.insert(new FluidStack(Fluids.WATER, 1_000), false);
+
+        check(heap.insert(new FluidStack(Fluids.LAVA, 1_000), false) == 0,
+                "a heap holding water should refuse lava");
+        check(heap.holds(new FluidStack(Fluids.WATER, 1)), "and should know what it does hold");
+        helper.succeed();
     }
 
     private static HeapBlockEntity place(GameTestHelper helper) {

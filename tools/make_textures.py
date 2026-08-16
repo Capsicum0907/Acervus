@@ -26,6 +26,7 @@ FRAME = 2  # how many pixels deep the metal border runs
 
 ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures"
 OUT = ASSETS / "block/heap.png"
+FLUID_OUT = ASSETS / "block/fluid_heap.png"
 GUI_OUT = ASSETS / "gui/heap.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
@@ -80,13 +81,15 @@ def _png(pixels: dict[tuple[int, int], tuple[int, int, int, int]]) -> bytes:
     )
 
 
-def draw() -> bytes:
+def draw(glass: str = GLASS_BODY, sheen: str = GLASS_SHEEN) -> bytes:
+    """The same block in a different glass. The frame is shared on purpose: a fluid
+    heap and an item heap are the same machine holding different things, and should
+    look like two of a set rather than two inventions."""
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     for pixel in METAL:
         pixels[pixel] = _rgb(_tone(pixel, METAL, METAL_TONES)) + (255,)
     for pixel in GLASS:
-        colour = GLASS_SHEEN if pixel in SHEEN else GLASS_BODY
-        pixels[pixel] = _rgb(colour) + (GLASS_ALPHA,)
+        pixels[pixel] = _rgb(sheen if pixel in SHEEN else glass) + (GLASS_ALPHA,)
     return _png(pixels)
 
 
@@ -170,10 +173,17 @@ def draw_screen() -> bytes:
     )
 
 
+FLUID_GLASS = "#7FB8C8"
+FLUID_SHEEN = "#C8E8F0"
+
+
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_bytes(draw())
     print(f"wrote {OUT}")
+
+    FLUID_OUT.write_bytes(draw(FLUID_GLASS, FLUID_SHEEN))
+    print(f"wrote {FLUID_OUT}")
 
     GUI_OUT.parent.mkdir(parents=True, exist_ok=True)
     GUI_OUT.write_bytes(draw_screen())
