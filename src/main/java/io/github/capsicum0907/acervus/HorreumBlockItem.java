@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.Block;
  * them, one row apiece. Twelve lines of prose would be a tooltip nobody reads past,
  * which is what the icons are for.
  */
-public class HorreumBlockItem extends BlockItem {
+public class HorreumBlockItem extends ContentsBlockItem {
     public HorreumBlockItem(Block block, Properties properties) {
         super(block, properties);
     }

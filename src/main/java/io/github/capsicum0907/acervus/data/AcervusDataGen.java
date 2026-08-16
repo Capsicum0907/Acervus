@@ -160,6 +160,8 @@ public final class AcervusDataGen {
             add("gui.acervus.intake_only", "Deposit only");
             add("gui.acervus.energy", "Energy");
             add("block.acervus.horreum.holding", "%s of %s heaps");
+            add("acervus.stacked.open", "One at a time: take a single one out of the stack.");
+            add("acervus.stacked.place", "This stack is holding something and cannot be placed.");
         }
     }
 

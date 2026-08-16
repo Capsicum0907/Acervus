@@ -19,6 +19,11 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -1433,26 +1438,108 @@ public final class AcervusTests {
     }
 
     /**
-     * No item this mod registers stacks, and it is a duplication bug when one does.
+     * Empty ones stack. That is the half of the rule that is a convenience: sixty four
+     * empty heaps are sixty four empty heaps and there is nothing in them to copy.
      *
-     * <p>Components sit on the {@code ItemStack}, so a stack of two heaps holds one set
-     * of contents and a count of two. Filling it fills "both"; splitting it copies what
-     * was inside. Two heaps picked up together were enough.
-     *
-     * <p>Asked of the registry rather than of five names, because the way this returns
-     * is an item added later whose properties were written out by hand.
+     * <p>Asked of the registry rather than of five names, because the way this comes
+     * back is an item added later that did not go through {@link ContentsBlockItem}.
      */
     @GameTest(template = TestStructures.FLOOR)
-    public static void noItemStacks(GameTestHelper helper) {
+    public static void emptyOnesStack(GameTestHelper helper) {
         for (Item item : BuiltInRegistries.ITEM) {
             ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
             if (!Acervus.MODID.equals(id.getNamespace())) {
                 continue;
             }
-            check(new ItemStack(item).getMaxStackSize() == 1,
-                    id + " stacks to " + new ItemStack(item).getMaxStackSize()
-                            + ", so its contents can be copied by splitting the stack");
+            check(new ItemStack(item).getMaxStackSize() > 1, id + " will not stack while empty");
         }
+        helper.succeed();
+    }
+
+    /**
+     * One holding anything stacks to one. That is the half of the rule that is a bug
+     * when it is missing: a stack of two is one set of contents with a count of two, so
+     * filling it fills "both" and splitting it copies what was inside.
+     *
+     * <p>Checked on a heap and on a rack, which arrive at their contents by different
+     * routes, and read through {@code ItemStack} rather than through the item so that
+     * what is asked is what the game asks.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void fullOnesDoNot(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+
+        ItemStack heap = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        CarriedHeap.of(registries, heap).insert(new ItemStack(Items.DIAMOND, 64), false);
+        check(heap.getMaxStackSize() == 1, "a heap holding diamonds should not stack");
+
+        ItemStack rack = new ItemStack(AcervusRegistry.HORREUM_ITEM.get());
+        NonNullList<ItemStack> heaps = NonNullList.withSize(HorreumBlockEntity.SLOTS, ItemStack.EMPTY);
+        heaps.set(0, heap);
+        HorreumBlockEntity.writeHeaps(rack, heaps, registries);
+        check(rack.getMaxStackSize() == 1, "a rack holding a heap should not stack");
+
+        // And back again: emptied, it is an empty one like any other.
+        CarriedHeap.stored(registries, heap).extract(64, false);
+        check(heap.getMaxStackSize() > 1, "an emptied heap should stack again");
+        helper.succeed();
+    }
+
+    /**
+     * A stack of heaps has no screen, because a screen onto a stack is a screen onto
+     * every heap in it.
+     *
+     * <p>The other way in — {@link Carried#absorb} — has refused a stack since it was
+     * written. This is the one that did not, and it is the one a player reaches by
+     * crafting several and sneak-clicking without splitting them first.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aStackOfHeapsHasNoScreen(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.setShiftKeyDown(true);
+        player.setItemInHand(InteractionHand.MAIN_HAND,
+                new ItemStack(AcervusRegistry.HEAP_ITEM.get(), 4));
+
+        InteractionResultHolder<ItemStack> result = Carried.open(player, InteractionHand.MAIN_HAND,
+                (id, inventory, who) -> null);
+        check(result.getResult() == InteractionResult.FAIL, "a stack of four should not open");
+
+        player.setItemInHand(InteractionHand.MAIN_HAND,
+                new ItemStack(AcervusRegistry.HEAP_ITEM.get()));
+        check(Carried.open(player, InteractionHand.MAIN_HAND, (id, inventory, who) -> null)
+                .getResult() != InteractionResult.FAIL, "and a single one still should");
+        helper.succeed();
+    }
+
+    /**
+     * A stack that is holding something will not be placed, however it came to be.
+     *
+     * <p>This state is unreachable in play — a stack cannot be filled and a full one
+     * cannot be stacked — so the test forces it, the way a command or another mod's
+     * inventory code could. Placing is where the duplication would happen and it needs
+     * no screen and no writing at all: the contents ride on the item and are copied onto
+     * every block placed, while the stack only gets shorter.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aStackHoldingSomethingIsNotPlaced(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+
+        ItemStack heap = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        CarriedHeap.of(registries, heap).insert(new ItemStack(Items.DIAMOND, 64), false);
+        heap.setCount(3);
+        player.setItemInHand(InteractionHand.MAIN_HAND, heap);
+
+        helper.setBlock(WHERE, Blocks.AIR);
+        BlockPos at = helper.absolutePos(WHERE);
+        BlockHitResult where = new BlockHitResult(Vec3.atCenterOf(at.below()), Direction.UP,
+                at.below(), false);
+        InteractionResult placed = ((ContentsBlockItem) heap.getItem()).place(
+                new BlockPlaceContext(new UseOnContext(player, InteractionHand.MAIN_HAND, where)));
+
+        check(placed == InteractionResult.FAIL, "a stack of three full heaps should not place");
+        check(helper.getLevel().getBlockState(at).isAir(), "and nothing should be there");
+        check(heap.getCount() == 3, "and none of them should have been used up");
         helper.succeed();
     }
 

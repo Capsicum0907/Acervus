@@ -23,7 +23,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
  * its contents when picked up, so one holding two million buckets looks exactly like
  * an empty one unless it says otherwise.
  */
-public class FluidHeapBlockItem extends BlockItem {
+public class FluidHeapBlockItem extends ContentsBlockItem {
     public FluidHeapBlockItem(Block block, Properties properties) {
         super(block, properties);
     }

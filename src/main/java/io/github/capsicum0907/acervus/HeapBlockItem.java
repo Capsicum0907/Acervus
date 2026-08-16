@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.Block;
  * something and look exactly like an empty one. Saying what is inside is not a
  * nicety here; without it the item lies.
  */
-public class HeapBlockItem extends BlockItem {
+public class HeapBlockItem extends ContentsBlockItem {
     public HeapBlockItem(Block block, Properties properties) {
         super(block, properties);
     }

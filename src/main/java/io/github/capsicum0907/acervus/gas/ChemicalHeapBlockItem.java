@@ -2,6 +2,7 @@ package io.github.capsicum0907.acervus.gas;
 
 import java.util.List;
 
+import io.github.capsicum0907.acervus.ContentsBlockItem;
 import io.github.capsicum0907.acervus.Counts;
 
 import mekanism.api.chemical.ChemicalStack;
@@ -22,7 +23,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Block;
 
 /** The gas heap as an item, saying what it carries so that it is not lying. */
-public class ChemicalHeapBlockItem extends BlockItem {
+public class ChemicalHeapBlockItem extends ContentsBlockItem {
     public ChemicalHeapBlockItem(Block block, Properties properties) {
         super(block, properties);
     }

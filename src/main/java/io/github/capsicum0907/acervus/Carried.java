@@ -1,5 +1,6 @@
 package io.github.capsicum0907.acervus;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
@@ -162,7 +163,7 @@ public final class Carried {
         // One heap, not a stack of them. Several heaps in a slot are one set of
         // components between them, so adding to "the" heap would add to all of them —
         // the same duplication a shulker box avoids by not stacking at all.
-        if (!isHeap(heap) || heap.getCount() != 1) {
+        if (!isHeap(heap) || !ContentsBlockItem.alone(heap)) {
             return 0;
         }
         CarriedHeap pile = CarriedHeap.of(player, heap);
@@ -183,12 +184,21 @@ public final class Carried {
      * <p>All four heaps do this and only the menu differs, so the gesture is written
      * once. What opens is the block's own screen, with one difference the screen states
      * outright: nothing comes out.
+     *
+     * <p><b>One at a time.</b> A screen onto a stack of empty heaps is a screen onto all
+     * of them — whatever went in would go into every one, and taking them apart
+     * afterwards would copy it. This is the same guard {@link #absorb} makes, in the
+     * other way in.
      */
     public static InteractionResultHolder<ItemStack> open(Player player, InteractionHand hand,
             MenuConstructor menu) {
         ItemStack held = player.getItemInHand(hand);
         if (!player.isShiftKeyDown()) {
             return InteractionResultHolder.pass(held);
+        }
+        if (!ContentsBlockItem.alone(held)) {
+            player.displayClientMessage(Component.translatable("acervus.stacked.open"), true);
+            return InteractionResultHolder.fail(held);
         }
         if (player instanceof ServerPlayer server) {
             server.openMenu(new SimpleMenuProvider(menu, held.getHoverName()),

@@ -25,26 +25,18 @@ public final class AcervusRegistry {
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, Acervus.MODID);
 
     /**
-     * What every item in this mod is made with, and it exists for one property.
+     * What every item in this mod is made with.
      *
-     * <p><b>A heap must not stack, and the reason is not tidiness.</b> Components belong
-     * to the {@code ItemStack}, not to each item in it, so two heaps sitting in one
-     * stack are not two heaps — they are one set of contents with a count of two beside
-     * it. Put anything into that stack and both halves answer with the whole of it; take
-     * the stack apart and the contents have been copied, not divided. Duplication, from
-     * nothing more exotic than picking two heaps up at once.
+     * <p>Deliberately plain: a heap stacks to sixty four <em>while it is empty</em>, and
+     * the rule that takes that away the moment it holds something is in
+     * {@link ContentsBlockItem}, where it can be asked of the item rather than fixed
+     * here for all of them at once.
      *
-     * <p>This is why a shulker box does not stack either, and it is the same reason. The
-     * rack's slots already forced one apiece ({@code HorreumMenu.HeapSlot}) — which was
-     * the right rule written in exactly one place too few, since a slot can only govern
-     * what is inside it, and this has to hold everywhere a stack can go.
-     *
-     * <p>Every item here carries contents, so every item here goes through this method
-     * and nothing calls {@code new Item.Properties()} directly. An item added later that
-     * did would be back to duplicating, silently.
+     * <p>The method stays even though it adds nothing, because every item here has to
+     * go through {@link ContentsBlockItem} and this is the one line that says so.
      */
     public static Item.Properties carriesItsOwnContents() {
-        return new Item.Properties().stacksTo(1);
+        return new Item.Properties();
     }
 
     /**

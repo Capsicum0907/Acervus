@@ -1,4 +1,6 @@
 {
+  "acervus.stacked.open": "One at a time: take a single one out of the stack.",
+  "acervus.stacked.place": "This stack is holding something and cannot be placed.",
   "block.acervus.chemical_heap": "Gas Heap",
   "block.acervus.chemical_heap.holding": "%s, %s",
   "block.acervus.energy_heap": "Energy Heap",

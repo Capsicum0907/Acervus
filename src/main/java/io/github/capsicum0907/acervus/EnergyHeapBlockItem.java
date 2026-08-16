@@ -17,7 +17,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Block;
 
 /** The energy heap as an item, saying what it is carrying so that it is not lying. */
-public class EnergyHeapBlockItem extends BlockItem {
+public class EnergyHeapBlockItem extends ContentsBlockItem {
     public EnergyHeapBlockItem(Block block, Properties properties) {
         super(block, properties);
     }
