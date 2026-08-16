@@ -59,7 +59,7 @@ public class HorreumBlock extends BaseEntityBlock {
         }
         if (player instanceof ServerPlayer server) {
             server.openMenu(new SimpleMenuProvider(
-                            (id, inventory, viewer) -> new HorreumMenu(id, inventory, pos),
+                            (id, inventory, viewer) -> HorreumMenu.at(id, inventory, pos),
                             state.getBlock().getName()),
                     buffer -> buffer.writeBlockPos(pos));
         }

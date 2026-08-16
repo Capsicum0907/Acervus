@@ -105,7 +105,13 @@ public final class AcervusRegistry {
 
     public static final DeferredHolder<MenuType<?>, MenuType<HorreumMenu>> HORREUM_MENU =
             MENUS.register("horreum", () -> IMenuTypeExtension.create(
-                    (id, inventory, buffer) -> new HorreumMenu(id, inventory, buffer.readBlockPos())));
+                    (id, inventory, buffer) -> HorreumMenu.at(id, inventory, buffer.readBlockPos())));
+
+    /** The same rack in a hand; see {@link #CARRIED_HEAP_MENU}. */
+    public static final DeferredHolder<MenuType<?>, MenuType<HorreumMenu>> CARRIED_HORREUM_MENU =
+            MENUS.register("carried_horreum", () -> IMenuTypeExtension.create(
+                    (id, inventory, buffer) -> HorreumMenu.inHand(id, inventory,
+                            buffer.readEnum(net.minecraft.world.InteractionHand.class))));
 
     public static final DeferredHolder<MenuType<?>, MenuType<HeapMenu>> HEAP_MENU =
             MENUS.register("item_heap", () -> IMenuTypeExtension.create(

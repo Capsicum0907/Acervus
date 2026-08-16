@@ -11,6 +11,7 @@
   "block.acervus.item_heap.absorbing": "Collecting what you pick up",
   "block.acervus.item_heap.holding": "%s x %s",
   "gui.acervus.empty": "Empty",
+  "gui.acervus.energy": "Energy",
   "gui.acervus.exact": "%s stored",
   "gui.acervus.flow.in": "In",
   "gui.acervus.flow.out": "Out",

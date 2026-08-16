@@ -33,6 +33,17 @@ public class ChemicalHeapBlockItem extends BlockItem {
         return io.github.capsicum0907.acervus.Carried.open(player, hand,
                 (id, inventory, viewer) -> io.github.capsicum0907.acervus.ReadoutMenu.inHand(id, inventory, hand));
     }
+    /**
+     * The contents as a picture rather than as a line of text; see {@link HeapContents}.
+     * Offered for anything at all, and the client decides there is nothing to draw when
+     * the heap is empty.
+     */
+    @Override
+    public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(
+            ItemStack stack) {
+        return java.util.Optional.of(new io.github.capsicum0907.acervus.HeapContents(stack));
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, context, lines, flag);
@@ -47,8 +58,5 @@ public class ChemicalHeapBlockItem extends BlockItem {
             lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));
             return;
         }
-        lines.add(Component.translatable("block.acervus.chemical_heap.holding",
-                        sample.getChemical().getTextComponent(), Counts.brief(amount))
-                .withStyle(ChatFormatting.GRAY));
     }
 }

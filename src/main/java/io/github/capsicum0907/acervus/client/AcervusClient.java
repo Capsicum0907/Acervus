@@ -3,7 +3,10 @@ package io.github.capsicum0907.acervus.client;
 import io.github.capsicum0907.acervus.AcervusRegistry;
 import io.github.capsicum0907.acervus.Mods;
 
+import io.github.capsicum0907.acervus.HeapContents;
+
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 /** The client half: what draws the block, and what draws its screen. */
@@ -21,11 +24,17 @@ public final class AcervusClient {
         }
     }
 
+    /** What turns {@link HeapContents} into something drawn. */
+    public static void registerTooltips(RegisterClientTooltipComponentFactoriesEvent event) {
+        event.register(HeapContents.class, HeapContentsTooltip::new);
+    }
+
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(AcervusRegistry.HEAP_MENU.get(), HeapScreen::new);
         event.register(AcervusRegistry.CARRIED_HEAP_MENU.get(), HeapScreen::new);
         event.register(AcervusRegistry.READOUT_MENU.get(), ReadoutScreen::new);
         event.register(AcervusRegistry.CARRIED_READOUT_MENU.get(), ReadoutScreen::new);
         event.register(AcervusRegistry.HORREUM_MENU.get(), HorreumScreen::new);
+        event.register(AcervusRegistry.CARRIED_HORREUM_MENU.get(), HorreumScreen::new);
     }
 }

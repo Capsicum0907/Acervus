@@ -100,6 +100,7 @@ public class Acervus {
         public Client(IEventBus modEventBus, ModContainer modContainer) {
             modEventBus.addListener(AcervusClient::registerRenderers);
             modEventBus.addListener(AcervusClient::registerScreens);
+            modEventBus.addListener(AcervusClient::registerTooltips);
         }
     }
 }

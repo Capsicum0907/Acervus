@@ -157,6 +157,7 @@ public final class AcervusDataGen {
             add("gui.acervus.flow.out", "Out");
             add("gui.acervus.exact", "%s stored");
             add("gui.acervus.intake_only", "Deposit only");
+            add("gui.acervus.energy", "Energy");
             add("block.acervus.horreum.holding", "%s of %s heaps");
         }
     }

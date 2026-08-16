@@ -47,6 +47,17 @@ public class HeapBlockItem extends BlockItem {
         return Carried.open(player, hand, (id, inventory, viewer) -> HeapMenu.inHand(id, inventory, hand));
     }
 
+    /**
+     * The contents as a picture rather than as a line of text; see {@link HeapContents}.
+     * Offered for anything at all, and the client decides there is nothing to draw when
+     * the heap is empty.
+     */
+    @Override
+    public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(
+            ItemStack stack) {
+        return java.util.Optional.of(new HeapContents(stack));
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, context, lines, flag);
@@ -64,10 +75,6 @@ public class HeapBlockItem extends BlockItem {
             lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));
             return;
         }
-
-        lines.add(Component.translatable("block.acervus.item_heap.holding",
-                        heap.sample().getHoverName(), Component.literal(String.format("%,d", count)))
-                .withStyle(ChatFormatting.GRAY));
 
         // Said only while it is true, because it is a thing the item is quietly doing
         // to items the player expected to end up in a slot. A heap that is full, or one

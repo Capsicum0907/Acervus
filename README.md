@@ -260,9 +260,29 @@ say one thing.
 | energy | **one pool** — `IEnergyStorage` has no index at all, because energy has no kinds |
 | breaking one | carries its heaps, for the same reason a heap carries its contents |
 
+**Sneak and right-click the air** to open one you are carrying, the same as a heap.
+The heaps inside can be moved about; what is inside *them* stays out of reach, because
+nothing carried offers a window onto its contents — taking a heap out of a bag is
+moving an item, not drawing from a store.
+
 **The heaps inside give**, unlike the one in your pocket. That was never about the
 item: the price of drawing from a heap is putting a block down, and a rack is that
 block. It is one field, set by whichever factory found the heap.
+
+### Contents in the tooltip
+
+Every heap draws what it holds: the item itself, or a fluid's or a chemical's own
+sprite, beside its name and its amount. A rack draws one such row per heap, so twelve
+heaps can be read without opening anything.
+
+It is a picture rather than a list of lines because a rack has twelve of them, and
+twelve lines of prose is a tooltip nobody reads past. Energy is the one row with no
+icon: there is no such thing as a kind of it.
+
+The reading happens on the client, in `HeapContentsTooltip`, and not where the tooltip
+is asked for. `Item#getTooltipImage` is handed a stack and nothing else, and reading a
+heap needs the registries — which a client has and an item does not. So the component
+carries the stack, and only the stack.
 
 ## Optional mods
 
