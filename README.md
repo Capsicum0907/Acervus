@@ -5,7 +5,8 @@ One kind of item, in numbers a chest cannot hold.
 *Acervus* is Latin for a heap.
 
 > **Status: stage 4.** Four heaps — Item, Fluid, Energy and Gas — with screens for
-> each, in the world and in the hand. 43 game tests pass headlessly.
+> each, in the world and in the hand. 44 game tests pass headlessly, and every
+> gesture below has been watched in a running client.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
