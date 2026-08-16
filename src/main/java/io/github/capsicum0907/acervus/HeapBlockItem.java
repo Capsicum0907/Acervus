@@ -61,11 +61,11 @@ public class HeapBlockItem extends BlockItem {
         CarriedHeap heap = CarriedHeap.of(registries, stack);
         long count = heap.count();
         if (heap.isEmpty()) {
-            lines.add(Component.translatable("block.acervus.heap.empty").withStyle(ChatFormatting.GRAY));
+            lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));
             return;
         }
 
-        lines.add(Component.translatable("block.acervus.heap.holding",
+        lines.add(Component.translatable("block.acervus.item_heap.holding",
                         heap.sample().getHoverName(), Component.literal(String.format("%,d", count)))
                 .withStyle(ChatFormatting.GRAY));
 
@@ -74,7 +74,7 @@ public class HeapBlockItem extends BlockItem {
         // in a game where the setting is off, says nothing.
         if (stack.getCount() == 1 && AcervusConfig.SPEC.isLoaded()
                 && AcervusConfig.ABSORBS_WHEN_CARRIED.get() && count < AcervusConfig.CAPACITY.get()) {
-            lines.add(Component.translatable("block.acervus.heap.absorbing")
+            lines.add(Component.translatable("block.acervus.item_heap.absorbing")
                     .withStyle(ChatFormatting.DARK_GRAY));
         }
     }

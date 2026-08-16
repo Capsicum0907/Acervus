@@ -119,12 +119,13 @@ public final class AcervusDataGen {
             add(AcervusRegistry.HEAP.get(), "Item Heap");
             add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
             add(AcervusRegistry.ENERGY_HEAP.get(), "Energy Heap");
-            add("block.acervus.heap.empty", "Empty");
-            add("block.acervus.heap.holding", "%s x %s");
+            // Shared by all four: emptiness is not a fact about any one of them.
+            add("gui.acervus.empty", "Empty");
+            add("block.acervus.item_heap.holding", "%s x %s");
             add("block.acervus.fluid_heap.holding", "%s, %s");
             add("block.acervus.energy_heap.holding", "%s FE");
             add("block.acervus.chemical_heap.holding", "%s, %s");
-            add("block.acervus.heap.absorbing", "Collecting what you pick up");
+            add("block.acervus.item_heap.absorbing", "Collecting what you pick up");
             if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
                 add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "Gas Heap");
             }

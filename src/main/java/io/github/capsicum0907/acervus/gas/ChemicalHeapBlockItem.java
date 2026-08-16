@@ -44,7 +44,7 @@ public class ChemicalHeapBlockItem extends BlockItem {
         long amount = tag.getLong("Amount");
 
         if (sample.isEmpty() || amount <= 0) {
-            lines.add(Component.translatable("block.acervus.heap.empty").withStyle(ChatFormatting.GRAY));
+            lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));
             return;
         }
         lines.add(Component.translatable("block.acervus.chemical_heap.holding",

@@ -36,18 +36,18 @@ public final class AcervusRegistry {
      * it is what breaks one quickly — but being without one costs time, not the
      * contents.
      */
-    public static final DeferredBlock<HeapBlock> HEAP = BLOCKS.register("heap",
+    public static final DeferredBlock<HeapBlock> HEAP = BLOCKS.register("item_heap",
             () -> new HeapBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.METAL)
                     .strength(3.0F, 6.0F)
                     .sound(SoundType.METAL)
                     .noOcclusion()));
 
-    public static final DeferredItem<BlockItem> HEAP_ITEM = ITEMS.register("heap",
+    public static final DeferredItem<BlockItem> HEAP_ITEM = ITEMS.register("item_heap",
             () -> new HeapBlockItem(HEAP.get(), new net.minecraft.world.item.Item.Properties()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HeapBlockEntity>> HEAP_ENTITY =
-            BLOCK_ENTITIES.register("heap", blockEntityType(HeapBlockEntity::new, HEAP));
+            BLOCK_ENTITIES.register("item_heap", blockEntityType(HeapBlockEntity::new, HEAP));
 
     /** The same block, for a resource that is measured rather than counted. */
     public static final DeferredBlock<FluidHeapBlock> FLUID_HEAP = BLOCKS.register("fluid_heap",
@@ -83,7 +83,7 @@ public final class AcervusRegistry {
             DeferredRegister.create(Registries.MENU, Acervus.MODID);
 
     public static final DeferredHolder<MenuType<?>, MenuType<HeapMenu>> HEAP_MENU =
-            MENUS.register("heap", () -> IMenuTypeExtension.create(
+            MENUS.register("item_heap", () -> IMenuTypeExtension.create(
                     (id, inventory, buffer) -> HeapMenu.at(id, inventory, buffer.readBlockPos())));
 
     /**
@@ -92,7 +92,7 @@ public final class AcervusRegistry {
      * position, or which hand — and one type cannot read both.
      */
     public static final DeferredHolder<MenuType<?>, MenuType<HeapMenu>> CARRIED_HEAP_MENU =
-            MENUS.register("carried_heap", () -> IMenuTypeExtension.create(
+            MENUS.register("carried_item_heap", () -> IMenuTypeExtension.create(
                     (id, inventory, buffer) -> HeapMenu.inHand(id, inventory,
                             buffer.readEnum(net.minecraft.world.InteractionHand.class))));
 

@@ -7,9 +7,10 @@ One kind of item, in numbers a chest cannot hold.
 > **Status: stage 4.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each, in the world and in the hand. 43 game tests pass headlessly.
 
-The item one is called **Item Heap**. Its registry name is still `acervus:heap`,
-which is deliberate: renaming it would empty every one already placed in a world,
-and a display name is the part anyone reads.
+The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
+was the only one; being written first is not a reason to be the one without a
+surname. **Anything placed under the old name is gone** — there is no data fixer,
+and there will not be one before the first release.
 
 ## Target
 

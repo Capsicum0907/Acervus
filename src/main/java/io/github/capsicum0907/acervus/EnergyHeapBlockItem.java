@@ -35,7 +35,7 @@ public class EnergyHeapBlockItem extends BlockItem {
         CompoundTag tag = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
         long stored = tag.contains("Amount") ? tag.getLong("Amount") : tag.getLong("Stored");
         if (stored <= 0) {
-            lines.add(Component.translatable("block.acervus.heap.empty").withStyle(ChatFormatting.GRAY));
+            lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));
             return;
         }
         lines.add(Component.translatable("block.acervus.energy_heap.holding", Counts.brief(stored))

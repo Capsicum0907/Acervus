@@ -25,11 +25,11 @@ SIZE = 16
 FRAME = 2  # how many pixels deep the metal border runs
 
 ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures"
-OUT = ASSETS / "block/heap.png"
+OUT = ASSETS / "block/item_heap.png"
 FLUID_OUT = ASSETS / "block/fluid_heap.png"
 ENERGY_OUT = ASSETS / "block/energy_heap.png"
 CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
-GUI_OUT = ASSETS / "gui/heap.png"
+GUI_OUT = ASSETS / "gui/item_heap.png"
 READOUT_OUT = ASSETS / "gui/readout.png"
 READOUT_PLAIN_OUT = ASSETS / "gui/readout_plain.png"
 

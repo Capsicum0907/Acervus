@@ -173,7 +173,7 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
             graphics.drawString(font, note, NOTE_RIGHT - font.width(note), NOTE_Y, NOTE, false);
         }
         if (heap.isEmpty()) {
-            graphics.drawString(font, Component.translatable("block.acervus.heap.empty"),
+            graphics.drawString(font, Component.translatable("gui.acervus.empty"),
                     textX, NAME_Y, TEXT, false);
             return;
         }

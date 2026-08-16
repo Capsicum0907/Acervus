@@ -2,6 +2,6 @@
   "parent": "minecraft:block/cube_all",
   "render_type": "minecraft:translucent",
   "textures": {
-    "all": "acervus:block/heap"
+    "all": "acervus:block/item_heap"
   }
 }

@@ -27,7 +27,7 @@ import net.minecraft.world.item.ItemStack;
  */
 public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "textures/gui/heap.png");
+            ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "textures/gui/item_heap.png");
 
     private static final int PANEL_W = 176;
     private static final int PANEL_H = 166;
@@ -87,7 +87,7 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
             graphics.drawString(font, note, NOTE_RIGHT - font.width(note), NOTE_Y, NOTE, false);
         }
         if (heap.isEmpty()) {
-            graphics.drawString(font, Component.translatable("block.acervus.heap.empty"),
+            graphics.drawString(font, Component.translatable("gui.acervus.empty"),
                     TEXT_X, NAME_Y, TEXT, false);
             return;
         }
