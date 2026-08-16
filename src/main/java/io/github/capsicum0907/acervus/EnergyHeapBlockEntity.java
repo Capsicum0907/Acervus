@@ -121,11 +121,9 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
     }
 
     /**
-     * Whatever is in the vessel is charged from the heap, or drained into it.
-     *
-     * <p>Charging is the common case and is tried first. A battery that cannot take
-     * any more, but can give, is emptied into the heap instead — so one slot covers
-     * both directions without the player choosing.
+     * The battery in the vessel moves in the direction decided when it was put there:
+     * a full one empties into the heap, anything else is charged from it. Deciding it
+     * again every tick would charge a battery and then immediately drain it back.
      */
     private void tickVessel() {
         if (vessel.isEmpty()) {
@@ -133,21 +131,34 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         }
         IEnergyStorage container = vessel.held().getCapability(Capabilities.EnergyStorage.ITEM);
         if (container == null) {
+            vessel.done();
             return;
         }
-        int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
-        if (container.canReceive()) {
-            int given = container.receiveEnergy((int) Math.min(rate, stored), false);
-            if (given > 0) {
-                give(given, false);
-                return;
-            }
+        if (vessel.undecided()) {
+            boolean full = container.receiveEnergy(1, true) == 0;
+            vessel.decide(full && container.canExtract() ? Vessel.Flow.IN : Vessel.Flow.OUT);
         }
-        if (container.canExtract()) {
-            int taken = container.extractEnergy((int) Math.min(rate, room()), false);
-            if (taken > 0) {
-                receive(taken, false);
+
+        int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
+        boolean moved = switch (vessel.flow()) {
+            case IN -> {
+                int taken = container.extractEnergy((int) Math.min(rate, room()), false);
+                if (taken > 0) {
+                    receive(taken, false);
+                }
+                yield taken > 0;
             }
+            case OUT -> {
+                int given = container.receiveEnergy((int) Math.min(rate, stored), false);
+                if (given > 0) {
+                    give(given, false);
+                }
+                yield given > 0;
+            }
+            case NONE -> false;
+        };
+        if (!moved) {
+            vessel.done();
         }
     }
 

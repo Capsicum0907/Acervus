@@ -127,7 +127,11 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         return vessel;
     }
 
-    /** A tank in the slot is filled from the heap, or emptied into it. */
+    /**
+     * The tank in the vessel moves in the direction decided when it was put there: a
+     * full one of the same chemical empties into the heap, anything else is filled
+     * from it. See {@code Vessel} for why the question is only asked once.
+     */
     public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state,
             ChemicalHeapBlockEntity heap) {
         if (level.isClientSide || heap.vessel.isEmpty()) {
@@ -136,28 +140,72 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         mekanism.api.chemical.IChemicalHandler container =
                 heap.vessel.held().getCapability(GasHeap.CHEMICAL_ITEM);
         if (container == null) {
+            heap.vessel.done();
             return;
         }
+        if (heap.vessel.undecided()) {
+            heap.vessel.decide(pouring(heap, container)
+                    ? io.github.capsicum0907.acervus.Vessel.Flow.IN
+                    : io.github.capsicum0907.acervus.Vessel.Flow.OUT);
+        }
 
+        boolean moved = switch (heap.vessel.flow()) {
+            case IN -> pourIn(heap, container);
+            case OUT -> drawOut(heap, container);
+            case NONE -> false;
+        };
+        if (moved) {
+            heap.changed();
+        } else {
+            heap.vessel.done();
+        }
+    }
+
+    /** Full, and of something this heap would take. */
+    private static boolean pouring(ChemicalHeapBlockEntity heap,
+            mekanism.api.chemical.IChemicalHandler container) {
+        boolean anything = false;
         for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
             ChemicalStack inside = container.getChemicalInTank(tank);
-            if (!inside.isEmpty() && heap.accepts(inside)) {
-                long moved = heap.insert(inside, false);
-                if (moved > 0) {
-                    container.extractChemical(tank, moved, mekanism.api.Action.EXECUTE);
-                    return;
-                }
+            if (inside.getAmount() < container.getChemicalTankCapacity(tank)) {
+                return false;
             }
-            if (!heap.isEmpty()) {
-                ChemicalStack offer = heap.extract(container.getChemicalTankCapacity(tank), true);
-                ChemicalStack left = container.insertChemical(tank, offer, mekanism.api.Action.EXECUTE);
-                long given = offer.getAmount() - left.getAmount();
-                if (given > 0) {
-                    heap.extract(given, false);
-                    return;
-                }
+            anything |= !inside.isEmpty() && heap.accepts(inside);
+        }
+        return anything;
+    }
+
+    private static boolean pourIn(ChemicalHeapBlockEntity heap,
+            mekanism.api.chemical.IChemicalHandler container) {
+        for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
+            ChemicalStack inside = container.getChemicalInTank(tank);
+            if (inside.isEmpty() || !heap.accepts(inside)) {
+                continue;
+            }
+            long taken = heap.insert(inside, false);
+            if (taken > 0) {
+                container.extractChemical(tank, taken, mekanism.api.Action.EXECUTE);
+                return true;
             }
         }
+        return false;
+    }
+
+    private static boolean drawOut(ChemicalHeapBlockEntity heap,
+            mekanism.api.chemical.IChemicalHandler container) {
+        if (heap.isEmpty()) {
+            return false;
+        }
+        for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
+            ChemicalStack offer = heap.extract(container.getChemicalTankCapacity(tank), true);
+            ChemicalStack left = container.insertChemical(tank, offer, mekanism.api.Action.EXECUTE);
+            long given = offer.getAmount() - left.getAmount();
+            if (given > 0) {
+                heap.extract(given, false);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

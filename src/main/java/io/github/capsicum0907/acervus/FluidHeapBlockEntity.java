@@ -3,8 +3,9 @@ package io.github.capsicum0907.acervus;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.fluids.FluidActionResult;
-import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -138,32 +139,70 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     }
 
     /**
-     * Whatever is in the vessel is filled or emptied, once a tick.
-     *
-     * <p>Which way round is not asked: a container with something in it is poured in,
-     * and one without is filled. That covers a bucket both ways without the player
-     * having to say which they meant.
+     * The container in the vessel moves in the direction decided when it was put
+     * there: a full one of the same fluid empties into the heap, anything else is
+     * filled from it. See {@link Vessel} for why the question is only asked once.
      */
     public static void serverTick(Level level, BlockPos pos, BlockState state, FluidHeapBlockEntity heap) {
         if (level.isClientSide || heap.vessel.isEmpty()) {
             return;
         }
-        ItemStack container = heap.vessel.held();
-
-        FluidActionResult poured = FluidUtil.tryEmptyContainer(
-                container, heap.handler(), Integer.MAX_VALUE, null, true);
-        if (poured.isSuccess()) {
-            heap.vessel.hold(poured.getResult());
-            heap.changed();
+        IFluidHandlerItem container = heap.vessel.held().getCapability(Capabilities.FluidHandler.ITEM);
+        if (container == null) {
+            heap.vessel.done();
             return;
         }
-
-        FluidActionResult drawn = FluidUtil.tryFillContainer(
-                container, heap.handler(), Integer.MAX_VALUE, null, true);
-        if (drawn.isSuccess()) {
-            heap.vessel.hold(drawn.getResult());
-            heap.changed();
+        if (heap.vessel.undecided()) {
+            heap.vessel.decide(pouring(heap, container) ? Vessel.Flow.IN : Vessel.Flow.OUT);
         }
+
+        boolean moved = switch (heap.vessel.flow()) {
+            case IN -> pourIn(heap, container);
+            case OUT -> drawOut(heap, container);
+            case NONE -> false;
+        };
+        if (moved) {
+            heap.vessel.replace(container.getContainer());
+            heap.changed();
+        } else {
+            heap.vessel.done();
+        }
+    }
+
+    /** Full, and of something this heap would take: the one case that goes inward. */
+    private static boolean pouring(FluidHeapBlockEntity heap, IFluidHandlerItem container) {
+        for (int tank = 0; tank < container.getTanks(); tank++) {
+            if (container.getFluidInTank(tank).getAmount() < container.getTankCapacity(tank)) {
+                return false;
+            }
+        }
+        return heap.accepts(container.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE));
+    }
+
+    private static boolean pourIn(FluidHeapBlockEntity heap, IFluidHandlerItem container) {
+        FluidStack offered = container.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+        if (offered.isEmpty() || !heap.accepts(offered)) {
+            return false;
+        }
+        int taken = heap.insert(offered, false);
+        if (taken <= 0) {
+            return false;
+        }
+        container.drain(offered.copyWithAmount(taken), IFluidHandler.FluidAction.EXECUTE);
+        return true;
+    }
+
+    private static boolean drawOut(FluidHeapBlockEntity heap, IFluidHandlerItem container) {
+        if (heap.isEmpty()) {
+            return false;
+        }
+        FluidStack offer = heap.extract(Integer.MAX_VALUE, true);
+        int filled = container.fill(offer, IFluidHandler.FluidAction.EXECUTE);
+        if (filled <= 0) {
+            return false;
+        }
+        heap.extract(filled, false);
+        return true;
     }
 
     @Override
