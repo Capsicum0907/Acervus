@@ -37,7 +37,17 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class HeapBlockEntity extends BlockEntity {
     private static final String SAMPLE = "Sample";
-    private static final String COUNT = "Count";
+
+    /**
+     * The same name every heap uses for how much it holds.
+     *
+     * <p>It was {@code Count} here, {@code Amount} on two others and {@code Stored} on
+     * the fourth — three names for one idea, which meant that {@code /data merge block}
+     * worked on one heap and silently did nothing on the rest. The old name is still
+     * read so that heaps saved before this keep their contents.
+     */
+    private static final String AMOUNT = "Amount";
+    private static final String LEGACY_COUNT = "Count";
 
     private ItemStack sample = ItemStack.EMPTY;
     private long count;
@@ -199,7 +209,7 @@ public class HeapBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putLong(COUNT, count);
+        tag.putLong(AMOUNT, count);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
         }
@@ -212,8 +222,10 @@ public class HeapBlockEntity extends BlockEntity {
                 ? ItemStack.parse(registries, tag.getCompound(SAMPLE)).orElse(ItemStack.EMPTY)
                 : ItemStack.EMPTY;
         // getLong reads a tag that was written as an int too, so a heap saved before
-        // the total widened comes back without a migration step.
-        count = sample.isEmpty() ? 0L : tag.getLong(COUNT);
+        // the total widened comes back without a migration step. The old key is read
+        // when the new one is absent, for the same reason.
+        count = sample.isEmpty() ? 0L
+                : tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
     }
 
     /** The client is sent the same fields, because it draws them. */

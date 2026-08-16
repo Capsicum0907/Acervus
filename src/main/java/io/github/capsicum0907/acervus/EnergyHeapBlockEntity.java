@@ -27,7 +27,9 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
  * for being full.
  */
 public class EnergyHeapBlockEntity extends BlockEntity {
-    private static final String STORED = "Stored";
+    /** The same name every heap uses; see {@link HeapBlockEntity} for why. */
+    private static final String AMOUNT = "Amount";
+    private static final String LEGACY_STORED = "Stored";
 
     private long stored;
 
@@ -143,13 +145,13 @@ public class EnergyHeapBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putLong(STORED, stored);
+        tag.putLong(AMOUNT, stored);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        stored = tag.getLong(STORED);
+        stored = tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_STORED);
     }
 
     @Override
