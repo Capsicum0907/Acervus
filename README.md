@@ -276,8 +276,18 @@ sprite, beside its name and its amount. A rack draws one such row per heap, so t
 heaps can be read without opening anything.
 
 It is a picture rather than a list of lines because a rack has twelve of them, and
-twelve lines of prose is a tooltip nobody reads past. Energy is the one row with no
-icon: there is no such thing as a kind of it.
+twelve lines of prose is a tooltip nobody reads past. Energy has no item and no sprite
+of its own, so it gets a bolt drawn for it — a row with a hole where every other row
+has a picture reads as broken rather than as empty.
+
+**How a rack's heaps are written down is known in one place**, `HorreumBlockEntity`,
+and that was bought. Four places spelled the shape out for themselves and the carried
+rack spelled it differently — it wrote the item list as the whole component instead of
+nesting it under `Heaps`. One write and the other three found nothing, so taking a
+heap out of a rack in your bag appeared to destroy the other eleven. They were still
+there; nothing could read them. It is the same mistake the count made when it was
+`Count` on one heap and `Amount` on three: a shape known in more than one place is a
+shape that will disagree with itself.
 
 The reading happens on the client, in `HeapContentsTooltip`, and not where the tooltip
 is asked for. `Item#getTooltipImage` is handed a stack and nothing else, and reading a
