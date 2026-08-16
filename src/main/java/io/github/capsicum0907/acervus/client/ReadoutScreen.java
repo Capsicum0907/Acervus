@@ -7,6 +7,7 @@ import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.FluidHeapBlockEntity;
 import io.github.capsicum0907.acervus.Heaped;
 import io.github.capsicum0907.acervus.ReadoutMenu;
+import io.github.capsicum0907.acervus.Vessel;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -31,8 +32,12 @@ import net.neoforged.neoforge.fluids.FluidStack;
  * <p>Every measurement here has a twin in {@code tools/make_textures.py}.
  */
 public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
-    private static final ResourceLocation TEXTURE =
+    private static final ResourceLocation WITH_CONTENTS =
             ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "textures/gui/readout.png");
+
+    /** The same panel without the contents box, for the resource that has no kinds. */
+    private static final ResourceLocation PLAIN =
+            ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "textures/gui/readout_plain.png");
 
     private static final int PANEL_W = 176;
     private static final int PANEL_H = 166;
@@ -51,8 +56,15 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
     private static final int AMOUNT_Y = 46;
     private static final int ROOM_Y = 58;
 
-    /** Clear of the contents box, so the two do not overlap. */
+    /** Clear of the contents box when there is one, and against the edge when there is not. */
     private static final int TEXT_X = 30;
+    private static final int TEXT_X_PLAIN = 8;
+
+    /** Under the container slot, saying which way what is in it is going. */
+    private static final int FLOW_Y = 56;
+
+    /** Matches the slot position in ReadoutMenu. */
+    private static final int VESSEL_X = 150;
 
     private static final int TEXT = 0x404040;
 
@@ -72,9 +84,11 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        Heaped shown = heap();
+        graphics.blit(shown == null || shown.hasKinds() ? WITH_CONTENTS : PLAIN,
+                leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
-        Heaped heap = heap();
+        Heaped heap = shown;
         if (heap == null || heap.isEmpty()) {
             return;
         }
@@ -103,6 +117,9 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
         ResourceLocation texture = heap.contentTexture();
         int tint = heap.contentTint();
 
+        if (!heap.hasKinds()) {
+            return;
+        }
         if (heap instanceof FluidHeapBlockEntity fluid) {
             FluidStack held = fluid.sample();
             if (held.isEmpty()) {
@@ -131,19 +148,47 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         super.renderLabels(graphics, mouseX, mouseY);
 
+        drawFlow(graphics);
+
         Heaped heap = heap();
+        int textX = textX();
         if (heap == null || heap.isEmpty()) {
             graphics.drawString(font, Component.translatable("block.acervus.heap.empty"),
-                    TEXT_X, NAME_Y, TEXT, false);
+                    textX, NAME_Y, TEXT, false);
             return;
         }
 
         if (!heap.contentName().getString().isEmpty()) {
-            graphics.drawString(font, heap.contentName(), TEXT_X, NAME_Y, TEXT, false);
+            graphics.drawString(font, heap.contentName(), textX, NAME_Y, TEXT, false);
         }
-        graphics.drawString(font, heap.brief(heap.amount()), TEXT_X, AMOUNT_Y, TEXT, false);
+        graphics.drawString(font, heap.brief(heap.amount()), textX, AMOUNT_Y, TEXT, false);
         graphics.drawString(font, Component.translatable("gui.acervus.room", heap.brief(heap.room())),
-                TEXT_X, ROOM_Y, TEXT, false);
+                textX, ROOM_Y, TEXT, false);
+    }
+
+    /**
+     * Which way what is in the slot is going, written under it.
+     *
+     * <p>The direction is decided when the container is put in and does not change
+     * afterwards, so a player who cannot see it has no way of telling why a tank is
+     * filling rather than emptying. Saying it is the difference between a rule and a
+     * mystery.
+     */
+    private void drawFlow(GuiGraphics graphics) {
+        Vessel.Flow flow = menu.flow();
+        if (flow == Vessel.Flow.NONE) {
+            return;
+        }
+        Component label = Component.translatable(
+                flow == Vessel.Flow.IN ? "gui.acervus.flow.in" : "gui.acervus.flow.out");
+        graphics.drawString(font, label,
+                VESSEL_X + CONTENT_SIZE / 2 - font.width(label) / 2, FLOW_Y, TEXT, false);
+    }
+
+    /** The text starts clear of the contents box, when there is one. */
+    private int textX() {
+        Heaped heap = heap();
+        return heap == null || heap.hasKinds() ? TEXT_X : TEXT_X_PLAIN;
     }
 
     @Override
@@ -189,7 +234,8 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
     }
 
     private boolean over(int x, int y, String line, int top) {
-        return x >= TEXT_X && x < TEXT_X + font.width(line) && y >= top && y < top + font.lineHeight;
+        int textX = textX();
+        return x >= textX && x < textX + font.width(line) && y >= top && y < top + font.lineHeight;
     }
 
     private Heaped heap() {

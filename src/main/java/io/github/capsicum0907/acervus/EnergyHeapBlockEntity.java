@@ -87,6 +87,11 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         return Math.max(given, 0);
     }
 
+    @Override
+    public boolean hasKinds() {
+        return false;
+    }
+
     /** Energy has no kinds, so there is nothing to name. */
     @Override
     public Component contentName() {

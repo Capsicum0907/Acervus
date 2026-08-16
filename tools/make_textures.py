@@ -31,6 +31,7 @@ ENERGY_OUT = ASSETS / "block/energy_heap.png"
 CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
 GUI_OUT = ASSETS / "gui/heap.png"
 READOUT_OUT = ASSETS / "gui/readout.png"
+READOUT_PLAIN_OUT = ASSETS / "gui/readout_plain.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
 METAL = {(x, y) for (x, y) in ALL
@@ -192,11 +193,14 @@ CONTENT_BOX = (8, 38)     # where the contents themselves are drawn
 VESSEL_SLOT = (150, 38)   # where a container goes
 
 
-def draw_readout() -> bytes:
+def draw_readout(with_contents: bool = True) -> bytes:
+    """The same panel with or without the box for the contents. Energy has no kinds,
+    so a box that could only ever be empty is left off rather than drawn."""
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     _panel(pixels, 0, 0)
     _recess(pixels, *BAR)
-    _recess(pixels, CONTENT_BOX[0] - 1, CONTENT_BOX[1] - 1, SLOT, SLOT)
+    if with_contents:
+        _recess(pixels, CONTENT_BOX[0] - 1, CONTENT_BOX[1] - 1, SLOT, SLOT)
     _recess(pixels, VESSEL_SLOT[0] - 1, VESSEL_SLOT[1] - 1, SLOT, SLOT)
     for row in INVENTORY_ROWS + (HOTBAR,):
         for column in range(9):
@@ -241,6 +245,9 @@ def main() -> None:
 
     READOUT_OUT.write_bytes(draw_readout())
     print(f"wrote {READOUT_OUT}")
+
+    READOUT_PLAIN_OUT.write_bytes(draw_readout(False))
+    print(f"wrote {READOUT_PLAIN_OUT}")
 
 
 if __name__ == "__main__":

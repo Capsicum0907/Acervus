@@ -127,6 +127,8 @@ public final class AcervusDataGen {
             }
             add("gui.acervus.room", "%s more will fit");
             add("gui.acervus.vessel", "Put a container here");
+            add("gui.acervus.flow.in", "In");
+            add("gui.acervus.flow.out", "Out");
             add("gui.acervus.exact", "%s stored");
         }
     }

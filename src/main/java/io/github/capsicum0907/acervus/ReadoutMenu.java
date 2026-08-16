@@ -66,6 +66,12 @@ public class ReadoutMenu extends AbstractContainerMenu {
         return player.level().getBlockEntity(pos) instanceof Heaped heaped ? heaped : null;
     }
 
+    /** Which way the container in the slot is going, for the screen to say. */
+    public Vessel.Flow flow() {
+        Vessel vessel = slots.isEmpty() || !(slots.get(0) instanceof VesselSlot slot) ? null : slot.vessel();
+        return vessel == null ? Vessel.Flow.NONE : vessel.flow();
+    }
+
     private Vessel vessel(Player player) {
         return player.level().getBlockEntity(pos) instanceof HasVessel holder ? holder.vessel() : null;
     }

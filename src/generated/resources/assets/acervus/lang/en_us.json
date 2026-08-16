@@ -9,6 +9,8 @@
   "block.acervus.heap.empty": "Empty",
   "block.acervus.heap.holding": "%s x %s",
   "gui.acervus.exact": "%s stored",
+  "gui.acervus.flow.in": "In",
+  "gui.acervus.flow.out": "Out",
   "gui.acervus.room": "%s more will fit",
   "gui.acervus.vessel": "Put a container here"
 }

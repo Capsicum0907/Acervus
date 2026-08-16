@@ -22,6 +22,10 @@ public class VesselSlot extends Slot {
         this.vessel = vessel;
     }
 
+    public Vessel vessel() {
+        return vessel;
+    }
+
     @Override
     public ItemStack getItem() {
         return vessel.held();

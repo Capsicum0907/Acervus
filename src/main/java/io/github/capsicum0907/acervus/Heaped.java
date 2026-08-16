@@ -37,6 +37,17 @@ public interface Heaped {
     int tint();
 
     /**
+     * Whether this resource comes in kinds.
+     *
+     * <p>Energy does not: there is no such thing as a kind of it, so there is nothing
+     * to name and nothing to draw. The screen leaves out the box that would show it
+     * rather than presenting an empty square that will never hold anything.
+     */
+    default boolean hasKinds() {
+        return true;
+    }
+
+    /**
      * A sprite standing for the contents, or null when the screen must work it out
      * another way. Chemicals carry their own icon; fluids only have one on the client,
      * so a fluid heap leaves this null and the screen looks it up there.
