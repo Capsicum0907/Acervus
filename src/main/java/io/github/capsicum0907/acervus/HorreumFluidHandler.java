@@ -1,17 +1,27 @@
 package io.github.capsicum0907.acervus;
 
+import java.util.List;
+
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 /**
  * The window a pipe or a pump sees onto a rack of fluid heaps.
  *
- * <p>One tank per rack slot, always twelve — see {@link HorreumItemHandler} for why
- * the indices must not move. A slot holding anything but a fluid heap reads as an
- * empty tank of no capacity.
+ * <p><b>One tank per fluid heap actually in the rack, not one per rack slot.</b> That
+ * is a reversal, and the interface is what settles it: {@code fill} and {@code drain}
+ * take no tank index at all — the routing below is this class's own — so an index is
+ * only ever used to <em>read</em> a tank, within the tick it was asked for. Nothing
+ * holds one between ticks, so nothing is broken by the numbering changing when a heap
+ * is put in or taken out.
  *
- * <p>Filling and draining have no tank index in this interface, so they are routed:
- * <b>a fluid goes to a tank that already holds it before it goes to an empty one.</b>
+ * <p>Twelve fixed tanks was the cautious answer and it had a visible price: anything
+ * that lists a block's tanks — Jade, most obviously — drew twelve bars for a rack with
+ * one fluid heap in it, eleven of them saying Empty forever. The item side keeps its
+ * fixed slots, because {@code IItemHandler} really does take an index when it inserts
+ * and extracts. See {@link HorreumItemHandler}.
+ *
+ * <p>Filling routes to <b>a tank that already holds that fluid before an empty one</b>.
  * The other way round, a bucket of water would claim whichever empty heap came first
  * and the rack would fill up with half-used tanks of the same thing.
  */
@@ -22,13 +32,19 @@ public class HorreumFluidHandler implements IFluidHandler {
         this.rack = rack;
     }
 
+    /** The fluid heaps in the rack, in slot order. Read fresh: the slots change. */
+    private List<HeldFluidHeap> tanks() {
+        return rack.readAll(AcervusRegistry.FLUID_HEAP_ITEM.get(), HeldFluidHeap::stored);
+    }
+
     private HeldFluidHeap at(int tank) {
-        return rack.read(tank, AcervusRegistry.FLUID_HEAP_ITEM.get(), HeldFluidHeap::stored);
+        List<HeldFluidHeap> tanks = tanks();
+        return tank < 0 || tank >= tanks.size() ? null : tanks.get(tank);
     }
 
     @Override
     public int getTanks() {
-        return HorreumBlockEntity.SLOTS;
+        return tanks().size();
     }
 
     @Override
@@ -57,9 +73,9 @@ public class HorreumFluidHandler implements IFluidHandler {
         if (resource.isEmpty()) {
             return 0;
         }
-        // Twice over the slots: everything that already holds this fluid, and only
-        // then the empty ones. One pass would commit an empty heap while a matching
-        // one stood half full beside it.
+        // Twice over the tanks: everything that already holds this fluid, and only then
+        // the empty ones. One pass would commit an empty heap while a matching one stood
+        // half full beside it.
         int filled = pour(resource, action, true);
         if (filled < resource.getAmount()) {
             filled += pour(resource.copyWithAmount(resource.getAmount() - filled), action, false);
@@ -72,9 +88,11 @@ public class HorreumFluidHandler implements IFluidHandler {
 
     private int pour(FluidStack resource, FluidAction action, boolean matchingOnly) {
         int filled = 0;
-        for (int tank = 0; tank < HorreumBlockEntity.SLOTS && filled < resource.getAmount(); tank++) {
-            HeldFluidHeap heap = at(tank);
-            if (heap == null || (matchingOnly ? heap.isEmpty() : !heap.isEmpty())) {
+        for (HeldFluidHeap heap : tanks()) {
+            if (filled >= resource.getAmount()) {
+                break;
+            }
+            if (matchingOnly == heap.isEmpty()) {
                 continue;
             }
             filled += heap.insert(resource.copyWithAmount(resource.getAmount() - filled), action.simulate());
@@ -88,10 +106,8 @@ public class HorreumFluidHandler implements IFluidHandler {
         if (resource.isEmpty()) {
             return FluidStack.EMPTY;
         }
-        for (int tank = 0; tank < HorreumBlockEntity.SLOTS; tank++) {
-            HeldFluidHeap heap = at(tank);
-            if (heap == null || heap.isEmpty()
-                    || !FluidStack.isSameFluidSameComponents(heap.sample(), resource)) {
+        for (HeldFluidHeap heap : tanks()) {
+            if (heap.isEmpty() || !FluidStack.isSameFluidSameComponents(heap.sample(), resource)) {
                 continue;
             }
             FluidStack out = heap.extract(resource.getAmount(), action.simulate());
@@ -112,9 +128,8 @@ public class HorreumFluidHandler implements IFluidHandler {
      */
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
-        for (int tank = 0; tank < HorreumBlockEntity.SLOTS; tank++) {
-            HeldFluidHeap heap = at(tank);
-            if (heap == null || heap.isEmpty()) {
+        for (HeldFluidHeap heap : tanks()) {
+            if (heap.isEmpty()) {
                 continue;
             }
             FluidStack out = heap.extract(maxDrain, action.simulate());

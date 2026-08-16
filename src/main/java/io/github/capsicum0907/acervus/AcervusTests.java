@@ -1235,8 +1235,13 @@ public final class AcervusTests {
 
         IFluidHandler tanks = helper.getLevel().getCapability(
                 Capabilities.FluidHandler.BLOCK, helper.absolutePos(WHERE), null);
-        check(tanks != null && tanks.getFluidInTank(3).getAmount() == 5_000,
-                "the fluid heap in slot 3 should read 5,000");
+        // One tank per fluid heap in the rack, not one per rack slot: the heap put in
+        // slot 3 is the rack's only fluid heap, so it is tank 0. Anything that lists a
+        // block's tanks would otherwise draw eleven bars that say Empty forever.
+        check(tanks != null && tanks.getTanks() == 1,
+                "a rack with one fluid heap should offer one tank, not " + tanks.getTanks());
+        check(tanks.getFluidInTank(0).getAmount() == 5_000,
+                "and that tank should read 5,000");
         check(tanks.drain(1_000, IFluidHandler.FluidAction.EXECUTE).getAmount() == 1_000,
                 "and hand over a bucket");
         check(CarriedHeap.of(registries, items).count() == MANY - 64

@@ -255,10 +255,19 @@ say one thing.
 
 | | |
 |---|---|
-| items, fluids, gases | **one slot of the window per rack slot**, always twelve, so the indices a pipe remembers do not move when a heap is taken out |
+| items | **one window slot per rack slot**, always twelve, so the indices a pipe remembers do not move when a heap is taken out |
+| fluids, gases | **one tank per heap actually in it** — `fill` and `drain` take no index, so nothing holds one between ticks |
 | filling a fluid or gas | goes to a heap that **already holds it** before it commits an empty one |
 | energy | **one pool** — `IEnergyStorage` has no index at all, because energy has no kinds |
 | breaking one | carries its heaps, for the same reason a heap carries its contents |
+
+Items keep fixed slots and fluids do not, and the interfaces are what settle it.
+`IItemHandler` takes a slot number *when it inserts and extracts*, so a pipe can pick a
+slot in one tick and act on it in the next — the numbering has to hold still.
+`IFluidHandler` takes none: `fill` and `drain` are given a resource and an amount, and
+the index only ever reads a tank within the tick it was asked for. Twelve fixed tanks
+was the cautious answer, and it drew eleven bars saying Empty forever in anything that
+lists a block's tanks.
 
 **Sneak and right-click the air** to open one you are carrying, the same as a heap.
 The heaps inside can be moved about; what is inside *them* stays out of reach, because

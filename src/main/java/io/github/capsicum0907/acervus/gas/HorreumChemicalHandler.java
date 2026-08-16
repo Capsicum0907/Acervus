@@ -9,9 +9,18 @@ import mekanism.api.chemical.IChemicalHandler;
 /**
  * The window Mekanism's tubes see onto a rack of gas heaps.
  *
- * <p>One tank per rack slot, always twelve, for the same reason as the others: a
- * tube remembers indices between ticks, so they must not move when a slot changes.
- * A slot holding anything but a gas heap reads as a tank of no capacity.
+ * <p><b>One tank per gas heap actually in the rack, not one per rack slot.</b> The
+ * same reversal as {@link io.github.capsicum0907.acervus.HorreumFluidHandler}, and for
+ * the same reason: twelve fixed tanks meant twelve bars in anything that lists them,
+ * eleven of which said Empty forever.
+ *
+ * <p>This one is the less clear-cut of the two, because {@code insertChemical} and
+ * {@code extractChemical} <em>do</em> take an index where the fluid interface does not.
+ * What makes it safe is that Mekanism reaches them through the handler's own sideless
+ * defaults, which walk the tanks in the tick they were asked for; nothing carries a
+ * tank number from one tick to the next. If something ever does, the symptom is an
+ * insert landing in the wrong heap of the same rack — not a loss, and not a
+ * duplication.
  *
  * <p>The one that needs no care at the edge. Mekanism counts in longs at both ends,
  * so nothing here saturates, and the tank reports exactly what it holds.
@@ -26,13 +35,19 @@ public class HorreumChemicalHandler implements IChemicalHandler {
         this.rack = rack;
     }
 
+    /** The gas heaps in the rack, in slot order. Read fresh: the slots change. */
+    private java.util.List<HeldChemicalHeap> tanks() {
+        return rack.readAll(GasHeap.ITEM.get(), HeldChemicalHeap::stored);
+    }
+
     private HeldChemicalHeap at(int tank) {
-        return rack.read(tank, GasHeap.ITEM.get(), HeldChemicalHeap::stored);
+        java.util.List<HeldChemicalHeap> tanks = tanks();
+        return tank < 0 || tank >= tanks.size() ? null : tanks.get(tank);
     }
 
     @Override
     public int getChemicalTanks() {
-        return HorreumBlockEntity.SLOTS;
+        return tanks().size();
     }
 
     @Override
