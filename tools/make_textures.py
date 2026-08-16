@@ -224,9 +224,22 @@ BOLT_EDGE = "#D8A24A"
 
 def draw_bolt() -> bytes:
     """Sixteen by sixteen, transparent but for the bolt. Blitted straight rather than
-    stitched onto the block atlas: it belongs to a tooltip, not to a block."""
+    stitched onto the block atlas: it belongs to a tooltip, not to a block.
+
+    The drawing is centred by measuring it, not by counting dots in the art above.
+    Written out by hand it sat against the top-left corner of its frame while every
+    other icon in the row was centred, and the fix for that is not to move the dots -
+    it is to stop the position being something anyone has to get right."""
     rows = [line for line in BOLT.strip("\n").split("\n")]
-    lit = {(x, y) for y, line in enumerate(rows) for x, cell in enumerate(line) if cell == "#"}
+    drawn = {(x, y) for y, line in enumerate(rows) for x, cell in enumerate(line) if cell == "#"}
+
+    left = min(x for (x, _) in drawn)
+    right = max(x for (x, _) in drawn)
+    top = min(y for (_, y) in drawn)
+    bottom = max(y for (_, y) in drawn)
+    dx = (SIZE - (right - left + 1)) // 2 - left
+    dy = (SIZE - (bottom - top + 1)) // 2 - top
+    lit = {(x + dx, y + dy) for (x, y) in drawn}
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     for (x, y) in lit:
         # An edge is any lit pixel with an unlit neighbour above or to the left, which
