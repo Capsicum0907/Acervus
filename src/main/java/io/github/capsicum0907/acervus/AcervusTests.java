@@ -8,6 +8,7 @@ import com.mojang.authlib.GameProfile;
 import io.github.capsicum0907.acervus.data.TestStructures;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.stats.Stat;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -1099,6 +1100,47 @@ public final class AcervusTests {
                 "and the empty bucket should have come back when the screen closed");
         check(menu.slots.get(0).getItem().isEmpty(), "with nothing left in the slot");
         helper.succeed();
+    }
+
+    /**
+     * Every heap an item can be written by hand must survive being saved.
+     *
+     * <p>This is the one that was missing, and it cost a world. {@code BLOCK_ENTITY_DATA}
+     * is persisted with {@code CustomData.CODEC_WITH_ID}, which refuses a tag that does
+     * not name its block entity — and it refuses it inside the player inventory save, so
+     * the failure is a crash rather than a lost item. Nothing caught it earlier because
+     * the network codec does not check, and because every test read the numbers back
+     * through the same code that wrote them: they agreed with each other about a shape
+     * the game would not accept.
+     *
+     * <p>So this asks the game, with the call that crashed.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void everyHeldHeapCanBeSaved(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+
+        ItemStack items = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        CarriedHeap.of(registries, items).insert(new ItemStack(Items.DIAMOND, 2_308), false);
+        saves(items, registries, "an item heap committed through its screen");
+
+        ItemStack fluid = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        HeldFluidHeap.of(registries, fluid).insert(new FluidStack(Fluids.WATER, 1_000), false);
+        saves(fluid, registries, "a fluid heap filled from a bucket in its slot");
+
+        ItemStack energy = new ItemStack(AcervusRegistry.ENERGY_HEAP_ITEM.get());
+        HeldEnergyHeap.of(registries, energy).receive(1_000_000);
+        saves(energy, registries, "an energy heap drained from a battery in its slot");
+
+        helper.succeed();
+    }
+
+    /** The call the server makes on every player, once a minute, forever. */
+    private static void saves(ItemStack stack, HolderLookup.Provider registries, String what) {
+        try {
+            stack.save(registries);
+        } catch (RuntimeException refused) {
+            throw new GameTestAssertException(what + " must survive a world save: " + refused.getMessage());
+        }
     }
 
     /** What the heap in that inventory slot is holding. */

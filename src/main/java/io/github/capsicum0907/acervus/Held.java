@@ -5,8 +5,10 @@ import java.util.function.Supplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
 /**
  * A fluid, energy or gas heap that is being carried rather than placed.
@@ -50,6 +52,9 @@ public abstract class Held implements Heaped {
      */
     public abstract void draw(Vessel vessel);
 
+    /** Which block this is the item of; the written contents have to name it. */
+    protected abstract BlockEntityType<?> type();
+
     protected final ItemStack item() {
         return where.get();
     }
@@ -62,12 +67,15 @@ public abstract class Held implements Heaped {
      * Writes the contents back, dropping the component altogether once there is nothing
      * left, so that emptied heaps stack with the other empty ones instead of looking
      * different for carrying an empty tag.
+     *
+     * <p><b>Through {@code setBlockEntityData}, never {@code CustomData.of}.</b> The
+     * component is persisted with {@code CustomData.CODEC_WITH_ID}, which refuses a tag
+     * with no {@code id} naming the block entity — and refuses it while the player's
+     * inventory is being saved, which takes the world down. Nothing catches this
+     * earlier: the network codec does not check, so a heap written by hand looks
+     * perfectly well until the first autosave.
      */
     protected final void write(CompoundTag tag, boolean empty) {
-        if (empty) {
-            item().remove(DataComponents.BLOCK_ENTITY_DATA);
-        } else {
-            item().set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(tag));
-        }
+        BlockItem.setBlockEntityData(item(), type(), empty ? new CompoundTag() : tag);
     }
 }

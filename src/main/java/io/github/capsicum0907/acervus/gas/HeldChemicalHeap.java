@@ -114,6 +114,11 @@ public final class HeldChemicalHeap extends Held {
     }
 
     @Override
+    protected net.minecraft.world.level.block.entity.BlockEntityType<?> type() {
+        return GasHeap.BLOCK_ENTITY.get();
+    }
+
+    @Override
     public void draw(Vessel vessel) {
         IChemicalHandler container = vessel.held().getCapability(GasHeap.CHEMICAL_ITEM);
         if (container == null) {

@@ -84,6 +84,11 @@ public final class HeldEnergyHeap extends Held {
         return taken;
     }
 
+    @Override
+    protected net.minecraft.world.level.block.entity.BlockEntityType<?> type() {
+        return AcervusRegistry.ENERGY_HEAP_ENTITY.get();
+    }
+
     /**
      * Whatever the battery holds goes in, charged or not — the block asks whether it is
      * full because the block can also charge it back and needs to know which was meant.

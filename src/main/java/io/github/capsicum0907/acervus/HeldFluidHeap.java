@@ -91,6 +91,11 @@ public final class HeldFluidHeap extends Held {
         return taken;
     }
 
+    @Override
+    protected net.minecraft.world.level.block.entity.BlockEntityType<?> type() {
+        return AcervusRegistry.FLUID_HEAP_ENTITY.get();
+    }
+
     /**
      * Whatever is in the container goes in — not only a full one, which is the rule the
      * block needs because the block can also pour back out and has to be told which way

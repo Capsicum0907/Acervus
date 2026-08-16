@@ -7,6 +7,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 
@@ -189,12 +190,16 @@ public final class CarriedHeap implements Pile {
     /**
      * An emptied heap loses the component altogether, so that it stacks with the other
      * empty ones again instead of looking different for carrying an empty tag.
+     *
+     * <p><b>Through {@code setBlockEntityData}, never {@code CustomData.of}.</b> The
+     * component is persisted with {@code CustomData.CODEC_WITH_ID}, which refuses a tag
+     * with no {@code id} naming the block entity — and refuses it while the player's
+     * inventory is being saved, which takes the world down. Nothing catches it earlier:
+     * the network codec does not check, so a heap written by hand looks perfectly well
+     * until the first autosave. See {@link Held#write}.
      */
     private void write(ItemStack heap, CompoundTag tag) {
-        if (!tag.contains(SAMPLE)) {
-            heap.remove(DataComponents.BLOCK_ENTITY_DATA);
-        } else {
-            heap.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(tag));
-        }
+        BlockItem.setBlockEntityData(heap, AcervusRegistry.HEAP_ENTITY.get(),
+                tag.contains(SAMPLE) ? tag : new CompoundTag());
     }
 }
