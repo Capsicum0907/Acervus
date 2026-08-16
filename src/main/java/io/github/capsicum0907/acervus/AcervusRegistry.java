@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -22,6 +23,29 @@ public final class AcervusRegistry {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Acervus.MODID);
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, Acervus.MODID);
+
+    /**
+     * What every item in this mod is made with, and it exists for one property.
+     *
+     * <p><b>A heap must not stack, and the reason is not tidiness.</b> Components belong
+     * to the {@code ItemStack}, not to each item in it, so two heaps sitting in one
+     * stack are not two heaps — they are one set of contents with a count of two beside
+     * it. Put anything into that stack and both halves answer with the whole of it; take
+     * the stack apart and the contents have been copied, not divided. Duplication, from
+     * nothing more exotic than picking two heaps up at once.
+     *
+     * <p>This is why a shulker box does not stack either, and it is the same reason. The
+     * rack's slots already forced one apiece ({@code HorreumMenu.HeapSlot}) — which was
+     * the right rule written in exactly one place too few, since a slot can only govern
+     * what is inside it, and this has to hold everywhere a stack can go.
+     *
+     * <p>Every item here carries contents, so every item here goes through this method
+     * and nothing calls {@code new Item.Properties()} directly. An item added later that
+     * did would be back to duplicating, silently.
+     */
+    public static Item.Properties carriesItsOwnContents() {
+        return new Item.Properties().stacksTo(1);
+    }
 
     /**
      * {@code noOcclusion} because the contents are drawn inside it, and a block that
@@ -44,7 +68,7 @@ public final class AcervusRegistry {
                     .noOcclusion()));
 
     public static final DeferredItem<BlockItem> HEAP_ITEM = ITEMS.register("item_heap",
-            () -> new HeapBlockItem(HEAP.get(), new net.minecraft.world.item.Item.Properties()));
+            () -> new HeapBlockItem(HEAP.get(), carriesItsOwnContents()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HeapBlockEntity>> HEAP_ENTITY =
             BLOCK_ENTITIES.register("item_heap", blockEntityType(HeapBlockEntity::new, HEAP));
@@ -58,7 +82,7 @@ public final class AcervusRegistry {
                     .noOcclusion()));
 
     public static final DeferredItem<BlockItem> FLUID_HEAP_ITEM = ITEMS.register("fluid_heap",
-            () -> new FluidHeapBlockItem(FLUID_HEAP.get(), new net.minecraft.world.item.Item.Properties()));
+            () -> new FluidHeapBlockItem(FLUID_HEAP.get(), carriesItsOwnContents()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FluidHeapBlockEntity>>
             FLUID_HEAP_ENTITY = BLOCK_ENTITIES.register("fluid_heap",
@@ -73,7 +97,7 @@ public final class AcervusRegistry {
                     .noOcclusion()));
 
     public static final DeferredItem<BlockItem> ENERGY_HEAP_ITEM = ITEMS.register("energy_heap",
-            () -> new EnergyHeapBlockItem(ENERGY_HEAP.get(), new net.minecraft.world.item.Item.Properties()));
+            () -> new EnergyHeapBlockItem(ENERGY_HEAP.get(), carriesItsOwnContents()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EnergyHeapBlockEntity>>
             ENERGY_HEAP_ENTITY = BLOCK_ENTITIES.register("energy_heap",
@@ -94,7 +118,7 @@ public final class AcervusRegistry {
                     .sound(SoundType.METAL)));
 
     public static final DeferredItem<BlockItem> HORREUM_ITEM = ITEMS.register("horreum",
-            () -> new HorreumBlockItem(HORREUM.get(), new net.minecraft.world.item.Item.Properties()));
+            () -> new HorreumBlockItem(HORREUM.get(), carriesItsOwnContents()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HorreumBlockEntity>>
             HORREUM_ENTITY = BLOCK_ENTITIES.register("horreum",

@@ -61,7 +61,7 @@ public final class GasHeap {
                     .noOcclusion()));
 
     public static final DeferredItem<BlockItem> ITEM = AcervusRegistry.ITEMS.register("chemical_heap",
-            () -> new ChemicalHeapBlockItem(BLOCK.get(), new Item.Properties()));
+            () -> new ChemicalHeapBlockItem(BLOCK.get(), AcervusRegistry.carriesItsOwnContents()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChemicalHeapBlockEntity>>
             BLOCK_ENTITY = AcervusRegistry.BLOCK_ENTITIES.register("chemical_heap",
