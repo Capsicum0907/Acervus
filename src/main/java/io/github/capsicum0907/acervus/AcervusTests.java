@@ -1,10 +1,14 @@
 package io.github.capsicum0907.acervus;
 
 import java.util.List;
+import java.util.UUID;
+
+import com.mojang.authlib.GameProfile;
 
 import io.github.capsicum0907.acervus.data.TestStructures;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.stats.Stat;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.BlockTags;
@@ -13,6 +17,7 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -771,6 +776,75 @@ public final class AcervusTests {
 
         check(Carried.amount(player.getInventory().getItem(0)) == 100,
                 "a heap should not have taken an item that was thrown a moment ago");
+        helper.succeed();
+    }
+
+    /**
+     * What the heap could not hold is handed back for the inventory, and the heap
+     * plus the slot come to exactly what was on the ground.
+     *
+     * <p>The whole-stack case leaves nothing behind and is the easy one. This is the
+     * path where the item entity survives the event and vanilla carries on with the
+     * remainder, and it is the one place a number could be counted twice.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void whatDoesNotFitIsHandedBack(GameTestHelper helper) {
+        long capacity = AcervusConfig.CAPACITY.get();
+        AcervusConfig.CAPACITY.set(105L);
+        try {
+            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+            player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+            ItemEntity dropped = drop(helper, new ItemStack(Items.DIAMOND, 10));
+
+            Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
+
+            long inHeap = Carried.amount(player.getInventory().getItem(0));
+            check(inHeap == 105, "the heap should have filled to 105, not " + inHeap);
+            check(!dropped.isRemoved(), "and the rest should still be lying there to pick up");
+            check(dropped.getItem().getCount() == 5,
+                    "which is 5 diamonds, not " + dropped.getItem().getCount());
+        } finally {
+            AcervusConfig.CAPACITY.set(capacity);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * The statistic names what was picked up, not air.
+     *
+     * <p>An emptied stack answers {@code Items.AIR}, and absorbing the whole of a drop
+     * empties it — so reading the item after the shrink would have quietly credited
+     * every full pickup to air for as long as a matching heap was carried. Vanilla
+     * takes the item at the top of {@code playerTouch} for this reason; so does this.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theStatisticNamesWhatWasPickedUp(GameTestHelper helper) {
+        Item[] awarded = new Item[1];
+        Player player = new Player(helper.getLevel(), BlockPos.ZERO, 0.0F,
+                new GameProfile(UUID.randomUUID(), "test-statistic-player")) {
+            @Override
+            public boolean isSpectator() {
+                return false;
+            }
+
+            @Override
+            public boolean isCreative() {
+                return false;
+            }
+
+            @Override
+            public void awardStat(Stat<?> stat, int increment) {
+                if (stat.getValue() instanceof Item item) {
+                    awarded[0] = item;
+                }
+            }
+        };
+        player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+
+        Carried.onPickup(new ItemEntityPickupEvent.Pre(player, drop(helper, new ItemStack(Items.DIAMOND, 10))));
+
+        check(awarded[0] == Items.DIAMOND,
+                "picking up diamonds should count as diamonds, and counted as " + awarded[0]);
         helper.succeed();
     }
 

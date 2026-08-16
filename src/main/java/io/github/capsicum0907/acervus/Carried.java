@@ -7,6 +7,7 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.common.util.TriState;
@@ -69,9 +70,13 @@ public final class Carried {
             return;
         }
 
+        // Read before the shrink. An emptied stack answers Items.AIR, so asking it
+        // afterwards would quietly award every full pickup to air — which is why
+        // ItemEntity#playerTouch takes the item at the top and not where it is used.
+        Item taken = stack.getItem();
         player.take(entity, absorbed);
         stack.shrink(absorbed);
-        player.awardStat(Stats.ITEM_PICKED_UP.get(stack.getItem()), absorbed);
+        player.awardStat(Stats.ITEM_PICKED_UP.get(taken), absorbed);
         player.onItemPickup(entity);
         if (stack.isEmpty()) {
             // Nothing is left for the inventory, and an item entity holding an empty
