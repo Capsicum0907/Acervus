@@ -39,6 +39,9 @@ public class Acervus {
         if (Mods.mekanism()) {
             io.github.capsicum0907.acervus.gas.GasHeap.register(modEventBus);
         }
+        if (Mods.refinedStorage()) {
+            io.github.capsicum0907.acervus.rs.RefinedStorage.register(modEventBus);
+        }
 
         modEventBus.addListener(Acervus::registerCapabilities);
         modEventBus.addListener(Acervus::addToCreativeTab);

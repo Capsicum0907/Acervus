@@ -297,7 +297,23 @@ carries the stack, and only the stack.
 ## Optional mods
 
 Acervus needs **nothing but NeoForge**. Mekanism and Refined Storage are things it
-notices, not things it requires.
+notices, not things it requires — and both are checked by running the tests with the
+mods folder emptied, not by reading the code and hoping.
+
+**Refined Storage** gets one thing: an external storage provider that reads a heap in
+longs. RS counts in longs everywhere — `ResourceAmount` carries one, `insert` and
+`extract` take one — and a heap holds a long, so the two agree perfectly. Until now
+they had to speak through `IItemHandler`, whose `ItemStack` counts in an int, and a
+network looking at a heap of five billion was told 2,147,483,647 and believed it.
+Nothing about RS was the limit; the adapter between them was. Point an External
+Storage at a heap or at a Horreum and the network is told the real total.
+
+RS publishes no API artifact — not to Central, not to ModMaven — so the dependency is
+its own jar off Modrinth's maven, pinned to a version. The factory always returns a
+provider, never null, because RS collects them with
+`.map(factory -> factory.create(…)).toList()` and does not filter what comes back; one
+that answers "nothing here" for somebody else's block is the shape the interface
+actually asks for.
 
 That is easy to say and was not true until it was tested. `GasHeap.present()` read
 as exactly the right guard and could not work: calling a static method initialises

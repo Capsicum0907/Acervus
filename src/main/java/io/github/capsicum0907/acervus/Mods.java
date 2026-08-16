@@ -22,6 +22,7 @@ import net.neoforged.fml.ModList;
  */
 public final class Mods {
     private static final String MEKANISM = "mekanism";
+    private static final String REFINED_STORAGE = "refinedstorage";
 
     private Mods() {
     }
@@ -29,5 +30,10 @@ public final class Mods {
     /** Whether the gas heap exists at all in this game. */
     public static boolean mekanism() {
         return ModList.get().isLoaded(MEKANISM);
+    }
+
+    /** Whether there is a storage network here that can be told a heap's real total. */
+    public static boolean refinedStorage() {
+        return ModList.get().isLoaded(REFINED_STORAGE);
     }
 }

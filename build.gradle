@@ -29,6 +29,18 @@ repositories {
             includeGroup 'mekanism'
         }
     }
+
+    // Refined Storage, which publishes no API artifact anywhere - not to Central, not
+    // to ModMaven. Its own jar off Modrinth is the only way to compile against it, and
+    // it is pinned to a version so this stays reproducible. Scoped to the one group,
+    // as above.
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content {
+            includeGroup 'maven.modrinth'
+        }
+    }
 }
 
 base {
@@ -134,6 +146,11 @@ dependencies {
     // gas heap is registered only when it is present, and nothing else in the mod
     // mentions it.
     compileOnly "mekanism:Mekanism:${mekanism_version}:api"
+
+    // Refined Storage, likewise compile time only. What Acervus wants from it is one
+    // registration point: an external storage provider reads a heap in longs, which is
+    // what an item handler cannot carry.
+    compileOnly "maven.modrinth:refined-storage:${refinedstorage_version}"
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
