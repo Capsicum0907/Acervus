@@ -22,7 +22,7 @@ import net.minecraft.world.item.ItemStack;
  */
 public class ReadoutMenu extends AbstractContainerMenu {
     /** Matches the slot positions in the generated screen texture. */
-    private static final int VESSEL_X = 80;
+    private static final int VESSEL_X = 150;
     private static final int VESSEL_Y = 38;
     private static final int INVENTORY_X = 8;
     private static final int INVENTORY_Y = 84;

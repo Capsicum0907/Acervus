@@ -188,13 +188,15 @@ CHEMICAL_SHEEN = "#D6F2D2"
 
 # The readout panel: one bar, one slot for a container, and the player's inventory.
 BAR = (8, 20, 160, 10)      # x, y, w, h - the fill is drawn in code, in the resource's colour
-VESSEL_SLOT = (80, 38)
+CONTENT_BOX = (8, 38)     # where the contents themselves are drawn
+VESSEL_SLOT = (150, 38)   # where a container goes
 
 
 def draw_readout() -> bytes:
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     _panel(pixels, 0, 0)
     _recess(pixels, *BAR)
+    _recess(pixels, CONTENT_BOX[0] - 1, CONTENT_BOX[1] - 1, SLOT, SLOT)
     _recess(pixels, VESSEL_SLOT[0] - 1, VESSEL_SLOT[1] - 1, SLOT, SLOT)
     for row in INVENTORY_ROWS + (HOTBAR,):
         for column in range(9):

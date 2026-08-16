@@ -4,15 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.capsicum0907.acervus.Acervus;
+import io.github.capsicum0907.acervus.FluidHeapBlockEntity;
 import io.github.capsicum0907.acervus.Heaped;
 import io.github.capsicum0907.acervus.ReadoutMenu;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
  * One screen for the fluid, energy and gas heaps.
@@ -36,10 +42,17 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
     private static final int BAR_W = 160;
     private static final int BAR_H = 10;
 
+    /** Where the contents themselves are drawn, in the box on the left. */
+    private static final int CONTENT_X = 8;
+    private static final int CONTENT_Y = 38;
+    private static final int CONTENT_SIZE = 16;
+
     private static final int NAME_Y = 34;
     private static final int AMOUNT_Y = 46;
     private static final int ROOM_Y = 58;
-    private static final int TEXT_X = 8;
+
+    /** Clear of the contents box, so the two do not overlap. */
+    private static final int TEXT_X = 30;
 
     private static final int TEXT = 0x404040;
 
@@ -72,6 +85,46 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
             graphics.fill(leftPos + BAR_X, topPos + BAR_Y,
                     leftPos + BAR_X + filled, topPos + BAR_Y + BAR_H, heap.tint());
         }
+
+        drawContents(graphics, heap);
+    }
+
+    /**
+     * The contents themselves, in the box on the left — the same thing the item heap
+     * does by putting the item in a slot. A fluid and a gas are not items, so what
+     * stands for them is their own sprite off the block atlas.
+     *
+     * <p>A chemical carries its icon and its tint on itself. A fluid's are only
+     * reachable from the client, so the fluid heap leaves them unanswered and they are
+     * looked up here instead — which it can do because the fluid heap, unlike the gas
+     * one, exists in every game.
+     */
+    private void drawContents(GuiGraphics graphics, Heaped heap) {
+        ResourceLocation texture = heap.contentTexture();
+        int tint = heap.contentTint();
+
+        if (heap instanceof FluidHeapBlockEntity fluid) {
+            FluidStack held = fluid.sample();
+            if (held.isEmpty()) {
+                return;
+            }
+            IClientFluidTypeExtensions look = IClientFluidTypeExtensions.of(held.getFluid());
+            texture = look.getStillTexture(held);
+            tint = 0xFF000000 | look.getTintColor(held);
+        }
+        if (texture == null) {
+            return;
+        }
+
+        TextureAtlasSprite sprite = Minecraft.getInstance()
+                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(texture);
+        graphics.setColor(
+                (tint >> 16 & 0xFF) / 255.0F,
+                (tint >> 8 & 0xFF) / 255.0F,
+                (tint & 0xFF) / 255.0F,
+                1.0F);
+        graphics.blit(leftPos + CONTENT_X, topPos + CONTENT_Y, 0, CONTENT_SIZE, CONTENT_SIZE, sprite);
+        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     @Override
@@ -112,7 +165,16 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
             graphics.renderTooltip(font, Component.literal(heap.exact(heap.room())), mouseX, mouseY);
             return;
         }
-        if (withinBar(x, y)) {
+        if (within(x, y, CONTENT_X, CONTENT_Y, CONTENT_SIZE, CONTENT_SIZE)) {
+            // The contents box answers the same question the item heap's slot does:
+            // what is this, and how much of it.
+            List<Component> lines = new ArrayList<>();
+            lines.add(heap.contentName());
+            lines.add(Component.literal(heap.exact(heap.amount())).withStyle(ChatFormatting.GRAY));
+            graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+            return;
+        }
+        if (within(x, y, BAR_X, BAR_Y, BAR_W, BAR_H)) {
             List<Component> lines = new ArrayList<>();
             lines.add(Component.literal(heap.exact(heap.amount())));
             lines.add(Component.literal(heap.exact(heap.capacity())).withStyle(ChatFormatting.DARK_GRAY));
@@ -122,8 +184,8 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
         super.renderTooltip(graphics, mouseX, mouseY);
     }
 
-    private boolean withinBar(int x, int y) {
-        return x >= BAR_X && x < BAR_X + BAR_W && y >= BAR_Y && y < BAR_Y + BAR_H;
+    private boolean within(int x, int y, int left, int top, int width, int height) {
+        return x >= left && x < left + width && y >= top && y < top + height;
     }
 
     private boolean over(int x, int y, String line, int top) {

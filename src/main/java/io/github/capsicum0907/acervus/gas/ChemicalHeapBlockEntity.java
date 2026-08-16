@@ -225,6 +225,16 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
     }
 
     @Override
+    public net.minecraft.resources.ResourceLocation contentTexture() {
+        return sample.isEmpty() ? null : sample.getChemical().getIcon();
+    }
+
+    @Override
+    public int contentTint() {
+        return sample.isEmpty() ? 0xFFFFFFFF : 0xFF000000 | sample.getChemical().getTint();
+    }
+
+    @Override
     public int tint() {
         return 0xFF8FCF8A;
     }

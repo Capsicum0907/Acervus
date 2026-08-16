@@ -36,6 +36,20 @@ public interface Heaped {
     /** The colour of the fill on a gauge, which is also the colour of the block's glass. */
     int tint();
 
+    /**
+     * A sprite standing for the contents, or null when the screen must work it out
+     * another way. Chemicals carry their own icon; fluids only have one on the client,
+     * so a fluid heap leaves this null and the screen looks it up there.
+     */
+    default net.minecraft.resources.ResourceLocation contentTexture() {
+        return null;
+    }
+
+    /** The colour that sprite is drawn in. */
+    default int contentTint() {
+        return 0xFFFFFFFF;
+    }
+
     default long room() {
         return Math.max(0L, capacity() - amount());
     }
