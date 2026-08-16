@@ -1,0 +1,108 @@
+package io.github.capsicum0907.acervus;
+
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+
+/** An energy heap being carried. See {@link Held} for the rule it follows. */
+public final class HeldEnergyHeap extends Held {
+    /** What the amount used to be called here; read when the current name is absent. */
+    private static final String LEGACY_STORED = "Stored";
+
+    private HeldEnergyHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where) {
+        super(registries, where);
+    }
+
+    public static HeldEnergyHeap of(HolderLookup.Provider registries, ItemStack stack) {
+        return new HeldEnergyHeap(registries, () -> stack);
+    }
+
+    public static HeldEnergyHeap inHand(Player player, InteractionHand hand) {
+        return new HeldEnergyHeap(player.level().registryAccess(), () -> player.getItemInHand(hand));
+    }
+
+    @Override
+    public long amount() {
+        CompoundTag tag = tag();
+        return tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_STORED);
+    }
+
+    @Override
+    public long capacity() {
+        return AcervusConfig.ENERGY_CAPACITY.get();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return amount() <= 0;
+    }
+
+    /** Energy has no kinds, so there is nothing to name and nothing to draw. */
+    @Override
+    public boolean hasKinds() {
+        return false;
+    }
+
+    @Override
+    public Component contentName() {
+        return Component.empty();
+    }
+
+    @Override
+    public String brief(long value) {
+        return Counts.brief(value) + " FE";
+    }
+
+    @Override
+    public String exact(long value) {
+        return Counts.exact(value) + " FE";
+    }
+
+    @Override
+    public int tint() {
+        return 0xFFD8A24A;
+    }
+
+    /** @return how much was taken in, which is never more than was offered */
+    public int receive(int offered) {
+        if (offered <= 0) {
+            return 0;
+        }
+        int taken = (int) Math.min(room(), offered);
+        if (taken <= 0) {
+            return 0;
+        }
+        CompoundTag tag = tag();
+        tag.putLong(AMOUNT, amount() + taken);
+        tag.remove(LEGACY_STORED);
+        write(tag, false);
+        return taken;
+    }
+
+    /**
+     * Whatever the battery holds goes in, charged or not — the block asks whether it is
+     * full because the block can also charge it back and needs to know which was meant.
+     * Here there is only one way, and the screen says so.
+     */
+    @Override
+    public void draw(Vessel vessel) {
+        IEnergyStorage container = vessel.held().getCapability(Capabilities.EnergyStorage.ITEM);
+        if (container == null) {
+            vessel.done();
+            return;
+        }
+        int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
+        int taken = container.extractEnergy((int) Math.min(rate, room()), false);
+        if (taken <= 0) {
+            vessel.done();
+            return;
+        }
+        receive(taken);
+        vessel.decide(Vessel.Flow.IN);
+    }
+}

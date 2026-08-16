@@ -995,6 +995,112 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    /**
+     * A fluid heap in a hand reads what it is carrying, and a bucket put in its slot
+     * empties into it.
+     *
+     * <p>Only inward, and not only when full: the block asks whether the container is
+     * full because the block can also pour back out and has to be told which way a
+     * half-empty bucket was meant to go. Here there is one direction and no question.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aHeldFluidHeapReadsAndTakes(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack item = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        HeldFluidHeap heap = HeldFluidHeap.of(helper.getLevel().registryAccess(), item);
+        heap.insert(new FluidStack(Fluids.WATER, 5_000), false);
+
+        check(heap.amount() == 5_000, "a held fluid heap should read 5,000, not " + heap.amount());
+        check(!heap.gives(), "and must not give anything back while it is being carried");
+
+        Vessel vessel = new Vessel();
+        vessel.hold(new ItemStack(Items.WATER_BUCKET));
+        heap.draw(vessel);
+
+        check(heap.amount() == 6_000, "the bucket should have gone in, leaving " + heap.amount());
+        check(vessel.held().is(Items.BUCKET), "and left an empty bucket in the slot");
+        check(vessel.flow() == Vessel.Flow.IN, "going inward, and saying so");
+        helper.succeed();
+    }
+
+    /**
+     * An energy heap in a hand does the same with a battery — charged or not.
+     *
+     * <p>A dev-environment battery is hard to come by, so this drives the heap's own
+     * side directly and checks the one thing the vessel cannot: that what goes in stays
+     * in and nothing will come back out.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aHeldEnergyHeapReadsAndTakes(GameTestHelper helper) {
+        ItemStack item = new ItemStack(AcervusRegistry.ENERGY_HEAP_ITEM.get());
+        HeldEnergyHeap heap = HeldEnergyHeap.of(helper.getLevel().registryAccess(), item);
+
+        int taken = heap.receive(1_000_000);
+
+        check(taken == 1_000_000, "a held energy heap should have taken it all, not " + taken);
+        check(heap.amount() == 1_000_000, "and read " + heap.amount());
+        check(!heap.gives(), "and must not give anything back while it is being carried");
+        check(!heap.hasKinds(), "energy has no kinds, here as on the block");
+
+        Vessel vessel = new Vessel();
+        vessel.hold(new ItemStack(Items.STONE));
+        heap.draw(vessel);
+        check(heap.amount() == 1_000_000, "and something that is not a battery changes nothing");
+        check(vessel.flow() == Vessel.Flow.NONE, "and moves in no direction");
+        helper.succeed();
+    }
+
+    /**
+     * What a held heap collected is there when it is put back down — the round trip the
+     * readings alone cannot make, since they would agree with themselves even if the
+     * shape written were one no block could load.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aHeldFluidHeapSurvivesBeingPutDown(GameTestHelper helper) {
+        ItemStack item = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        HeldFluidHeap.of(helper.getLevel().registryAccess(), item)
+                .insert(new FluidStack(Fluids.LAVA, 12_345), false);
+
+        helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity placed)) {
+            throw new GameTestAssertException("placing a fluid heap should have made one");
+        }
+        item.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
+                .loadInto(placed, helper.getLevel().registryAccess());
+
+        check(placed.amount() == 12_345, "the placed heap should hold 12,345, not " + placed.amount());
+        check(placed.sample().is(Fluids.LAVA), "and should hold lava");
+        helper.succeed();
+    }
+
+    /**
+     * The screen over a held readout takes a container and hands it back when it closes.
+     *
+     * <p>The vessel belongs to the screen rather than to the item — saving it onto the
+     * heap would mean a bucket could be left inside one in a pocket, which is a second
+     * kind of storage nobody asked for. So closing must not swallow it.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aHeldReadoutHandsBackWhatIsInItsSlot(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(player.getInventory().selected,
+                new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get()));
+        ReadoutMenu menu = ReadoutMenu.inHand(1, player.getInventory(), InteractionHand.MAIN_HAND);
+
+        check(!menu.heap().gives(), "a held readout must say it gives nothing");
+        menu.slots.get(0).set(new ItemStack(Items.WATER_BUCKET));
+        menu.broadcastChanges();
+
+        check(menu.heap().amount() == 1_000,
+                "the bucket should have emptied into it, leaving " + menu.heap().amount());
+
+        menu.removed(player);
+        check(player.getInventory().contains(new ItemStack(Items.BUCKET)),
+                "and the empty bucket should have come back when the screen closed");
+        check(menu.slots.get(0).getItem().isEmpty(), "with nothing left in the slot");
+        helper.succeed();
+    }
+
     /** What the heap in that inventory slot is holding. */
     private static long carriedCount(Player player, int slot) {
         return CarriedHeap.of(player, player.getInventory().getItem(slot)).count();

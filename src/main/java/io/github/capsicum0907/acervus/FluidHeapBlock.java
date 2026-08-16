@@ -77,7 +77,7 @@ public class FluidHeapBlock extends BaseEntityBlock {
         }
         if (player instanceof net.minecraft.server.level.ServerPlayer server) {
             server.openMenu(new net.minecraft.world.SimpleMenuProvider(
-                            (id, inventory, viewer) -> new ReadoutMenu(id, inventory, pos),
+                            (id, inventory, viewer) -> ReadoutMenu.at(id, inventory, pos),
                             state.getBlock().getName()),
                     buffer -> buffer.writeBlockPos(pos));
         }

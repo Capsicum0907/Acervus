@@ -67,7 +67,7 @@ public class ChemicalHeapBlock extends BaseEntityBlock {
         if (player instanceof net.minecraft.server.level.ServerPlayer server) {
             server.openMenu(new net.minecraft.world.SimpleMenuProvider(
                             (id, inventory, viewer) ->
-                                    new io.github.capsicum0907.acervus.ReadoutMenu(id, inventory, pos),
+                                    io.github.capsicum0907.acervus.ReadoutMenu.at(id, inventory, pos),
                             state.getBlock().getName()),
                     buffer -> buffer.writeBlockPos(pos));
         }

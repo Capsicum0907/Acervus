@@ -37,8 +37,12 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
     private static final int COUNT_Y = 38;
     private static final int ROOM_Y = 50;
 
-    /** Under the three readings, clear of the inventory label at 72. */
-    private static final int NOTE_Y = 62;
+    /**
+     * On the title line, against the right edge — the same place the readout screen
+     * puts it. It is a fact about the window rather than about the contents.
+     */
+    private static final int NOTE_Y = 6;
+    private static final int NOTE_RIGHT = 168;
 
     private static final int TEXT = 0x404040;
 
@@ -79,8 +83,8 @@ public class HeapScreen extends AbstractContainerScreen<HeapMenu> {
         // Said whenever it is true, empty or not: a slot that will not give anything
         // back looks broken unless the screen says that is what it is.
         if (!heap.gives()) {
-            graphics.drawString(font, Component.translatable("gui.acervus.intake_only"),
-                    TEXT_X, NOTE_Y, NOTE, false);
+            Component note = Component.translatable("gui.acervus.intake_only");
+            graphics.drawString(font, note, NOTE_RIGHT - font.width(note), NOTE_Y, NOTE, false);
         }
         if (heap.isEmpty()) {
             graphics.drawString(font, Component.translatable("block.acervus.heap.empty"),

@@ -99,7 +99,13 @@ public final class AcervusRegistry {
     /** One menu for the three heaps whose contents are not items. */
     public static final DeferredHolder<MenuType<?>, MenuType<ReadoutMenu>> READOUT_MENU =
             MENUS.register("readout", () -> IMenuTypeExtension.create(
-                    (id, inventory, buffer) -> new ReadoutMenu(id, inventory, buffer.readBlockPos())));
+                    (id, inventory, buffer) -> ReadoutMenu.at(id, inventory, buffer.readBlockPos())));
+
+    /** The same readout over the one in a hand; see {@link #CARRIED_HEAP_MENU}. */
+    public static final DeferredHolder<MenuType<?>, MenuType<ReadoutMenu>> CARRIED_READOUT_MENU =
+            MENUS.register("carried_readout", () -> IMenuTypeExtension.create(
+                    (id, inventory, buffer) -> ReadoutMenu.inHand(id, inventory,
+                            buffer.readEnum(net.minecraft.world.InteractionHand.class))));
 
     private AcervusRegistry() {
     }

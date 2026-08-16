@@ -24,5 +24,6 @@ public final class AcervusClient {
         event.register(AcervusRegistry.HEAP_MENU.get(), HeapScreen::new);
         event.register(AcervusRegistry.CARRIED_HEAP_MENU.get(), HeapScreen::new);
         event.register(AcervusRegistry.READOUT_MENU.get(), ReadoutScreen::new);
+        event.register(AcervusRegistry.CARRIED_READOUT_MENU.get(), ReadoutScreen::new);
     }
 }

@@ -66,7 +66,21 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
     /** Matches the slot position in ReadoutMenu. */
     private static final int VESSEL_X = 150;
 
+    /**
+     * On the title line, against the right edge.
+     *
+     * <p>Not under the readings, where it would have to sit between the last of them
+     * and the inventory label with four pixels to spare. It is a fact about the window
+     * rather than about the contents, and the title line is where the window describes
+     * itself.
+     */
+    private static final int NOTE_Y = 6;
+    private static final int NOTE_RIGHT = 168;
+
     private static final int TEXT = 0x404040;
+
+    /** Quieter than the readings: it is a standing fact, not a number that changes. */
+    private static final int NOTE = 0x808080;
 
     public ReadoutScreen(ReadoutMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -85,11 +99,11 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         Heaped shown = heap();
-        graphics.blit(shown == null || shown.hasKinds() ? WITH_CONTENTS : PLAIN,
+        graphics.blit(shown.hasKinds() ? WITH_CONTENTS : PLAIN,
                 leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
         Heaped heap = shown;
-        if (heap == null || heap.isEmpty()) {
+        if (heap.isEmpty()) {
             return;
         }
         // Drawn rather than blitted, so the colour can be the resource's own and the
@@ -152,7 +166,13 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
 
         Heaped heap = heap();
         int textX = textX();
-        if (heap == null || heap.isEmpty()) {
+        // Said whenever it is true, empty or not: a slot that will not give anything
+        // back looks broken unless the screen says that is what it is.
+        if (!heap.gives()) {
+            Component note = Component.translatable("gui.acervus.intake_only");
+            graphics.drawString(font, note, NOTE_RIGHT - font.width(note), NOTE_Y, NOTE, false);
+        }
+        if (heap.isEmpty()) {
             graphics.drawString(font, Component.translatable("block.acervus.heap.empty"),
                     textX, NAME_Y, TEXT, false);
             return;
@@ -188,13 +208,13 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
     /** The text starts clear of the contents box, when there is one. */
     private int textX() {
         Heaped heap = heap();
-        return heap == null || heap.hasKinds() ? TEXT_X : TEXT_X_PLAIN;
+        return heap.hasKinds() ? TEXT_X : TEXT_X_PLAIN;
     }
 
     @Override
     protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         Heaped heap = heap();
-        if (heap == null || heap.isEmpty() || !menu.getCarried().isEmpty()) {
+        if (heap.isEmpty() || !menu.getCarried().isEmpty()) {
             super.renderTooltip(graphics, mouseX, mouseY);
             return;
         }
@@ -238,7 +258,8 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
         return x >= textX && x < textX + font.width(line) && y >= top && y < top + font.lineHeight;
     }
 
+    /** Never null - see {@link Heaped#NONE}, which a heap that has gone answers with. */
     private Heaped heap() {
-        return minecraft == null || minecraft.player == null ? null : menu.heap(minecraft.player);
+        return menu.heap();
     }
 }

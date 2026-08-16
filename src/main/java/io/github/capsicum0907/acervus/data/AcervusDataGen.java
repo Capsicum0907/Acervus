@@ -114,7 +114,9 @@ public final class AcervusDataGen {
 
         @Override
         protected void addTranslations() {
-            add(AcervusRegistry.HEAP.get(), "Heap");
+            // "Item Heap", not "Heap": it is one of four, and being the first written is
+            // not a reason for it to be the one without a surname.
+            add(AcervusRegistry.HEAP.get(), "Item Heap");
             add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
             add(AcervusRegistry.ENERGY_HEAP.get(), "Energy Heap");
             add("block.acervus.heap.empty", "Empty");

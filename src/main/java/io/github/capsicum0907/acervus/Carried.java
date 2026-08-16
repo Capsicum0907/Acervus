@@ -1,7 +1,13 @@
 package io.github.capsicum0907.acervus;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -164,6 +170,31 @@ public final class Carried {
             return 0;
         }
         return pile.insert(incoming.copyWithCount(wanted), false);
+    }
+
+    /**
+     * The gesture that opens a held heap: sneak and right-click the air.
+     *
+     * <p>The air, because right-clicking a block is how a heap is placed and that must
+     * keep working; {@code useOn} runs first and only a miss reaches here. Sneaking,
+     * because a plain right-click with a heap in hand already means something on the
+     * heap in front of you.
+     *
+     * <p>All four heaps do this and only the menu differs, so the gesture is written
+     * once. What opens is the block's own screen, with one difference the screen states
+     * outright: nothing comes out.
+     */
+    public static InteractionResultHolder<ItemStack> open(Player player, InteractionHand hand,
+            MenuConstructor menu) {
+        ItemStack held = player.getItemInHand(hand);
+        if (!player.isShiftKeyDown()) {
+            return InteractionResultHolder.pass(held);
+        }
+        if (player instanceof ServerPlayer server) {
+            server.openMenu(new SimpleMenuProvider(menu, held.getHoverName()),
+                    buffer -> buffer.writeEnum(hand));
+        }
+        return InteractionResultHolder.sidedSuccess(held, player.level().isClientSide());
     }
 
     public static boolean isHeap(ItemStack stack) {

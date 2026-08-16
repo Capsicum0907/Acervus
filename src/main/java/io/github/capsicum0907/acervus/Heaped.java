@@ -64,4 +64,62 @@ public interface Heaped {
     default long room() {
         return Math.max(0L, capacity() - amount());
     }
+
+    /**
+     * Whether anything may come out of it.
+     *
+     * <p>A heap in the world gives; a heap in a pocket does not. The same rule and the
+     * same word as {@link Pile#gives()}, so that a reader meeting it on the second heap
+     * does not have to learn it twice. See {@link Held}.
+     */
+    default boolean gives() {
+        return true;
+    }
+
+    /**
+     * A heap that is not there: the block was broken while its screen was open, or the
+     * item left the hand holding it. Answering with this rather than with null is what
+     * lets the screen be written without a check at every reading.
+     */
+    Heaped NONE = new Heaped() {
+        @Override
+        public long amount() {
+            return 0L;
+        }
+
+        @Override
+        public long capacity() {
+            return 0L;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return true;
+        }
+
+        @Override
+        public Component contentName() {
+            return Component.empty();
+        }
+
+        @Override
+        public String brief(long value) {
+            return Counts.brief(value);
+        }
+
+        @Override
+        public String exact(long value) {
+            return Counts.exact(value);
+        }
+
+        @Override
+        public int tint() {
+            return 0;
+        }
+
+        @Override
+        public boolean gives() {
+            return false;
+        }
+    };
 }

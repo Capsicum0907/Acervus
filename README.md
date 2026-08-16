@@ -4,8 +4,12 @@ One kind of item, in numbers a chest cannot hold.
 
 *Acervus* is Latin for a heap.
 
-> **Status: stage 2.** The heap works and six game tests pass headlessly.
-> The drawing has not been watched in a running client.
+> **Status: stage 4.** Four heaps — Item, Fluid, Energy and Gas — with screens for
+> each, in the world and in the hand. 43 game tests pass headlessly.
+
+The item one is called **Item Heap**. Its registry name is still `acervus:heap`,
+which is deliberate: renaming it would empty every one already placed in a world,
+and a display name is the part anyone reads.
 
 ## Target
 
@@ -184,6 +188,12 @@ heap that nothing was reading. Now something does: **a carried heap collects.**
   taking up slots at all.
 - **Sneak and right-click the air** to open the one in your hand: the block's own
   screen, same slot and same numbers.
+
+All four heaps open that way, not only the item one. A held fluid, energy or gas
+heap reads exactly as the block does, and the slot beside the gauge still takes a
+container — a bucket, a battery, a tank empties into it. **Only inward.** The blocks
+have to ask which way a half-full container was meant to go, because they can pour
+back out; a held one has one direction and no question.
 
 **What is in your hand is left alone**, and that is the escape hatch: it is the one
 place to keep something a heap would otherwise claim. Worn armour is left alone for

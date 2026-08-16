@@ -199,8 +199,8 @@ public class HeapMenu extends AbstractContainerMenu {
      * <p>Refusing both directions is what covers the swap click as well — pressing a
      * number key over another slot checks this one before exchanging them.
      */
-    private static final class Frozen extends Slot {
-        private Frozen(Inventory inventory, int index, int x, int y) {
+    static final class Frozen extends Slot {
+        Frozen(Inventory inventory, int index, int x, int y) {
             super(inventory, index, x, y);
         }
 

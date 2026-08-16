@@ -11,6 +11,10 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -23,6 +27,12 @@ public class ChemicalHeapBlockItem extends BlockItem {
         super(block, properties);
     }
 
+    /** Sneak and right-click the air to look inside the one you are holding. */
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        return io.github.capsicum0907.acervus.Carried.open(player, hand,
+                (id, inventory, viewer) -> io.github.capsicum0907.acervus.ReadoutMenu.inHand(id, inventory, hand));
+    }
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, context, lines, flag);

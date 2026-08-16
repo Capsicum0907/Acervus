@@ -44,17 +44,7 @@ public class HeapBlockItem extends BlockItem {
      */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        ItemStack held = player.getItemInHand(hand);
-        if (!player.isShiftKeyDown()) {
-            return InteractionResultHolder.pass(held);
-        }
-        if (player instanceof ServerPlayer server) {
-            server.openMenu(new SimpleMenuProvider(
-                            (id, inventory, viewer) -> HeapMenu.inHand(id, inventory, hand),
-                            held.getHoverName()),
-                    buffer -> buffer.writeEnum(hand));
-        }
-        return InteractionResultHolder.sidedSuccess(held, level.isClientSide());
+        return Carried.open(player, hand, (id, inventory, viewer) -> HeapMenu.inHand(id, inventory, hand));
     }
 
     @Override
