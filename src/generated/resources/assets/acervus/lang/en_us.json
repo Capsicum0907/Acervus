@@ -6,6 +6,7 @@
   "block.acervus.fluid_heap": "Fluid Heap",
   "block.acervus.fluid_heap.holding": "%s, %s",
   "block.acervus.heap": "Heap",
+  "block.acervus.heap.absorbing": "Collecting what you pick up",
   "block.acervus.heap.empty": "Empty",
   "block.acervus.heap.holding": "%s x %s",
   "gui.acervus.exact": "%s stored",

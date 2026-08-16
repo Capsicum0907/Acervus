@@ -10,6 +10,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -41,6 +42,11 @@ public class Acervus {
 
         modEventBus.addListener(Acervus::registerCapabilities);
         modEventBus.addListener(Acervus::addToCreativeTab);
+
+        // The game bus, not the mod bus: this one happens while playing rather than
+        // while loading. A carried heap has no block entity to tick, so the only moment
+        // it can act is the moment something is walked over.
+        NeoForge.EVENT_BUS.addListener(Carried::onPickup);
 
         LOGGER.info("Acervus {} loaded.", modContainer.getModInfo().getVersion());
     }

@@ -122,6 +122,7 @@ public final class AcervusDataGen {
             add("block.acervus.fluid_heap.holding", "%s, %s");
             add("block.acervus.energy_heap.holding", "%s FE");
             add("block.acervus.chemical_heap.holding", "%s, %s");
+            add("block.acervus.heap.absorbing", "Collecting what you pick up");
             if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
                 add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "Gas Heap");
             }

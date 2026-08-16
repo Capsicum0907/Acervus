@@ -47,5 +47,14 @@ public class HeapBlockItem extends BlockItem {
         lines.add(Component.translatable("block.acervus.heap.holding",
                         sample.getHoverName(), Component.literal(String.format("%,d", count)))
                 .withStyle(ChatFormatting.GRAY));
+
+        // Said only while it is true, because it is a thing the item is quietly doing
+        // to items the player expected to end up in a slot. A heap that is full, or one
+        // in a game where the setting is off, says nothing.
+        if (stack.getCount() == 1 && AcervusConfig.SPEC.isLoaded()
+                && AcervusConfig.ABSORBS_WHEN_CARRIED.get() && count < AcervusConfig.CAPACITY.get()) {
+            lines.add(Component.translatable("block.acervus.heap.absorbing")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
     }
 }

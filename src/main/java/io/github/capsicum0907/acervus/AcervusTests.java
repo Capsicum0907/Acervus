@@ -12,8 +12,11 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -24,6 +27,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -654,6 +658,152 @@ public final class AcervusTests {
                 "and the two together should still hold 1,000,000, not "
                         + (from.stored() + into.stored()));
         helper.succeed();
+    }
+
+    /**
+     * A heap in a pocket takes what is walked over, before the inventory sees it.
+     *
+     * <p>The check that matters is the last one: the diamonds are in the heap and
+     * <em>not</em> in a slot. Absorbing that also left a copy in the inventory would
+     * be a duplication bug that looks like a feature working.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aCarriedHeapTakesWhatIsWalkedOver(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        ItemEntity dropped = drop(helper, new ItemStack(Items.DIAMOND, 10));
+
+        Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
+
+        check(Carried.amount(player.getInventory().getItem(0)) == 110,
+                "a carried heap should be holding 110, not "
+                        + Carried.amount(player.getInventory().getItem(0)));
+        check(dropped.isRemoved(), "and nothing should be left lying on the ground");
+        check(!player.getInventory().contains(new ItemStack(Items.DIAMOND)),
+                "and no diamond should have reached a slot as well as the heap");
+        helper.succeed();
+    }
+
+    /** Anything else goes past it, to be picked up the ordinary way. */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aCarriedHeapTakesOnlyItsOwnKind(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        ItemEntity dropped = drop(helper, new ItemStack(Items.DIRT, 10));
+
+        Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
+
+        check(Carried.amount(player.getInventory().getItem(0)) == 100,
+                "a heap of diamonds should not have taken dirt");
+        check(dropped.getItem().getCount() == 10, "and the dirt should still be there for the player");
+        helper.succeed();
+    }
+
+    /**
+     * An empty carried heap claims nothing.
+     *
+     * <p>The block lets a pipe decide what an empty heap is for, because that is what a
+     * pipe is. Walking over something is not a decision, and a heap that committed
+     * itself to the first flower picked up would be ruined by a step.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anEmptyCarriedHeapCommitsToNothing(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(0, new ItemStack(AcervusRegistry.HEAP_ITEM.get()));
+        ItemEntity dropped = drop(helper, new ItemStack(Items.DIAMOND, 10));
+
+        Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
+
+        check(Carried.amount(player.getInventory().getItem(0)) == 0,
+                "an empty carried heap should still be empty");
+        check(dropped.getItem().getCount() == 10, "and the diamonds should still be on the ground");
+        helper.succeed();
+    }
+
+    /**
+     * Two heaps and ten diamonds are still ten diamonds.
+     *
+     * <p>Every heap is asked in turn, so the count left has to travel between them.
+     * Handing each the whole stack would have both report success and turn ten into
+     * twenty — the one way this feature could create items out of nothing.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void severalCarriedHeapsShareOneStack(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        player.getInventory().setItem(1, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+
+        int absorbed = Carried.absorb(player, new ItemStack(Items.DIAMOND, 10));
+
+        long total = Carried.amount(player.getInventory().getItem(0))
+                + Carried.amount(player.getInventory().getItem(1));
+        check(absorbed == 10, "ten diamonds should have been taken, not " + absorbed);
+        check(total == 210, "and the two heaps together should hold 210, not " + total);
+        helper.succeed();
+    }
+
+    /**
+     * Two heaps in one slot are one set of components, so adding to "the" heap would
+     * add to both. Refusing is the same answer a shulker box gives by not stacking.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aStackOfCarriedHeapsTakesNothing(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack pair = carried(helper, new ItemStack(Items.DIAMOND, 100));
+        pair.setCount(2);
+        player.getInventory().setItem(0, pair);
+
+        int absorbed = Carried.absorb(player, new ItemStack(Items.DIAMOND, 10));
+
+        check(absorbed == 0, "a stack of two heaps should have taken nothing, and took " + absorbed);
+        helper.succeed();
+    }
+
+    /** An item that was only just thrown is not free to take yet, for a heap either. */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aCarriedHeapWaitsOutThePickupDelay(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(0, carried(helper, new ItemStack(Items.DIAMOND, 100)));
+        ItemEntity dropped = drop(helper, new ItemStack(Items.DIAMOND, 10));
+        dropped.setPickUpDelay(40);
+
+        Carried.onPickup(new ItemEntityPickupEvent.Pre(player, dropped));
+
+        check(Carried.amount(player.getInventory().getItem(0)) == 100,
+                "a heap should not have taken an item that was thrown a moment ago");
+        helper.succeed();
+    }
+
+    /**
+     * The other half of the rule, and the reason the first half is safe: a carried heap
+     * offers no handler, so nothing — no pipe, no backpack mod, no other heap — can
+     * draw two billion items out of an inventory slot.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aCarriedHeapGivesNothingBack(GameTestHelper helper) {
+        ItemStack heap = carried(helper, new ItemStack(Items.DIAMOND, 100));
+
+        check(heap.getCapability(Capabilities.ItemHandler.ITEM) == null,
+                "a heap in item form must offer no item handler; taking needs the block placed");
+        helper.succeed();
+    }
+
+    /** A heap item holding what a real heap would hold, written the way a broken one is. */
+    private static ItemStack carried(GameTestHelper helper, ItemStack contents) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(contents, false);
+        ItemStack stack = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        heap.saveToItem(stack, helper.getLevel().registryAccess());
+        helper.setBlock(WHERE, Blocks.AIR);
+        return stack;
+    }
+
+    private static ItemEntity drop(GameTestHelper helper, ItemStack stack) {
+        Vec3 at = Vec3.atCenterOf(helper.absolutePos(WHERE));
+        ItemEntity entity = new ItemEntity(helper.getLevel(), at.x, at.y, at.z, stack);
+        entity.setNoPickUpDelay();
+        helper.getLevel().addFreshEntity(entity);
+        return entity;
     }
 
     private static HeapBlockEntity place(GameTestHelper helper) {

@@ -171,6 +171,35 @@ notices and everybody distrusts.
 **An emptied heap forgets what it held.** One that remembered would refuse the next
 thing put into it with nothing on the block to say why.
 
+### Carrying one
+
+A heap keeps its contents when it is broken, so a heap in an inventory is a full
+heap that nothing was reading. Now something does: **a carried heap takes items
+straight out of the air.** Walk over what it already holds and it goes into the
+heap instead of into a slot, sound and animation and all.
+
+**It only takes.** Nothing comes back out of a heap until it is placed again, and
+that asymmetry is the whole design rather than an unfinished half of it:
+
+- Taking is what makes it worth a slot. A stone heap in the hotbar turns a mining
+  trip into one slot that never fills, which is the job this mod exists to do.
+- Giving would end the game. Two billion of anything reachable from a pocket, with
+  no block to place and nothing to stand next to, makes every other kind of storage
+  — and most of the reason to carry anything — pointless. Putting the block down is
+  the price of drawing from it, and it is a small, deliberate act in a place.
+
+The rules, and why each one is there:
+
+| | |
+|---|---|
+| only a heap that **already holds** that item takes it | an empty one in a bag would commit itself to whatever you stepped on first |
+| only a heap **on its own** in a slot takes anything | several heaps in one slot share one set of components, so filling "the" heap would fill all of them |
+| a stack is **shared** between heaps, not offered to each | ten items must stay ten however many heaps are asked |
+| items just thrown, or held for someone else, are **left alone** | the same two conditions vanilla checks, checked one step earlier |
+| there is **no handler on the item** | so no pipe, backpack or other mod can find a way to drain one from a slot either |
+
+Off with `absorbsWhenCarried = false` under `[item]`.
+
 ## Build
 
 ```
@@ -194,7 +223,8 @@ gradlew runData           # regenerate models, recipes and language
 - [x] **3** — a screen, because a block whose only controls are undocumented
   gestures is a block nobody can use. Built on a real slot rather than buttons, so
   there is nothing new to learn
-- [ ] **4** — open questions below
+- [x] **4** — a carried heap takes what is picked up, and only takes
+- [ ] **5** — open questions below
 
 ## Open questions
 

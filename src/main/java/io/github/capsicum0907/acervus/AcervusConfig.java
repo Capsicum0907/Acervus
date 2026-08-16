@@ -21,6 +21,11 @@ public final class AcervusConfig {
             .push("item")
             .defineInRange("capacity", 2_000_000_000L, 64L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.BooleanValue ABSORBS_WHEN_CARRIED = BUILDER
+            .comment("Whether a heap being carried takes up items of the kind it already holds.",
+                    "It only takes. Nothing comes back out until the heap is placed again.")
+            .define("absorbsWhenCarried", true);
+
     public static final ModConfigSpec.LongValue FLUID_CAPACITY = pop()
             .comment("Millibuckets in one heap. The default is a billion buckets.")
             .push("fluid")
