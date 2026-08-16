@@ -1143,6 +1143,63 @@ public final class AcervusTests {
         }
     }
 
+    /**
+     * The same heap gives or does not give depending on where the item is.
+     *
+     * <p>A pocket does not give; a controller does, because a controller is a placed
+     * block and placing one is the price. The reading code is identical either way —
+     * what differs is one field, set where the heap was found — so this checks that the
+     * field is what decides, on all three, rather than the class.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void whatGivesIsWhereTheHeapIsKept(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+
+        ItemStack items = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        CarriedHeap.of(registries, items).insert(new ItemStack(Items.DIAMOND, 500), false);
+        check(CarriedHeap.of(registries, items).extract(64, false).isEmpty(),
+                "a carried item heap must hand back nothing");
+        check(CarriedHeap.stored(registries, items).extract(64, false).getCount() == 64,
+                "and the same heap in a controller must hand over 64");
+
+        ItemStack fluid = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        HeldFluidHeap.of(registries, fluid).insert(new FluidStack(Fluids.WATER, 5_000), false);
+        check(HeldFluidHeap.of(registries, fluid).extract(1_000, false).isEmpty(),
+                "a carried fluid heap must hand back nothing");
+        check(HeldFluidHeap.stored(registries, fluid).extract(1_000, false).getAmount() == 1_000,
+                "and the same heap in a controller must hand over a bucket");
+
+        ItemStack energy = new ItemStack(AcervusRegistry.ENERGY_HEAP_ITEM.get());
+        HeldEnergyHeap.of(registries, energy).receive(1_000);
+        check(HeldEnergyHeap.of(registries, energy).give(500) == 0,
+                "a carried energy heap must hand back nothing");
+        check(HeldEnergyHeap.stored(registries, energy).give(500) == 500,
+                "and the same heap in a controller must hand over 500");
+
+        helper.succeed();
+    }
+
+    /**
+     * Drained to nothing, a stored heap forgets its kind and loses the component
+     * outright — so it stacks with the other empty ones again, and the next thing put
+     * into it is not refused for a reason nothing on the item explains.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anEmptiedStoredHeapForgetsWhatItHeld(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        ItemStack fluid = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        HeldFluidHeap.stored(registries, fluid).insert(new FluidStack(Fluids.LAVA, 1_000), false);
+
+        HeldFluidHeap.stored(registries, fluid).extract(1_000, false);
+
+        check(!fluid.has(DataComponents.BLOCK_ENTITY_DATA),
+                "an emptied heap should carry no contents at all");
+        check(HeldFluidHeap.stored(registries, fluid).insert(new FluidStack(Fluids.WATER, 1), false) == 1,
+                "and should take water next, having forgotten the lava");
+        saves(fluid, registries, "an emptied stored heap");
+        helper.succeed();
+    }
+
     /** What the heap in that inventory slot is holding. */
     private static long carriedCount(Player player, int slot) {
         return CarriedHeap.of(player, player.getInventory().getItem(slot)).count();

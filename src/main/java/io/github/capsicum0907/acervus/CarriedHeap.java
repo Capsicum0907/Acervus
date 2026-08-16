@@ -48,14 +48,17 @@ public final class CarriedHeap implements Pile {
     private CustomData read;
     private ItemStack parsed = ItemStack.EMPTY;
 
-    private CarriedHeap(HolderLookup.Provider registries, Supplier<ItemStack> where) {
+    private final boolean gives;
+
+    private CarriedHeap(HolderLookup.Provider registries, Supplier<ItemStack> where, boolean gives) {
         this.registries = registries;
         this.where = where;
+        this.gives = gives;
     }
 
     /** A particular stack, which the caller is holding still. */
     public static CarriedHeap of(HolderLookup.Provider registries, ItemStack stack) {
-        return new CarriedHeap(registries, () -> stack);
+        return new CarriedHeap(registries, () -> stack, false);
     }
 
     /** The same, where a player is the nearest thing that knows the registries. */
@@ -65,12 +68,22 @@ public final class CarriedHeap implements Pile {
 
     /** Whatever is in that hand at the moment of asking. */
     public static CarriedHeap inHand(Player player, InteractionHand hand) {
-        return new CarriedHeap(player.level().registryAccess(), () -> player.getItemInHand(hand));
+        return new CarriedHeap(player.level().registryAccess(), () -> player.getItemInHand(hand), false);
     }
 
+    /** A heap slotted into a controller, which is a placed block, so it gives. */
+    public static CarriedHeap stored(HolderLookup.Provider registries, ItemStack stack) {
+        return new CarriedHeap(registries, () -> stack, true);
+    }
+
+    /**
+     * Whether anything may come out, decided by <em>where the item is</em> rather than
+     * by what it is. See {@link Held#gives()} for the reasoning; it is the same rule and
+     * the same field.
+     */
     @Override
     public boolean gives() {
-        return false;
+        return gives;
     }
 
     @Override

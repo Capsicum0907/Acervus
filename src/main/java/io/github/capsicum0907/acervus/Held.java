@@ -34,15 +34,28 @@ public abstract class Held implements Heaped {
 
     protected final HolderLookup.Provider registries;
     private final Supplier<ItemStack> where;
+    private final boolean gives;
 
-    protected Held(HolderLookup.Provider registries, Supplier<ItemStack> where) {
+    protected Held(HolderLookup.Provider registries, Supplier<ItemStack> where, boolean gives) {
         this.registries = registries;
         this.where = where;
+        this.gives = gives;
     }
 
+    /**
+     * Whether anything may come out, decided by <em>where the item is</em> rather than
+     * by what it is.
+     *
+     * <p>A heap in a pocket does not give, and the reason was never the item — it was
+     * that reaching a trillion of anything from an inventory slot, with nothing to
+     * place and nowhere to stand, ends every reason to build a storage room. The price
+     * is putting a block down. A heap slotted into a {@link HorreumBlockEntity} has had
+     * that price paid, by the controller, so the same reading code answers the other
+     * way. One field, set where the heap is found.
+     */
     @Override
     public final boolean gives() {
-        return false;
+        return gives;
     }
 
     /**

@@ -14,16 +14,24 @@ public final class HeldEnergyHeap extends Held {
     /** What the amount used to be called here; read when the current name is absent. */
     private static final String LEGACY_STORED = "Stored";
 
-    private HeldEnergyHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where) {
-        super(registries, where);
+    private HeldEnergyHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where,
+            boolean gives) {
+        super(registries, where, gives);
     }
 
+    /** A heap being carried: it takes and does not give. */
     public static HeldEnergyHeap of(HolderLookup.Provider registries, ItemStack stack) {
-        return new HeldEnergyHeap(registries, () -> stack);
+        return new HeldEnergyHeap(registries, () -> stack, false);
     }
 
+    /** The one in that hand, whatever it is at the moment of asking. */
     public static HeldEnergyHeap inHand(Player player, InteractionHand hand) {
-        return new HeldEnergyHeap(player.level().registryAccess(), () -> player.getItemInHand(hand));
+        return new HeldEnergyHeap(player.level().registryAccess(), () -> player.getItemInHand(hand), false);
+    }
+
+    /** A heap slotted into a controller, which is a placed block, so it gives. */
+    public static HeldEnergyHeap stored(HolderLookup.Provider registries, ItemStack stack) {
+        return new HeldEnergyHeap(registries, () -> stack, true);
     }
 
     @Override
@@ -82,6 +90,27 @@ public final class HeldEnergyHeap extends Held {
         tag.remove(LEGACY_STORED);
         write(tag, false);
         return taken;
+    }
+
+    /**
+     * @return how much was handed out, which is nothing at all unless this heap
+     *         {@link #gives()} — a carried one never does
+     */
+    public int give(int wanted) {
+        if (!gives() || wanted <= 0 || isEmpty()) {
+            return 0;
+        }
+        int given = (int) Math.min(Math.min(wanted, amount()), Integer.MAX_VALUE);
+        if (given <= 0) {
+            return 0;
+        }
+        long left = amount() - given;
+        CompoundTag tag = tag();
+        tag.putLong(AMOUNT, left);
+        tag.remove(LEGACY_STORED);
+        // No sample to forget: for energy, emptiness is the amount and nothing else.
+        write(tag, left <= 0);
+        return given;
     }
 
     @Override

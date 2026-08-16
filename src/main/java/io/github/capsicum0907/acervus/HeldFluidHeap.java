@@ -13,16 +13,24 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 
 /** A fluid heap being carried. See {@link Held} for the rule it follows. */
 public final class HeldFluidHeap extends Held {
-    private HeldFluidHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where) {
-        super(registries, where);
+    private HeldFluidHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where,
+            boolean gives) {
+        super(registries, where, gives);
     }
 
+    /** A heap being carried: it takes and does not give. */
     public static HeldFluidHeap of(HolderLookup.Provider registries, ItemStack stack) {
-        return new HeldFluidHeap(registries, () -> stack);
+        return new HeldFluidHeap(registries, () -> stack, false);
     }
 
+    /** The one in that hand, whatever it is at the moment of asking. */
     public static HeldFluidHeap inHand(Player player, InteractionHand hand) {
-        return new HeldFluidHeap(player.level().registryAccess(), () -> player.getItemInHand(hand));
+        return new HeldFluidHeap(player.level().registryAccess(), () -> player.getItemInHand(hand), false);
+    }
+
+    /** A heap slotted into a controller, which is a placed block, so it gives. */
+    public static HeldFluidHeap stored(HolderLookup.Provider registries, ItemStack stack) {
+        return new HeldFluidHeap(registries, () -> stack, true);
     }
 
     /** Identity only: the fluid and its components, always with an amount of one. */
@@ -89,6 +97,33 @@ public final class HeldFluidHeap extends Held {
         tag.putLong(AMOUNT, held + taken);
         write(tag, false);
         return taken;
+    }
+
+    /**
+     * @return what was taken out, which is nothing at all unless this heap
+     *         {@link #gives()} — a carried one never does
+     */
+    public FluidStack extract(int wanted, boolean simulate) {
+        if (!gives() || isEmpty() || wanted <= 0) {
+            return FluidStack.EMPTY;
+        }
+        int taken = (int) Math.min(Math.min(wanted, amount()), Integer.MAX_VALUE);
+        FluidStack out = sample().copyWithAmount(taken);
+        if (simulate) {
+            return out;
+        }
+
+        CompoundTag tag = tag();
+        long left = amount() - taken;
+        if (left <= 0) {
+            // Forgotten with the last drop, here as on the block: one that remembered
+            // would refuse the next thing poured in with nothing to say why.
+            tag.remove(SAMPLE);
+            left = 0;
+        }
+        tag.putLong(AMOUNT, left);
+        write(tag, left <= 0);
+        return out;
     }
 
     @Override

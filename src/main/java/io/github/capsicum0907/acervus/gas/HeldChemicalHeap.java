@@ -24,16 +24,24 @@ import net.minecraft.world.item.ItemStack;
  * ends, so nothing here saturates on the way out.
  */
 public final class HeldChemicalHeap extends Held {
-    private HeldChemicalHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where) {
-        super(registries, where);
+    private HeldChemicalHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where,
+            boolean gives) {
+        super(registries, where, gives);
     }
 
+    /** A heap being carried: it takes and does not give. */
     public static HeldChemicalHeap of(HolderLookup.Provider registries, ItemStack stack) {
-        return new HeldChemicalHeap(registries, () -> stack);
+        return new HeldChemicalHeap(registries, () -> stack, false);
     }
 
+    /** The one in that hand, whatever it is at the moment of asking. */
     public static HeldChemicalHeap inHand(Player player, InteractionHand hand) {
-        return new HeldChemicalHeap(player.level().registryAccess(), () -> player.getItemInHand(hand));
+        return new HeldChemicalHeap(player.level().registryAccess(), () -> player.getItemInHand(hand), false);
+    }
+
+    /** A heap slotted into a controller, which is a placed block, so it gives. */
+    public static HeldChemicalHeap stored(HolderLookup.Provider registries, ItemStack stack) {
+        return new HeldChemicalHeap(registries, () -> stack, true);
     }
 
     public ChemicalStack sample() {
@@ -111,6 +119,33 @@ public final class HeldChemicalHeap extends Held {
         tag.putLong(AMOUNT, held + taken);
         write(tag, false);
         return taken;
+    }
+
+    /**
+     * @return what was taken out, which is nothing at all unless this heap
+     *         {@link #gives()} — a carried one never does. No clamp anywhere: Mekanism
+     *         counts in longs at both ends.
+     */
+    public ChemicalStack extract(long wanted, boolean simulate) {
+        if (!gives() || isEmpty() || wanted <= 0) {
+            return ChemicalStack.EMPTY;
+        }
+        long taken = Math.min(wanted, amount());
+        ChemicalStack out = sample().copyWithAmount(taken);
+        if (simulate) {
+            return out;
+        }
+
+        CompoundTag tag = tag();
+        long left = amount() - taken;
+        if (left <= 0) {
+            // Forgotten with the last of it, here as on the block.
+            tag.remove(SAMPLE);
+            left = 0;
+        }
+        tag.putLong(AMOUNT, left);
+        write(tag, left <= 0);
+        return out;
     }
 
     @Override
