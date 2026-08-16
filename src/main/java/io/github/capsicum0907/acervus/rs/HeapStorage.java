@@ -94,7 +94,7 @@ public class HeapStorage implements ExternalStorageProvider {
         if (!(resource instanceof ItemResource item) || amount <= 0) {
             return 0L;
         }
-        ItemStack offered = item.toItemStack(atMostAStackfulOfInts(amount));
+        ItemStack offered = item.toItemStack(atMostAnInt(amount));
 
         long taken = 0L;
         for (Pile pile : piles()) {
@@ -121,17 +121,22 @@ public class HeapStorage implements ExternalStorageProvider {
             if (!ItemStack.isSameItemSameComponents(pile.sample(), wanted)) {
                 continue;
             }
-            given += pile.extract(atMostAStackfulOfInts(amount - given), action == Action.SIMULATE);
+            given += pile.extract(atMostAnInt(amount - given), action == Action.SIMULATE);
         }
         return given;
     }
 
     /**
-     * One call moves at most what an {@code ItemStack} can count, because a stack is
-     * still what carries it. A network wanting more asks again; nothing is lost by
-     * saying "this much for now".
+     * One call moves at most what an {@code ItemStack} can <em>count</em> — two billion,
+     * not sixty-four. {@code ItemResource.toItemStack(long)} casts rather than clamping
+     * to a stack, so the only real ceiling is the int, and clamping first is also what
+     * keeps Refined Storage from logging a truncation warning about it.
+     *
+     * <p>A network wanting more than two billion in one call asks again. Nothing is
+     * lost by saying "this much for now"; it was the <em>reading</em> that had no way to
+     * be honest.
      */
-    private static int atMostAStackfulOfInts(long amount) {
+    private static int atMostAnInt(long amount) {
         return (int) Math.min(amount, Integer.MAX_VALUE);
     }
 
