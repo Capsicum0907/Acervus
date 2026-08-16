@@ -1,0 +1,44 @@
+package io.github.capsicum0907.acervus.gas;
+
+import java.util.List;
+
+import io.github.capsicum0907.acervus.Counts;
+
+import mekanism.api.chemical.ChemicalStack;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.block.Block;
+
+/** The gas heap as an item, saying what it carries so that it is not lying. */
+public class ChemicalHeapBlockItem extends BlockItem {
+    public ChemicalHeapBlockItem(Block block, Properties properties) {
+        super(block, properties);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
+        super.appendHoverText(stack, context, lines, flag);
+
+        HolderLookup.Provider registries = context.registries();
+        CompoundTag tag = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
+        ChemicalStack sample = registries == null || !tag.contains("Sample") ? ChemicalStack.EMPTY
+                : ChemicalStack.parseOptional(registries, tag.getCompound("Sample"));
+        long amount = tag.getLong("Amount");
+
+        if (sample.isEmpty() || amount <= 0) {
+            lines.add(Component.translatable("block.acervus.heap.empty").withStyle(ChatFormatting.GRAY));
+            return;
+        }
+        lines.add(Component.translatable("block.acervus.chemical_heap.holding",
+                        sample.getChemical().getTextComponent(), Counts.brief(amount))
+                .withStyle(ChatFormatting.GRAY));
+    }
+}

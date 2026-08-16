@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 public class Acervus {
     public static final String MODID = "acervus";
 
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public Acervus(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.SERVER, AcervusConfig.SPEC);
@@ -33,6 +33,11 @@ public class Acervus {
         AcervusRegistry.ITEMS.register(modEventBus);
         AcervusRegistry.BLOCK_ENTITIES.register(modEventBus);
         AcervusRegistry.MENUS.register(modEventBus);
+
+        // Loading the class is what registers it, so the check has to come first.
+        if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+            io.github.capsicum0907.acervus.gas.GasHeap.register(modEventBus);
+        }
 
         modEventBus.addListener(Acervus::registerCapabilities);
         modEventBus.addListener(Acervus::addToCreativeTab);
@@ -63,6 +68,9 @@ public class Acervus {
             event.accept(AcervusRegistry.HEAP_ITEM);
             event.accept(AcervusRegistry.FLUID_HEAP_ITEM);
             event.accept(AcervusRegistry.ENERGY_HEAP_ITEM);
+            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+                event.accept(io.github.capsicum0907.acervus.gas.GasHeap.ITEM);
+            }
         }
     }
 

@@ -19,6 +19,16 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+
+    // Mekanism, for its chemical API and nothing else. Scoped to that one group so
+    // that nothing can start resolving from here by accident.
+    maven {
+        name = 'ModMaven'
+        url = 'https://modmaven.dev/'
+        content {
+            includeGroup 'mekanism'
+        }
+    }
 }
 
 base {
@@ -120,6 +130,11 @@ configurations {
 }
 
 dependencies {
+    // The chemical API, at compile time only. Mekanism itself is never required: the
+    // gas heap is registered only when it is present, and nothing else in the mod
+    // mentions it.
+    compileOnly "mekanism:Mekanism:${mekanism_version}:api"
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

@@ -1,0 +1,59 @@
+package io.github.capsicum0907.acervus.gas;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import io.github.capsicum0907.acervus.AcervusConfig;
+import io.github.capsicum0907.acervus.Counts;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import org.joml.Matrix4f;
+
+/**
+ * A chemical heap draws the name of what it holds and how much, because a gas has no
+ * picture either — and unlike energy it does at least have a name worth reading.
+ */
+public class ChemicalHeapRenderer implements BlockEntityRenderer<ChemicalHeapBlockEntity> {
+    private static final float TEXT_SCALE = 0.012F;
+    private static final float LINE_GAP = 1.2F;
+
+    private final Font font;
+
+    public ChemicalHeapRenderer(BlockEntityRendererProvider.Context context) {
+        this.font = context.getFont();
+    }
+
+    @Override
+    public void render(ChemicalHeapBlockEntity heap, float partialTick, PoseStack pose,
+            MultiBufferSource buffers, int packedLight, int packedOverlay) {
+        if (!AcervusConfig.SHOWS_CONTENTS.get() || heap.isEmpty()) {
+            return;
+        }
+
+        String name = heap.sample().getChemical().getTextComponent().getString();
+        String amount = Counts.brief(heap.amount());
+
+        pose.pushPose();
+        pose.translate(0.5, 0.5, 0.5);
+        pose.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
+        pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
+
+        Matrix4f matrix = pose.last().pose();
+        line(name, -font.lineHeight * LINE_GAP, matrix, buffers, packedLight);
+        line(amount, font.lineHeight * 0.2F, matrix, buffers, packedLight);
+        pose.popPose();
+    }
+
+    private void line(String text, float y, Matrix4f matrix, MultiBufferSource buffers, int packedLight) {
+        font.drawInBatch(text, -font.width(text) / 2.0F, y, 0xFFFFFFFF, false, matrix, buffers,
+                Font.DisplayMode.NORMAL, 0, packedLight);
+    }
+
+    @Override
+    public int getViewDistance() {
+        return 48;
+    }
+}

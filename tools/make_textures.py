@@ -28,6 +28,7 @@ ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/asset
 OUT = ASSETS / "block/heap.png"
 FLUID_OUT = ASSETS / "block/fluid_heap.png"
 ENERGY_OUT = ASSETS / "block/energy_heap.png"
+CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
 GUI_OUT = ASSETS / "gui/heap.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
@@ -180,6 +181,8 @@ FLUID_GLASS = "#7FB8C8"
 FLUID_SHEEN = "#C8E8F0"
 ENERGY_GLASS = "#D8A24A"
 ENERGY_SHEEN = "#F5DC9A"
+CHEMICAL_GLASS = "#8FCF8A"
+CHEMICAL_SHEEN = "#D6F2D2"
 
 
 def main() -> None:
@@ -192,6 +195,9 @@ def main() -> None:
 
     ENERGY_OUT.write_bytes(draw(ENERGY_GLASS, ENERGY_SHEEN))
     print(f"wrote {ENERGY_OUT}")
+
+    CHEMICAL_OUT.write_bytes(draw(CHEMICAL_GLASS, CHEMICAL_SHEEN))
+    print(f"wrote {CHEMICAL_OUT}")
 
     GUI_OUT.parent.mkdir(parents=True, exist_ok=True)
     GUI_OUT.write_bytes(draw_screen())

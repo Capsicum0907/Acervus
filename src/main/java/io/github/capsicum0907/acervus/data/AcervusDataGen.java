@@ -65,10 +65,13 @@ public final class AcervusDataGen {
 
         @Override
         protected void addTags(HolderLookup.Provider registries) {
-            tag(BlockTags.MINEABLE_WITH_PICKAXE)
+            var pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE)
                     .add(AcervusRegistry.HEAP.get())
                     .add(AcervusRegistry.FLUID_HEAP.get())
                     .add(AcervusRegistry.ENERGY_HEAP.get());
+            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+                pickaxe.add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get());
+            }
         }
     }
 
@@ -82,6 +85,11 @@ public final class AcervusDataGen {
             glassBox(AcervusRegistry.HEAP);
             glassBox(AcervusRegistry.FLUID_HEAP);
             glassBox(AcervusRegistry.ENERGY_HEAP);
+            // Only when Mekanism is present, because the block only exists then. Keep
+            // Mekanism in run/mods when regenerating, or these assets go stale.
+            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+                glassBox(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
+            }
         }
 
         /**
@@ -113,6 +121,10 @@ public final class AcervusDataGen {
             add("block.acervus.heap.holding", "%s x %s");
             add("block.acervus.fluid_heap.holding", "%s, %s");
             add("block.acervus.energy_heap.holding", "%s FE");
+            add("block.acervus.chemical_heap.holding", "%s, %s");
+            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+                add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "Gas Heap");
+            }
             add("gui.acervus.room", "%s more will fit");
             add("gui.acervus.exact", "%s stored");
         }
@@ -161,6 +173,21 @@ public final class AcervusDataGen {
                     .define('C', Blocks.REDSTONE_BLOCK)
                     .unlockedBy("has_redstone_block", has(Blocks.REDSTONE_BLOCK))
                     .save(output);
+
+            // A bottle rather than a cauldron: the same ingredients cannot make two
+            // different blocks, and a bottle is the vanilla thing that holds a vapour.
+            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+                ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS,
+                                io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get())
+                        .pattern("GIG")
+                        .pattern("ICI")
+                        .pattern("GIG")
+                        .define('G', Blocks.GLASS)
+                        .define('I', Items.IRON_INGOT)
+                        .define('C', Items.GLASS_BOTTLE)
+                        .unlockedBy("has_glass_bottle", has(Items.GLASS_BOTTLE))
+                        .save(output);
+            }
         }
     }
 }

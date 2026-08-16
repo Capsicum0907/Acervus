@@ -14,6 +14,10 @@ public final class AcervusClient {
         event.registerBlockEntityRenderer(AcervusRegistry.HEAP_ENTITY.get(), HeapRenderer::new);
         event.registerBlockEntityRenderer(AcervusRegistry.FLUID_HEAP_ENTITY.get(), FluidHeapRenderer::new);
         event.registerBlockEntityRenderer(AcervusRegistry.ENERGY_HEAP_ENTITY.get(), EnergyHeapRenderer::new);
+        if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+            event.registerBlockEntityRenderer(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK_ENTITY.get(),
+                    io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::new);
+        }
     }
 
     public static void registerScreens(RegisterMenuScreensEvent event) {

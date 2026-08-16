@@ -40,6 +40,13 @@ public final class AcervusConfig {
                     "than on the block.")
             .defineInRange("energyCapacity", 1_000_000_000_000L, 1_000L, Long.MAX_VALUE);
 
+    public static final ModConfigSpec.LongValue CHEMICAL_CAPACITY = BUILDER
+            .comment("How much of one chemical a heap holds, when Mekanism is installed.",
+                    "Mekanism counts chemicals in longs at every point, so this one number is",
+                    "also the largest a heap can say - the only resource of the four where what",
+                    "is held and what can be reported are the same thing.")
+            .defineInRange("chemicalCapacity", 1_000_000_000_000L, 1_000L, Long.MAX_VALUE);
+
     public static final ModConfigSpec.BooleanValue ENERGY_PUSHES = BUILDER
             .comment("Whether an energy heap offers what it holds to the blocks touching it.",
                     "On, because that is how Forge Energy actually moves: a store pushes and a",

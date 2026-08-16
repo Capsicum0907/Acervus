@@ -2,6 +2,7 @@
   "values": [
     "acervus:heap",
     "acervus:fluid_heap",
-    "acervus:energy_heap"
+    "acervus:energy_heap",
+    "acervus:chemical_heap"
   ]
 }
