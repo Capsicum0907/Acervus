@@ -458,6 +458,52 @@ public final class AcervusTests {
         }
     }
 
+    /**
+     * Past two billion the window saturates, and saturating is the whole requirement.
+     *
+     * <p>An item stack counts in an int, so an item handler cannot say a number larger
+     * than {@code Integer.MAX_VALUE} however much is really there. That much is the
+     * old API's ceiling and not something a heap can fix — it is why NeoForge's newer
+     * resource handlers count in longs. What a heap must not do is <em>wrap</em>:
+     * reporting a negative count would be worse than reporting a smaller one, and it
+     * is the arithmetic that is easy to get wrong when the total is a long and
+     * everything it is compared against is not.
+     *
+     * <p>Underneath, the heap is unaffected: the count is right, and draining works
+     * because each extraction can take another two billion.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void saturatesRatherThanWrapsPastTwoBillion(GameTestHelper helper) {
+        long was = AcervusConfig.CAPACITY.get();
+        try {
+            AcervusConfig.CAPACITY.set(Long.MAX_VALUE);
+            HeapBlockEntity heap = place(helper);
+            IItemHandler handler = handler(helper, WHERE, null);
+
+            long each = Integer.MAX_VALUE;
+            for (int time = 0; time < 3; time++) {
+                heap.insert(new ItemStack(Items.DIAMOND, (int) each), false);
+            }
+            long held = each * 3;
+            check(heap.count() == held, "the heap should be holding " + held + ", not " + heap.count());
+
+            check(handler.getStackInSlot(0).getCount() == Integer.MAX_VALUE,
+                    "the window should saturate, and read " + handler.getStackInSlot(0).getCount());
+            check(handler.getSlotLimit(0) == Integer.MAX_VALUE,
+                    "so should the limit, and read " + handler.getSlotLimit(0));
+
+            long drained = 0;
+            for (int sweep = 0; sweep < 10 && !heap.isEmpty(); sweep++) {
+                drained += handler.extractItem(0, Integer.MAX_VALUE, false).getCount();
+            }
+            check(heap.isEmpty(), "and draining should still finish, leaving " + heap.count());
+            check(drained == held, "having given back all " + held + ", not " + drained);
+            helper.succeed();
+        } finally {
+            AcervusConfig.CAPACITY.set(was);
+        }
+    }
+
     private static HeapBlockEntity place(GameTestHelper helper) {
         return place(helper, WHERE);
     }
