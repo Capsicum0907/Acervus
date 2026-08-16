@@ -17,7 +17,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
@@ -71,15 +70,15 @@ public final class GasHeap {
     private GasHeap() {
     }
 
-    /** Whether the gas heap exists at all in this game. */
-    public static boolean present() {
-        return ModList.get().isLoaded(MEKANISM);
-    }
-
     /**
-     * Loading this class is what registers everything in it, so the caller has to
-     * have checked first — and the check cannot live inside, because reaching inside
-     * is what loads it.
+     * Loading this class is what registers everything in it, so the caller has to have
+     * checked first — and the check cannot live in here, because <em>calling</em> it
+     * would be what loads the class.
+     *
+     * <p>That is not a nicety. The check used to be a static method on this class, and
+     * a static method initialises the class it is on: asking "is Mekanism here?" loaded
+     * a Mekanism class to find out, and without Mekanism the mod died during
+     * construction. It lives in {@link io.github.capsicum0907.acervus.Mods} now.
      */
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(GasHeap::registerCapability);
@@ -88,6 +87,21 @@ public final class GasHeap {
 
     private static void registerCapability(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(CHEMICAL_HANDLER, BLOCK_ENTITY.get(), (heap, side) -> heap.handler());
+    }
+
+    /**
+     * The rack's chemical window, registered from this side of the fence.
+     *
+     * <p>The rack itself lives in the main package and exists in every game, so it
+     * cannot name a chemical handler. It calls in here instead, and only after asking
+     * {@link io.github.capsicum0907.acervus.Mods#mekanism()} — which is why this is a method
+     * of its own rather than part of
+     * {@link #registerCapability}.
+     */
+    public static void registerRackCapability(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(CHEMICAL_HANDLER,
+                io.github.capsicum0907.acervus.AcervusRegistry.HORREUM_ENTITY.get(),
+                (rack, side) -> new HorreumChemicalHandler(rack));
     }
 
     @SuppressWarnings("DataFlowIssue") // the vanilla builder wants a data fixer type it never uses

@@ -32,6 +32,8 @@ CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
 GUI_OUT = ASSETS / "gui/item_heap.png"
 READOUT_OUT = ASSETS / "gui/readout.png"
 READOUT_PLAIN_OUT = ASSETS / "gui/readout_plain.png"
+RACK_OUT = ASSETS / "block/horreum.png"
+RACK_GUI_OUT = ASSETS / "gui/horreum.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
 METAL = {(x, y) for (x, y) in ALL
@@ -146,18 +148,9 @@ def _recess(pixels: dict, x: int, y: int, w: int, h: int) -> None:
             pixels[(x + dx, y + dy)] = _rgb(colour) + (255,)
 
 
-def draw_screen() -> bytes:
-    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
-    _panel(pixels, 0, 0)
-    _recess(pixels, *WELL)
-
-    # Slot frames are drawn one pixel out from the sixteen the item occupies. The
-    # heap's own slot sits inside the well, so it is drawn after it.
-    _recess(pixels, HEAP_SLOT[0] - 1, HEAP_SLOT[1] - 1, SLOT, SLOT)
-    for row in INVENTORY_ROWS + (HOTBAR,):
-        for column in range(9):
-            _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)
-
+def _sheet(pixels: dict) -> bytes:
+    """A 256x256 sheet, transparent wherever nothing was drawn. The three screens
+    share this rather than each carrying its own copy of the PNG writing."""
     raw = bytearray()
     for y in range(SHEET):
         raw.append(0)
@@ -177,6 +170,21 @@ def draw_screen() -> bytes:
     )
 
 
+def draw_screen() -> bytes:
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    _panel(pixels, 0, 0)
+    _recess(pixels, *WELL)
+
+    # Slot frames are drawn one pixel out from the sixteen the item occupies. The
+    # heap's own slot sits inside the well, so it is drawn after it.
+    _recess(pixels, HEAP_SLOT[0] - 1, HEAP_SLOT[1] - 1, SLOT, SLOT)
+    for row in INVENTORY_ROWS + (HOTBAR,):
+        for column in range(9):
+            _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)
+
+    return _sheet(pixels)
+
+
 # One frame, three glasses. The colour is the only thing that says which resource a
 # heap is for, which is the intent: they are the same machine.
 FLUID_GLASS = "#7FB8C8"
@@ -185,6 +193,51 @@ ENERGY_GLASS = "#D8A24A"
 ENERGY_SHEEN = "#F5DC9A"
 CHEMICAL_GLASS = "#8FCF8A"
 CHEMICAL_SHEEN = "#D6F2D2"
+
+
+def draw_rack() -> bytes:
+    """The rack block: the same frame as a heap, filled in rather than glazed, with a
+    grid of niches for the heaps it holds. It is the one block of the set you cannot
+    see into, because what is inside it is heaps and not contents."""
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    for pixel in ALL:
+        pixels[pixel] = _rgb(_tone(pixel, METAL, METAL_TONES)) + (255,)
+    # Four niches, two by two, standing for the slots inside. Dark on the top and left
+    # so they read as holes rather than as studs.
+    for ox in (3, 9):
+        for oy in (3, 9):
+            for dx in range(4):
+                for dy in range(4):
+                    dark = dx == 0 or dy == 0
+                    colour = RACK_NICHE_DARK if dark else RACK_NICHE
+                    pixels[(ox + dx, oy + dy)] = _rgb(colour) + (255,)
+    return _png(pixels)
+
+
+RACK_NICHE = "#3A3F4A"
+RACK_NICHE_DARK = "#23262E"
+
+# Where the twelve heap slots sit in the rack screen: six across, two down.
+RACK_SLOTS = (26, 22)
+RACK_COLUMNS = 6
+RACK_ROWS = 2
+
+
+def draw_rack_screen() -> bytes:
+    """Twelve slots and the player's inventory, and nothing else. Each heap says what
+    it holds on its own tooltip, so a readout here would be a second copy of it."""
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    _panel(pixels, 0, 0)
+    for row in range(RACK_ROWS):
+        for column in range(RACK_COLUMNS):
+            _recess(pixels,
+                    RACK_SLOTS[0] - 1 + column * SLOT,
+                    RACK_SLOTS[1] - 1 + row * SLOT,
+                    SLOT, SLOT)
+    for row in INVENTORY_ROWS + (HOTBAR,):
+        for column in range(9):
+            _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)
+    return _sheet(pixels)
 
 
 # The readout panel: one bar, one slot for a container, and the player's inventory.
@@ -206,23 +259,7 @@ def draw_readout(with_contents: bool = True) -> bytes:
         for column in range(9):
             _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)
 
-    raw = bytearray()
-    for y in range(SHEET):
-        raw.append(0)
-        for x in range(SHEET):
-            raw.extend(pixels.get((x, y), (0, 0, 0, 0)))
-
-    def chunk(kind: bytes, data: bytes) -> bytes:
-        body = kind + data
-        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
-
-    header = struct.pack(">IIBBBBB", SHEET, SHEET, 8, 6, 0, 0, 0)
-    return (
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", header)
-        + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
-        + chunk(b"IEND", b"")
-    )
+    return _sheet(pixels)
 
 
 def main() -> None:
@@ -248,6 +285,12 @@ def main() -> None:
 
     READOUT_PLAIN_OUT.write_bytes(draw_readout(False))
     print(f"wrote {READOUT_PLAIN_OUT}")
+
+    RACK_OUT.write_bytes(draw_rack())
+    print(f"wrote {RACK_OUT}")
+
+    RACK_GUI_OUT.write_bytes(draw_rack_screen())
+    print(f"wrote {RACK_GUI_OUT}")
 
 
 if __name__ == "__main__":

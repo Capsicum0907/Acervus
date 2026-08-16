@@ -4,6 +4,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.AcervusRegistry;
+import io.github.capsicum0907.acervus.Mods;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
@@ -12,6 +13,7 @@ import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -63,15 +65,28 @@ public final class AcervusDataGen {
             super(output, registries, Acervus.MODID, existingFileHelper);
         }
 
+        /**
+         * The gas heap goes in as an <b>optional</b> entry, always, whether Mekanism is
+         * here at datagen time or not.
+         *
+         * <p>A required entry naming a block that does not exist does not merely go
+         * missing: the whole tag file is refused, and all four blocks fall out of
+         * {@code mineable/pickaxe} together. So a game without Mekanism had a heap that
+         * a pickaxe was no quicker at than a fist — which is what
+         * {@code neverVoidsItselfForWantOfAPickaxe} caught the moment the mods were
+         * taken out of the folder.
+         *
+         * <p>Writing it optionally and unconditionally also ends the older trap that the
+         * generated files depended on what happened to be in {@code run/mods}.
+         */
         @Override
         protected void addTags(HolderLookup.Provider registries) {
-            var pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE)
+            tag(BlockTags.MINEABLE_WITH_PICKAXE)
                     .add(AcervusRegistry.HEAP.get())
                     .add(AcervusRegistry.FLUID_HEAP.get())
-                    .add(AcervusRegistry.ENERGY_HEAP.get());
-            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
-                pickaxe.add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get());
-            }
+                    .add(AcervusRegistry.ENERGY_HEAP.get())
+                    .add(AcervusRegistry.HORREUM.get())
+                    .addOptional(ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "chemical_heap"));
         }
     }
 
@@ -85,9 +100,14 @@ public final class AcervusDataGen {
             glassBox(AcervusRegistry.HEAP);
             glassBox(AcervusRegistry.FLUID_HEAP);
             glassBox(AcervusRegistry.ENERGY_HEAP);
+            // Solid: a rack holds heaps rather than contents, so there is nothing
+            // to see through and no reason to pay for translucency.
+            String rack = AcervusRegistry.HORREUM.getId().getPath();
+            simpleBlock(AcervusRegistry.HORREUM.get(), models().cubeAll(rack, modLoc("block/" + rack)));
+            itemModels().withExistingParent(rack, modLoc("block/" + rack));
             // Only when Mekanism is present, because the block only exists then. Keep
             // Mekanism in run/mods when regenerating, or these assets go stale.
-            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+            if (Mods.mekanism()) {
                 glassBox(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
             }
         }
@@ -119,6 +139,8 @@ public final class AcervusDataGen {
             add(AcervusRegistry.HEAP.get(), "Item Heap");
             add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
             add(AcervusRegistry.ENERGY_HEAP.get(), "Energy Heap");
+            // Latin for a granary: the building heaps are kept in.
+            add(AcervusRegistry.HORREUM.get(), "Horreum");
             // Shared by all four: emptiness is not a fact about any one of them.
             add("gui.acervus.empty", "Empty");
             add("block.acervus.item_heap.holding", "%s x %s");
@@ -126,7 +148,7 @@ public final class AcervusDataGen {
             add("block.acervus.energy_heap.holding", "%s FE");
             add("block.acervus.chemical_heap.holding", "%s, %s");
             add("block.acervus.item_heap.absorbing", "Collecting what you pick up");
-            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+            if (Mods.mekanism()) {
                 add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "Gas Heap");
             }
             add("gui.acervus.room", "%s more will fit");
@@ -135,6 +157,7 @@ public final class AcervusDataGen {
             add("gui.acervus.flow.out", "Out");
             add("gui.acervus.exact", "%s stored");
             add("gui.acervus.intake_only", "Deposit only");
+            add("block.acervus.horreum.holding", "%s of %s heaps");
         }
     }
 
@@ -172,6 +195,17 @@ public final class AcervusDataGen {
                     .unlockedBy("has_cauldron", has(Blocks.CAULDRON))
                     .save(output);
 
+            // A frame of iron around a chest, with no glass: a rack is the one block of
+            // the set you cannot see into, and it costs what a heap costs to make.
+            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.HORREUM.get())
+                    .pattern("III")
+                    .pattern("ICI")
+                    .pattern("III")
+                    .define('I', Items.IRON_INGOT)
+                    .define('C', Blocks.CHEST)
+                    .unlockedBy("has_chest", has(Blocks.CHEST))
+                    .save(output);
+
             ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.ENERGY_HEAP.get())
                     .pattern("GIG")
                     .pattern("ICI")
@@ -184,7 +218,7 @@ public final class AcervusDataGen {
 
             // A bottle rather than a cauldron: the same ingredients cannot make two
             // different blocks, and a bottle is the vanilla thing that holds a vapour.
-            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+            if (Mods.mekanism()) {
                 ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS,
                                 io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get())
                         .pattern("GIG")

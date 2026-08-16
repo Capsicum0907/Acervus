@@ -79,8 +79,33 @@ public final class AcervusRegistry {
             ENERGY_HEAP_ENTITY = BLOCK_ENTITIES.register("energy_heap",
                     energyHeapType(EnergyHeapBlockEntity::new, ENERGY_HEAP));
 
+    /**
+     * The rack: a block that holds heaps and offers one place to reach all of them.
+     *
+     * <p>Solid, unlike the heaps — there is nothing to see through, because what it
+     * holds is heaps rather than contents, and each of those says what is in it on its
+     * own tooltip. No {@code requiresCorrectToolForDrops}, for the reason every block
+     * in this mod goes without it: failing to drop would take everything inside with it.
+     */
+    public static final DeferredBlock<HorreumBlock> HORREUM = BLOCKS.register("horreum",
+            () -> new HorreumBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)));
+
+    public static final DeferredItem<BlockItem> HORREUM_ITEM = ITEMS.register("horreum",
+            () -> new HorreumBlockItem(HORREUM.get(), new net.minecraft.world.item.Item.Properties()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HorreumBlockEntity>>
+            HORREUM_ENTITY = BLOCK_ENTITIES.register("horreum",
+                    horreumType(HorreumBlockEntity::new, HORREUM));
+
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(Registries.MENU, Acervus.MODID);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<HorreumMenu>> HORREUM_MENU =
+            MENUS.register("horreum", () -> IMenuTypeExtension.create(
+                    (id, inventory, buffer) -> new HorreumMenu(id, inventory, buffer.readBlockPos())));
 
     public static final DeferredHolder<MenuType<?>, MenuType<HeapMenu>> HEAP_MENU =
             MENUS.register("item_heap", () -> IMenuTypeExtension.create(
@@ -125,6 +150,12 @@ public final class AcervusRegistry {
     @SuppressWarnings("DataFlowIssue")
     private static Supplier<BlockEntityType<EnergyHeapBlockEntity>> energyHeapType(
             BlockEntityType.BlockEntitySupplier<EnergyHeapBlockEntity> factory, Supplier<? extends Block> block) {
+        return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    private static Supplier<BlockEntityType<HorreumBlockEntity>> horreumType(
+            BlockEntityType.BlockEntitySupplier<HorreumBlockEntity> factory, Supplier<? extends Block> block) {
         return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
     }
 }

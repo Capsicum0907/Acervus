@@ -3,6 +3,10 @@
     "acervus:item_heap",
     "acervus:fluid_heap",
     "acervus:energy_heap",
-    "acervus:chemical_heap"
+    "acervus:horreum",
+    {
+      "id": "acervus:chemical_heap",
+      "required": false
+    }
   ]
 }

@@ -4,9 +4,9 @@ One kind of item, in numbers a chest cannot hold.
 
 *Acervus* is Latin for a heap.
 
-> **Status: stage 4.** Four heaps — Item, Fluid, Energy and Gas — with screens for
-> each, in the world and in the hand. 44 game tests pass headlessly, and every
-> gesture below has been watched in a running client.
+> **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
+> each in the world and in the hand, and a **Horreum** to keep twelve of them in.
+> 51 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -234,6 +234,58 @@ the arithmetic, with no opinion about where it is kept — and `HeapBlockEntity`
 `CarriedHeap` are the two places it can be kept. The slot, the menu and the screen
 were written against the block; they are written against `Pile` now, so the same
 three work over either and `gives()` is the single method that separates them.
+
+## The Horreum
+
+A rack that holds twelve heaps and gives one place to reach all of them. The idea is
+Industrial Foregoing's [Black Hole Controller](https://ftb.fandom.com/wiki/Black_Hole_Controller):
+not a thing that scans for storage nearby, but a box you put the storage *into*.
+
+It fits here almost for free, because **a heap already carries its contents as an
+item**. So a rack stores nothing of its own — it is twelve slots holding heap items,
+and every window it offers is a view over what is in them. Nothing is copied in,
+nothing has to be kept in step, and pulling a heap out takes its contents with it
+because they were never anywhere else.
+
+**Mixed on purpose.** One rack takes item, fluid, energy and gas heaps side by side
+and offers the matching window for each: an item handler, a fluid handler, an energy
+storage and — where Mekanism is installed — a chemical handler, all on the same
+block. Sorting them into four racks would be four blocks and four sets of pipes to
+say one thing.
+
+| | |
+|---|---|
+| items, fluids, gases | **one slot of the window per rack slot**, always twelve, so the indices a pipe remembers do not move when a heap is taken out |
+| filling a fluid or gas | goes to a heap that **already holds it** before it commits an empty one |
+| energy | **one pool** — `IEnergyStorage` has no index at all, because energy has no kinds |
+| breaking one | carries its heaps, for the same reason a heap carries its contents |
+
+**The heaps inside give**, unlike the one in your pocket. That was never about the
+item: the price of drawing from a heap is putting a block down, and a rack is that
+block. It is one field, set by whichever factory found the heap.
+
+## Optional mods
+
+Acervus needs **nothing but NeoForge**. Mekanism and Refined Storage are things it
+notices, not things it requires.
+
+That is easy to say and was not true until it was tested. `GasHeap.present()` read
+as exactly the right guard and could not work: calling a static method initialises
+the class it is on, and `GasHeap` holds a `BlockCapability<IChemicalHandler, …>` in a
+static field — so asking "is Mekanism here?" loaded a Mekanism class to find out, and
+without Mekanism the mod died during construction. **The guard cannot live behind the
+door it is guarding.** It lives in `Mods` now, which names nothing belonging to
+anybody else.
+
+The second one was quieter. The `mineable/pickaxe` tag listed the gas heap as a
+required entry; a required entry naming a block that does not exist does not go
+missing on its own — the whole tag file is refused, and all four blocks fall out of
+it together. Without Mekanism a pickaxe was no quicker at a heap than a fist. The
+entry is optional now, and written unconditionally, which also ends the trap that the
+generated files depended on what happened to be sitting in `run/mods`.
+
+Both were found by taking the mods out of the folder and running the tests, which is
+worth doing again whenever a new one is leaned on.
 
 ## Build
 

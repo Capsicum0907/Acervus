@@ -36,7 +36,7 @@ public class Acervus {
         AcervusRegistry.MENUS.register(modEventBus);
 
         // Loading the class is what registers it, so the check has to come first.
-        if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+        if (Mods.mekanism()) {
             io.github.capsicum0907.acervus.gas.GasHeap.register(modEventBus);
         }
 
@@ -68,6 +68,18 @@ public class Acervus {
                 (heap, side) -> heap.handler());
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, AcervusRegistry.ENERGY_HEAP_ENTITY.get(),
                 (heap, side) -> heap.handler());
+
+        // The rack offers all of them at once: what a pipe finds depends on what is in
+        // its slots, not on which block it is talking to.
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, AcervusRegistry.HORREUM_ENTITY.get(),
+                (rack, side) -> rack.items());
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, AcervusRegistry.HORREUM_ENTITY.get(),
+                (rack, side) -> rack.fluids());
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, AcervusRegistry.HORREUM_ENTITY.get(),
+                (rack, side) -> rack.energy());
+        if (Mods.mekanism()) {
+            io.github.capsicum0907.acervus.gas.GasHeap.registerRackCapability(event);
+        }
     }
 
     private static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
@@ -75,7 +87,8 @@ public class Acervus {
             event.accept(AcervusRegistry.HEAP_ITEM);
             event.accept(AcervusRegistry.FLUID_HEAP_ITEM);
             event.accept(AcervusRegistry.ENERGY_HEAP_ITEM);
-            if (io.github.capsicum0907.acervus.gas.GasHeap.present()) {
+            event.accept(AcervusRegistry.HORREUM_ITEM);
+            if (Mods.mekanism()) {
                 event.accept(io.github.capsicum0907.acervus.gas.GasHeap.ITEM);
             }
         }

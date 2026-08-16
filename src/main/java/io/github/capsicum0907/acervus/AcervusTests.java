@@ -1200,6 +1200,163 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    /**
+     * A rack offers each kind of heap it holds through the window that kind speaks.
+     *
+     * <p>Mixed on purpose: one item heap and one fluid heap in the same rack, reached
+     * through the item handler and the fluid handler respectively. The rack itself
+     * stores nothing, so what this really checks is that reading a slot as a heap and
+     * writing back through it survives the round trip.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aRackOffersEveryKindItHolds(GameTestHelper helper) {
+        HorreumBlockEntity rack = rack(helper);
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+
+        ItemStack items = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        CarriedHeap.of(registries, items).insert(new ItemStack(Items.DIAMOND, MANY), false);
+        rack.heaps().set(0, items);
+
+        ItemStack fluid = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        HeldFluidHeap.of(registries, fluid).insert(new FluidStack(Fluids.WATER, 5_000), false);
+        rack.heaps().set(3, fluid);
+
+        IItemHandler through = helper.getLevel().getCapability(
+                Capabilities.ItemHandler.BLOCK, helper.absolutePos(WHERE), null);
+        check(through != null && through.getSlots() == HorreumBlockEntity.SLOTS,
+                "a rack should offer one handler slot per rack slot");
+        check(through.getStackInSlot(0).getCount() == MANY,
+                "and report all " + MANY + " of the heap in slot 0, not "
+                        + through.getStackInSlot(0).getCount());
+        check(through.getStackInSlot(1).isEmpty(), "and nothing for a slot with no heap in it");
+        check(through.extractItem(0, 64, false).getCount() == 64,
+                "and hand over 64 when asked, because a rack is a placed block");
+
+        IFluidHandler tanks = helper.getLevel().getCapability(
+                Capabilities.FluidHandler.BLOCK, helper.absolutePos(WHERE), null);
+        check(tanks != null && tanks.getFluidInTank(3).getAmount() == 5_000,
+                "the fluid heap in slot 3 should read 5,000");
+        check(tanks.drain(1_000, IFluidHandler.FluidAction.EXECUTE).getAmount() == 1_000,
+                "and hand over a bucket");
+        check(CarriedHeap.of(registries, items).count() == MANY - 64
+                        && HeldFluidHeap.of(registries, fluid).amount() == 4_000,
+                "and both heaps should have been written back where they sit");
+        helper.succeed();
+    }
+
+    /**
+     * Filling looks for a heap that already holds that fluid before it commits an empty
+     * one. The other way round, a rack fills up with half-used tanks of the same thing
+     * while a matching heap stands beside them.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aRackFillsWhatItAlreadyHoldsFirst(GameTestHelper helper) {
+        HorreumBlockEntity rack = rack(helper);
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+
+        ItemStack empty = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        ItemStack water = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        HeldFluidHeap.of(registries, water).insert(new FluidStack(Fluids.WATER, 1_000), false);
+        rack.heaps().set(0, empty);
+        rack.heaps().set(1, water);
+
+        rack.fluids().fill(new FluidStack(Fluids.WATER, 1_000), IFluidHandler.FluidAction.EXECUTE);
+
+        check(HeldFluidHeap.of(registries, water).amount() == 2_000,
+                "the heap already holding water should have taken it");
+        check(HeldFluidHeap.of(registries, empty).isEmpty(),
+                "and the empty one should still be empty and uncommitted");
+        helper.succeed();
+    }
+
+    /** Energy has no kinds, so a rack of energy heaps is one pool with one total. */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aRackOfEnergyHeapsIsOnePool(GameTestHelper helper) {
+        HorreumBlockEntity rack = rack(helper);
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        for (int slot = 0; slot < 3; slot++) {
+            ItemStack cell = new ItemStack(AcervusRegistry.ENERGY_HEAP_ITEM.get());
+            HeldEnergyHeap.of(registries, cell).receive(1_000);
+            rack.heaps().set(slot, cell);
+        }
+
+        check(rack.energy().getEnergyStored() == 3_000,
+                "three heaps of 1,000 should read 3,000, not " + rack.energy().getEnergyStored());
+        check(rack.energy().extractEnergy(2_500, false) == 2_500,
+                "and 2,500 should come out across them");
+        check(rack.energy().getEnergyStored() == 500, "leaving 500");
+        helper.succeed();
+    }
+
+    /** Simulating must move nothing, at any of the three windows. */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aRackSimulatesWithoutMoving(GameTestHelper helper) {
+        HorreumBlockEntity rack = rack(helper);
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+
+        ItemStack items = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        CarriedHeap.of(registries, items).insert(new ItemStack(Items.DIAMOND, 1_000), false);
+        rack.heaps().set(0, items);
+        ItemStack cell = new ItemStack(AcervusRegistry.ENERGY_HEAP_ITEM.get());
+        HeldEnergyHeap.of(registries, cell).receive(1_000);
+        rack.heaps().set(1, cell);
+
+        for (int round = 0; round < 50; round++) {
+            rack.items().extractItem(0, 64, true);
+            rack.items().insertItem(0, new ItemStack(Items.DIAMOND, 64), true);
+            rack.energy().extractEnergy(100, true);
+            rack.energy().receiveEnergy(100, true);
+        }
+
+        check(CarriedHeap.of(registries, items).count() == 1_000,
+                "fifty simulated rounds should have left 1,000 diamonds, not "
+                        + CarriedHeap.of(registries, items).count());
+        check(rack.energy().getEnergyStored() == 1_000, "and 1,000 FE");
+        helper.succeed();
+    }
+
+    /**
+     * A rack carries its heaps when it is broken, and they must survive the saving.
+     *
+     * <p>The rack's own contents go through {@code ContainerHelper}, which is a
+     * different path from the player inventory that crashed once already. Reading them
+     * back through the code that wrote them is exactly the check that missed it, so
+     * this asks the game to save the item instead.
+     */
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aRackCarriesItsHeapsWhenBroken(GameTestHelper helper) {
+        HorreumBlockEntity rack = rack(helper);
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        ItemStack items = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        CarriedHeap.of(registries, items).insert(new ItemStack(Items.DIAMOND, MANY), false);
+        rack.heaps().set(5, items);
+
+        List<ItemStack> dropped = net.minecraft.world.level.block.Block.getDrops(
+                helper.getBlockState(WHERE), helper.getLevel(), helper.absolutePos(WHERE), rack);
+
+        check(dropped.size() == 1, "breaking a rack should leave one item, not " + dropped.size());
+        saves(dropped.get(0), registries, "a rack with a heap in it");
+
+        HorreumBlockEntity placed = rack(helper, OTHER);
+        dropped.get(0).getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
+                .loadInto(placed, registries);
+        check(CarriedHeap.of(registries, placed.heap(5)).count() == MANY,
+                "and putting it back down should give back all " + MANY);
+        helper.succeed();
+    }
+
+    private static HorreumBlockEntity rack(GameTestHelper helper) {
+        return rack(helper, WHERE);
+    }
+
+    private static HorreumBlockEntity rack(GameTestHelper helper, BlockPos where) {
+        helper.setBlock(where, AcervusRegistry.HORREUM.get());
+        if (helper.getBlockEntity(where) instanceof HorreumBlockEntity rack) {
+            return rack;
+        }
+        throw new GameTestAssertException("placing a rack should have made a rack block entity");
+    }
+
     /** What the heap in that inventory slot is holding. */
     private static long carriedCount(Player player, int slot) {
         return CarriedHeap.of(player, player.getInventory().getItem(slot)).count();

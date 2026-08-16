@@ -5,6 +5,8 @@
   "block.acervus.energy_heap.holding": "%s FE",
   "block.acervus.fluid_heap": "Fluid Heap",
   "block.acervus.fluid_heap.holding": "%s, %s",
+  "block.acervus.horreum": "Horreum",
+  "block.acervus.horreum.holding": "%s of %s heaps",
   "block.acervus.item_heap": "Item Heap",
   "block.acervus.item_heap.absorbing": "Collecting what you pick up",
   "block.acervus.item_heap.holding": "%s x %s",
