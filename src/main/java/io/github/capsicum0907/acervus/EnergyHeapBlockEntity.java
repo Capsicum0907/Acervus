@@ -130,6 +130,10 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
      * an empty one is charged from the heap, anything holding a charge is emptied into
      * it. Deciding it again every tick would charge a battery and then immediately
      * drain it back, since one tick of charge is enough to change the answer.
+     *
+     * <p>It stops when the job is done rather than when a tick moves nothing: a heap
+     * with nothing in it yet is a wait, not an end, and a battery put in before the
+     * energy arrives would otherwise sit there dead until somebody took it out again.
      */
     private void tickVessel() {
         if (vessel.isEmpty()) {
@@ -162,9 +166,17 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
             }
             case NONE -> false;
         };
-        if (!moved) {
+        if (!moved && finished(container)) {
             vessel.done();
         }
+    }
+
+    private boolean finished(IEnergyStorage container) {
+        return switch (vessel.flow()) {
+            case OUT -> container.receiveEnergy(1, true) == 0;
+            case IN -> container.extractEnergy(1, true) == 0 || room() == 0L;
+            case NONE -> true;
+        };
     }
 
     /**
