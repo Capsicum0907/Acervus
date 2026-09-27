@@ -127,8 +127,9 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
 
     /**
      * The battery in the vessel moves in the direction decided when it was put there:
-     * a full one empties into the heap, anything else is charged from it. Deciding it
-     * again every tick would charge a battery and then immediately drain it back.
+     * an empty one is charged from the heap, anything holding a charge is emptied into
+     * it. Deciding it again every tick would charge a battery and then immediately
+     * drain it back, since one tick of charge is enough to change the answer.
      */
     private void tickVessel() {
         if (vessel.isEmpty()) {
@@ -140,8 +141,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
             return;
         }
         if (vessel.undecided()) {
-            boolean full = container.receiveEnergy(1, true) == 0;
-            vessel.decide(full && container.canExtract() ? Vessel.Flow.IN : Vessel.Flow.OUT);
+            vessel.decide(container.getEnergyStored() <= 0 ? Vessel.Flow.OUT : Vessel.Flow.IN);
         }
 
         int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
