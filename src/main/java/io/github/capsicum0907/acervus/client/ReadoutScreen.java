@@ -108,7 +108,7 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
         }
         // Drawn rather than blitted, so the colour can be the resource's own and the
         // texture does not need a variant per heap.
-        int filled = (int) (BAR_W * Math.min(1.0, (double) heap.amount() / Math.max(1L, heap.capacity())));
+        int filled = barWidth(heap.amount(), heap.capacity());
         if (filled > 0) {
             graphics.fill(leftPos + BAR_X, topPos + BAR_Y,
                     leftPos + BAR_X + filled, topPos + BAR_Y + BAR_H, heap.tint());
@@ -242,11 +242,46 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
         if (within(x, y, BAR_X, BAR_Y, BAR_W, BAR_H)) {
             List<Component> lines = new ArrayList<>();
             lines.add(Component.literal(heap.exact(heap.amount())));
-            lines.add(Component.literal(heap.exact(heap.capacity())).withStyle(ChatFormatting.DARK_GRAY));
+            long amount = heap.amount();
+            long capacity = heap.capacity();
+            if (amount > 0L && amount < capacity) {
+                lines.add(Component.literal(heap.exact(windowFloor(amount))
+                        + " - " + heap.exact(windowCeiling(amount, capacity)))
+                        .withStyle(ChatFormatting.GRAY));
+            }
+            lines.add(Component.literal(heap.exact(capacity)).withStyle(ChatFormatting.DARK_GRAY));
             graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
             return;
         }
         super.renderTooltip(graphics, mouseX, mouseY);
+    }
+
+    static long windowFloor(long amount) {
+        long lower = 1L;
+        while (lower <= amount / 10L) {
+            lower *= 10L;
+        }
+        return lower;
+    }
+
+    static long windowCeiling(long amount, long capacity) {
+        return Math.min(capacity, windowFloor(amount) * 10L);
+    }
+
+    static int barWidth(long amount, long capacity) {
+        if (amount <= 0L) {
+            return 0;
+        }
+        if (amount >= capacity) {
+            return BAR_W;
+        }
+        long lower = windowFloor(amount);
+        long upper = windowCeiling(amount, capacity);
+        if (upper <= lower) {
+            return BAR_W;
+        }
+        int width = (int) Math.round(BAR_W * (double) (amount - lower) / (double) (upper - lower));
+        return Math.max(1, Math.min(BAR_W, width));
     }
 
     private boolean within(int x, int y, int left, int top, int width, int height) {
