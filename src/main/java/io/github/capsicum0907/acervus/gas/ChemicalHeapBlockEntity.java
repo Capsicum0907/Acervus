@@ -16,10 +16,12 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.capsicum0907.acervus.Heaped, io.github.capsicum0907.acervus.HasVessel {
     private static final String SAMPLE = "Sample";
+    private static final String LOCKED = "Locked";
     private static final String AMOUNT = "Amount";
 
     private ChemicalStack sample = ChemicalStack.EMPTY;
     private long amount;
+    private boolean locked;
 
     private final ChemicalHeapHandler handler = new ChemicalHeapHandler(this);
 
@@ -59,7 +61,7 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         if (stack.isEmpty()) {
             return false;
         }
-        return isEmpty() || ChemicalStack.isSameChemical(sample, stack);
+        return sample.isEmpty() || ChemicalStack.isSameChemical(sample, stack);
     }
 
     public boolean holds(ChemicalStack stack) {
@@ -96,7 +98,9 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
 
         amount -= taken;
         if (amount <= 0) {
-            sample = ChemicalStack.EMPTY;
+            if (!locked) {
+                sample = ChemicalStack.EMPTY;
+            }
             amount = 0;
         }
         changed();
@@ -214,6 +218,28 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         return io.github.capsicum0907.acervus.HeapColors.CHEMICAL;
     }
 
+    @Override
+    public boolean locked() {
+        return locked;
+    }
+
+    @Override
+    public boolean canLock() {
+        return !isEmpty();
+    }
+
+    @Override
+    public void lock(boolean on) {
+        if (on == locked || (on && !canLock())) {
+            return;
+        }
+        locked = on;
+        if (!on && amount <= 0) {
+            sample = ChemicalStack.EMPTY;
+        }
+        changed();
+    }
+
     private void changed() {
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -225,6 +251,7 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, amount);
+        tag.putBoolean(LOCKED, locked);
         in.save(tag, registries);
         out.save(tag, registries);
         if (!sample.isEmpty()) {
@@ -238,6 +265,7 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         sample = tag.contains(SAMPLE)
                 ? ChemicalStack.parseOptional(registries, tag.getCompound(SAMPLE))
                 : ChemicalStack.EMPTY;
+        locked = tag.getBoolean(LOCKED) && !sample.isEmpty();
         amount = sample.isEmpty() ? 0L : tag.getLong(AMOUNT);
         in.load(tag, registries);
         out.load(tag, registries);

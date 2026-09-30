@@ -1048,6 +1048,47 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aLockedHeapKeepsItsKindWhenEmptied(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.lock(true);
+        check(!heap.locked(), "an empty heap has nothing to lock to");
+
+        heap.insert(new ItemStack(Items.DIAMOND, 10), false);
+        heap.lock(true);
+        heap.extract(10, false);
+        check(heap.isEmpty() && heap.locked(), "emptying a locked heap should leave it empty and locked");
+        check(!heap.accepts(new ItemStack(Items.DIRT)), "and it must refuse another kind");
+        check(heap.accepts(new ItemStack(Items.DIAMOND)), "while still taking its own");
+
+        heap.lock(false);
+        check(heap.accepts(new ItemStack(Items.DIRT)), "unlocking an empty heap should forget its kind");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aLockedFluidHeapKeepsItsKindOnTheItemAndInTheMenu(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        FluidHeapBlockEntity heap = fluidHeap(helper);
+        heap.insert(new FluidStack(Fluids.WATER, 1_000), false);
+        ReadoutMenu menu = ReadoutMenu.at(1, player.getInventory(), helper.absolutePos(WHERE));
+        menu.clickMenuButton(player, LockButton.ID);
+        check(heap.locked(), "the screen's button should lock the heap");
+        heap.extract(1_000, false);
+
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        ItemStack item = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        heap.saveToItem(item, registries);
+        HeldFluidHeap carried = HeldFluidHeap.stored(registries, item);
+        check(carried.locked() && carried.isEmpty(), "an emptied locked heap should stay locked as an item");
+        check(carried.insert(new FluidStack(Fluids.LAVA, 1_000), true) == 0, "and still refuse lava");
+        check(carried.insert(new FluidStack(Fluids.WATER, 1_000), true) == 1_000, "while taking water");
+
+        carried.lock(false);
+        check(carried.insert(new FluidStack(Fluids.LAVA, 1_000), true) == 1_000, "unlocking should let lava in");
+        helper.succeed();
+    }
+
     private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap) {

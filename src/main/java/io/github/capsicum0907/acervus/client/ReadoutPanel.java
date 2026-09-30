@@ -8,6 +8,7 @@ import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.AcervusClientConfig;
 import io.github.capsicum0907.acervus.BarScale;
 import io.github.capsicum0907.acervus.Heaped;
+import io.github.capsicum0907.acervus.LockButton;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -48,6 +49,9 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
 
     private static final int NOTE_Y = 6;
     private static final int NOTE_RIGHT = 168;
+    private static final int LOCK_X = 158;
+    private static final int LOCK_Y = 4;
+    private static final int LOCK_GAP = 3;
 
     private static final int TEXT = 0x404040;
     private static final int NOTE = 0x808080;
@@ -59,7 +63,28 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
         this.inventoryLabelY = INVENTORY_LABEL_Y;
     }
 
+    private LockToggle lock;
+
     protected abstract Heaped heap();
+
+    @Override
+    protected void init() {
+        super.init();
+        lock = addRenderableWidget(new LockToggle(leftPos + LOCK_X, topPos + LOCK_Y, this::heap, () -> {
+            if (minecraft != null && minecraft.gameMode != null) {
+                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, LockButton.ID);
+            }
+        }));
+        lock.refresh();
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        if (lock != null) {
+            lock.refresh();
+        }
+    }
 
     protected abstract void drawContents(GuiGraphics graphics, Heaped heap);
 
@@ -104,7 +129,8 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
         Heaped heap = heap();
         if (!heap.gives()) {
             Component note = Component.translatable("gui.acervus.intake_only");
-            graphics.drawString(font, note, NOTE_RIGHT - font.width(note), NOTE_Y, NOTE, false);
+            int right = heap.hasKinds() ? LOCK_X - LOCK_GAP : NOTE_RIGHT;
+            graphics.drawString(font, note, right - font.width(note), NOTE_Y, NOTE, false);
         }
 
         graphics.drawString(font, name(heap), COLUMN_X, NAME_Y, TEXT, false);

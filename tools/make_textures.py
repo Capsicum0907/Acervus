@@ -20,6 +20,7 @@ RACK_GUI_OUT = ASSETS / "gui/horreum.png"
 RACK_FRONT_OUT = ASSETS / "block/horreum_front.png"
 RACK_LAMP_OUT = ASSETS / "block/horreum_lamp.png"
 BOLT_OUT = ASSETS / "gui/energy_icon.png"
+LOCK_OUT = ASSETS / "gui/lock.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
 METAL = {(x, y) for (x, y) in ALL
@@ -207,6 +208,22 @@ BOLT_BODY = "#F5DC9A"
 BOLT_EDGE = "#D8A24A"
 
 
+LOCK = (
+    "..##..",
+    ".#..#.",
+    ".#..#.",
+    "######",
+    "######",
+    "######",
+)
+
+
+def draw_lock() -> bytes:
+    size = len(LOCK)
+    pixels = {(x, y): (255, 255, 255, 255) for y, row in enumerate(LOCK) for x, c in enumerate(row) if c == "#"}
+    return _png(pixels, size)
+
+
 def draw_bolt() -> bytes:
     rows = [line for line in BOLT.strip("\n").split("\n")]
     drawn = {(x, y) for y, line in enumerate(rows) for x, cell in enumerate(line) if cell == "#"}
@@ -325,6 +342,9 @@ def main() -> None:
 
     RACK_LAMP_OUT.write_bytes(draw_rack_lamp())
     print(f"wrote {RACK_LAMP_OUT}")
+
+    LOCK_OUT.write_bytes(draw_lock())
+    print(f"wrote {LOCK_OUT}")
 
     BOLT_OUT.write_bytes(draw_bolt())
     print(f"wrote {BOLT_OUT}")

@@ -13,12 +13,14 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class HeapBlockEntity extends BlockEntity implements Pile {
     private static final String SAMPLE = "Sample";
+    private static final String LOCKED = "Locked";
 
     private static final String AMOUNT = "Amount";
     private static final String LEGACY_COUNT = "Count";
 
     private ItemStack sample = ItemStack.EMPTY;
     private long count;
+    private boolean locked;
 
     private final HeapItemHandler handler = new HeapItemHandler(this);
 
@@ -71,7 +73,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         if (stack.isEmpty()) {
             return false;
         }
-        return isEmpty() || ItemStack.isSameItemSameComponents(sample, stack);
+        return sample.isEmpty() || ItemStack.isSameItemSameComponents(sample, stack);
     }
 
     public boolean holds(ItemStack stack) {
@@ -108,11 +110,35 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
 
         count -= taken;
         if (count <= 0) {
-            sample = ItemStack.EMPTY;
+            if (!locked) {
+                sample = ItemStack.EMPTY;
+            }
             count = 0;
         }
         changed();
         return out;
+    }
+
+    @Override
+    public boolean locked() {
+        return locked;
+    }
+
+    @Override
+    public boolean canLock() {
+        return !isEmpty();
+    }
+
+    @Override
+    public void lock(boolean on) {
+        if (on == locked || (on && !canLock())) {
+            return;
+        }
+        locked = on;
+        if (!on && count <= 0) {
+            sample = ItemStack.EMPTY;
+        }
+        changed();
     }
 
     private void changed() {
@@ -126,6 +152,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, count);
+        tag.putBoolean(LOCKED, locked);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
         }
@@ -137,6 +164,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         sample = tag.contains(SAMPLE)
                 ? ItemStack.parse(registries, tag.getCompound(SAMPLE)).orElse(ItemStack.EMPTY)
                 : ItemStack.EMPTY;
+        locked = tag.getBoolean(LOCKED) && !sample.isEmpty();
         count = sample.isEmpty() ? 0L
                 : tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
     }

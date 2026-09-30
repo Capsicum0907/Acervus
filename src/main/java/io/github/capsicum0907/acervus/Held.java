@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 public abstract class Held implements Heaped {
     protected static final String SAMPLE = "Sample";
     protected static final String AMOUNT = "Amount";
+    protected static final String LOCKED = "Locked";
 
     protected final HolderLookup.Provider registries;
     private final Supplier<ItemStack> where;
@@ -44,6 +45,41 @@ public abstract class Held implements Heaped {
     }
 
     protected final void write(CompoundTag tag, boolean empty) {
-        BlockItem.setBlockEntityData(item(), type(), empty ? new CompoundTag() : tag);
+        BlockItem.setBlockEntityData(item(), type(), empty && !tag.getBoolean(LOCKED) ? new CompoundTag() : tag);
+    }
+
+    protected final void emptied(CompoundTag tag) {
+        if (!tag.getBoolean(LOCKED)) {
+            tag.remove(SAMPLE);
+        }
+    }
+
+    @Override
+    public boolean locked() {
+        return tag().getBoolean(LOCKED);
+    }
+
+    @Override
+    public boolean canLock() {
+        return hasKinds() && !isEmpty();
+    }
+
+    @Override
+    public void lock(boolean on) {
+        if (on == locked() || (on && !canLock())) {
+            return;
+        }
+        CompoundTag tag = tag();
+        if (on) {
+            tag.putBoolean(LOCKED, true);
+            write(tag, false);
+            return;
+        }
+        tag.remove(LOCKED);
+        boolean empty = amount() <= 0;
+        if (empty) {
+            tag.remove(SAMPLE);
+        }
+        write(tag, empty);
     }
 }

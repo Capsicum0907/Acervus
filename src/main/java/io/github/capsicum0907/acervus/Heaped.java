@@ -41,6 +41,17 @@ public interface Heaped {
         return true;
     }
 
+    default boolean locked() {
+        return false;
+    }
+
+    default boolean canLock() {
+        return false;
+    }
+
+    default void lock(boolean on) {
+    }
+
     Heaped NONE = new Heaped() {
         @Override
         public long amount() {

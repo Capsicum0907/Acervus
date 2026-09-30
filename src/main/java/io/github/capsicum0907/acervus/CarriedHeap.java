@@ -14,6 +14,7 @@ import net.minecraft.world.item.component.CustomData;
 public final class CarriedHeap implements Pile {
     private static final String SAMPLE = "Sample";
     private static final String AMOUNT = "Amount";
+    private static final String LOCKED = "Locked";
 
     private static final String LEGACY_COUNT = "Count";
 
@@ -100,7 +101,7 @@ public final class CarriedHeap implements Pile {
         if (stack.isEmpty()) {
             return false;
         }
-        return isEmpty() || ItemStack.isSameItemSameComponents(sample(), stack);
+        return sample().isEmpty() || ItemStack.isSameItemSameComponents(sample(), stack);
     }
 
     public boolean holds(ItemStack stack) {
@@ -144,7 +145,9 @@ public final class CarriedHeap implements Pile {
         CompoundTag tag = tag();
         long left = count() - taken;
         if (left <= 0) {
-            tag.remove(SAMPLE);
+            if (!tag.getBoolean(LOCKED)) {
+                tag.remove(SAMPLE);
+            }
             left = 0;
         }
         tag.putLong(AMOUNT, left);
@@ -154,6 +157,33 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public void setChanged() {
+    }
+
+    @Override
+    public boolean locked() {
+        return tag().getBoolean(LOCKED);
+    }
+
+    @Override
+    public boolean canLock() {
+        return !isEmpty();
+    }
+
+    @Override
+    public void lock(boolean on) {
+        if (on == locked() || (on && !canLock())) {
+            return;
+        }
+        CompoundTag tag = tag();
+        if (on) {
+            tag.putBoolean(LOCKED, true);
+        } else {
+            tag.remove(LOCKED);
+            if (count() <= 0) {
+                tag.remove(SAMPLE);
+            }
+        }
+        write(where.get(), tag);
     }
 
     private CompoundTag tag() {

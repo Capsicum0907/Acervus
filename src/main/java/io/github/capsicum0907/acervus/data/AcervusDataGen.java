@@ -162,6 +162,8 @@ public final class AcervusDataGen {
             add("gui.acervus.flow.in", "In");
             add("gui.acervus.flow.out", "Out");
             add("gui.acervus.of", "%s / %s");
+            add("gui.acervus.locked", "Locked");
+            add("gui.acervus.free", "Free");
             add("gui.acervus.scale", "%s - click to change");
             add("gui.acervus.scale.linear", "Linear");
             add("gui.acervus.scale.log", "Logarithmic");

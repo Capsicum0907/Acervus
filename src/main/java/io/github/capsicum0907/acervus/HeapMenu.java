@@ -73,6 +73,16 @@ public class HeapMenu extends AbstractContainerMenu {
     }
 
     @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id != LockButton.ID) {
+            return false;
+        }
+        Pile heap = pile();
+        heap.lock(!heap.locked());
+        return true;
+    }
+
+    @Override
     public boolean stillValid(Player player) {
         return source.stillValid(player);
     }

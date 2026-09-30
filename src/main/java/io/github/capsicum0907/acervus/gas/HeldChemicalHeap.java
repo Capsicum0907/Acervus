@@ -123,7 +123,7 @@ public final class HeldChemicalHeap extends Held {
         CompoundTag tag = tag();
         long left = amount() - taken;
         if (left <= 0) {
-            tag.remove(SAMPLE);
+            emptied(tag);
             left = 0;
         }
         tag.putLong(AMOUNT, left);

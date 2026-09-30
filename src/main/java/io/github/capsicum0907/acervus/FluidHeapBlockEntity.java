@@ -21,10 +21,12 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVessel {
     private static final String SAMPLE = "Sample";
+    private static final String LOCKED = "Locked";
     private static final String AMOUNT = "Amount";
 
     private FluidStack sample = FluidStack.EMPTY;
     private long amount;
+    private boolean locked;
 
     private final FluidHeapHandler handler = new FluidHeapHandler(this);
 
@@ -67,7 +69,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         if (stack.isEmpty()) {
             return false;
         }
-        return isEmpty() || FluidStack.isSameFluidSameComponents(sample, stack);
+        return sample.isEmpty() || FluidStack.isSameFluidSameComponents(sample, stack);
     }
 
     public boolean holds(FluidStack stack) {
@@ -104,7 +106,9 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
 
         amount -= taken;
         if (amount <= 0) {
-            sample = FluidStack.EMPTY;
+            if (!locked) {
+                sample = FluidStack.EMPTY;
+            }
             amount = 0;
         }
         changed();
@@ -211,6 +215,28 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         return HeapColors.FLUID;
     }
 
+    @Override
+    public boolean locked() {
+        return locked;
+    }
+
+    @Override
+    public boolean canLock() {
+        return !isEmpty();
+    }
+
+    @Override
+    public void lock(boolean on) {
+        if (on == locked || (on && !canLock())) {
+            return;
+        }
+        locked = on;
+        if (!on && amount <= 0) {
+            sample = FluidStack.EMPTY;
+        }
+        changed();
+    }
+
     private void changed() {
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -222,6 +248,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, amount);
+        tag.putBoolean(LOCKED, locked);
         in.save(tag, registries);
         out.save(tag, registries);
         if (!sample.isEmpty()) {
@@ -235,6 +262,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         sample = tag.contains(SAMPLE)
                 ? FluidStack.parse(registries, tag.getCompound(SAMPLE)).orElse(FluidStack.EMPTY)
                 : FluidStack.EMPTY;
+        locked = tag.getBoolean(LOCKED) && !sample.isEmpty();
         amount = sample.isEmpty() ? 0L : tag.getLong(AMOUNT);
         in.load(tag, registries);
         out.load(tag, registries);

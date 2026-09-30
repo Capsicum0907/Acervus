@@ -25,6 +25,17 @@ public interface Pile {
         return true;
     }
 
+    default boolean locked() {
+        return false;
+    }
+
+    default boolean canLock() {
+        return false;
+    }
+
+    default void lock(boolean on) {
+    }
+
     Pile NONE = new Pile() {
         @Override
         public boolean isEmpty() {

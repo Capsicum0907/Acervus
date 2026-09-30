@@ -89,5 +89,15 @@ public class HeapScreen extends ReadoutPanel<HeapMenu> {
         public boolean gives() {
             return pile.gives();
         }
+
+        @Override
+        public boolean locked() {
+            return pile.locked();
+        }
+
+        @Override
+        public boolean canLock() {
+            return pile.canLock();
+        }
     }
 }
