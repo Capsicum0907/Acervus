@@ -63,7 +63,10 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
         items.renderStatic(sample, ItemDisplayContext.GUI, packedLight, OverlayTexture.NO_OVERLAY,
                 pose, buffers, heap.getLevel(), 0);
         pose.popPose();
+        pose.popPose();
 
+        pose.pushPose();
+        BlockSurface.faceCamera(pose, heap.getBlockPos());
         drawCount(heap.count(), pose, buffers, packedLight);
         pose.popPose();
     }

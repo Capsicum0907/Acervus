@@ -12,10 +12,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import org.joml.Matrix4f;
 
-/**
- * A chemical heap draws the name of what it holds and how much, because a gas has no
- * picture either — and unlike energy it does at least have a name worth reading.
- */
 public class ChemicalHeapRenderer implements BlockEntityRenderer<ChemicalHeapBlockEntity> {
     private static final float TEXT_SCALE = 0.012F;
     private static final float LINE_GAP = 1.2F;
@@ -36,9 +32,16 @@ public class ChemicalHeapRenderer implements BlockEntityRenderer<ChemicalHeapBlo
         String name = heap.sample().getChemical().getTextComponent().getString();
         String amount = Counts.brief(heap.amount());
 
+        net.minecraft.resources.ResourceLocation texture = heap.contentTexture();
+        if (texture != null) {
+            net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = Minecraft.getInstance()
+                    .getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(texture);
+            io.github.capsicum0907.acervus.client.BlockSurface.fillWindows(pose, buffers, heap.getLevel(),
+                    heap.getBlockPos(), sprite, heap.contentTint(), packedLight);
+        }
+
         pose.pushPose();
-        pose.translate(0.5, 0.5, 0.5);
-        pose.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
+        io.github.capsicum0907.acervus.client.BlockSurface.faceCamera(pose, heap.getBlockPos());
         pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
 
         Matrix4f matrix = pose.last().pose();

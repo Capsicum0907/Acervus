@@ -205,6 +205,12 @@ shown. The choice is kept per player, in the client config (`screen.barScale`).
 
 Within the decade, pointing at the bar names the decade as powers of ten: `10⁴ - 10⁵`.
 
+In the world, a fluid or gas heap's glass is filled with what it holds. An energy
+heap is a closed casing that faces whoever placed it, with six lamps on its front:
+one more lights for every sixth of the powers of ten up to the capacity — with the
+default of a trillion, one for every hundredfold. Every heap writes its amount on the
+side facing you.
+
 ### Carrying one
 
 A heap keeps its contents when it is broken, so a heap in an inventory is a full

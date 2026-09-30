@@ -6,21 +6,12 @@ import io.github.capsicum0907.acervus.AcervusConfig;
 import io.github.capsicum0907.acervus.Counts;
 import io.github.capsicum0907.acervus.EnergyHeapBlockEntity;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import org.joml.Matrix4f;
 
-/**
- * An energy heap has nothing to draw but the number.
- *
- * <p>The other two show a picture of what they hold because there is one. Energy has
- * no picture: any icon would be a decision about what electricity looks like, and
- * the number is the entire content anyway. So it is drawn larger and alone, in the
- * middle of the block, rather than under an invented symbol.
- */
 public class EnergyHeapRenderer implements BlockEntityRenderer<EnergyHeapBlockEntity> {
     private static final float TEXT_SCALE = 0.016F;
 
@@ -40,8 +31,7 @@ public class EnergyHeapRenderer implements BlockEntityRenderer<EnergyHeapBlockEn
         String text = Counts.brief(heap.stored()) + " FE";
 
         pose.pushPose();
-        pose.translate(0.5, 0.5, 0.5);
-        pose.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
+        BlockSurface.faceCamera(pose, heap.getBlockPos());
         pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
 
         Matrix4f matrix = pose.last().pose();
