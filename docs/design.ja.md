@@ -1,0 +1,2275 @@
+# Acervus 設計メモ
+
+[English](design.md)
+
+コードがなぜこう書かれているかを、ファイルごとにまとめたものです。以前はソースのコメントにあった内容で、今のソースにはコメントがありません。
+
+## `Acervus.java`
+
+**`public class Acervus`**
+
+入口です。`MODID` は `gradle.properties` の `mod_id` と一致させる必要があります。生成される `neoforge.mods.toml` はそこから埋められるためです。
+
+**`if (Mods.mekanism())` の中**
+
+クラスを読み込むこと自体が登録になります。そのため判定を先に置く必要があります。
+
+**`NeoForge.EVENT_BUS.addListener(Carried::onPickup)` の中**
+
+Mod バスではなくゲームバスです。これは読み込み中ではなくプレイ中に起きることだからです。持ち運び中の Heap にはティックを回すブロックエンティティがありません。そのため動けるのは何かの上を歩いて通った瞬間だけです。
+
+**`private static void registerCapabilities(RegisterCapabilitiesEvent event)`**
+
+ホッパー・ドロッパー・あらゆる Mod のパイプを動かすものはただ1つです。アイテムハンドラーのケイパビリティです。どれもブロックにこれを求め、それ以外は何も求めません。だからこれを一度正しく作ることが連携のすべてです。
+
+向きを問わずに登録しています。Heap はどの方向にも同じ窓口を見せるからです。また問い合わせのたびに新しいハンドラーを渡さず、ブロックが持つ唯一のハンドラーを返します。こうすれば6つの面が同じ中身について6通りの見解を持つことはありません。
+
+**`event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, AcervusRegistry.HORREUM_ENTITY.get(),` の中**
+
+ラックはすべてを同時に提供します。パイプが見つけるものはスロットの中身で決まります。話しかけている相手がどのブロックかでは決まりません。
+
+**`public static class Client`**
+
+描画はクライアント側の関心事です。そしてその存在を知っているのはここだけです。
+
+## `AcervusConfig.java`
+
+**設定 `item.capacity`**
+
+1つの Heap に入るアイテム数です。既定値は20億です。上限は `long` で数えられる値です。
+
+**設定 `item.absorbsWhenCarried`**
+
+持ち運び中の Heap がすでに持っている種類のアイテムを取り込むかどうかです。取り込むだけです。Heap を再び設置するまで何も出てきません。
+
+**設定 `fluid.capacity`**
+
+1つの Heap に入るミリバケツ数です。既定値は10億バケツです。
+
+**設定 `energy.capacity`**
+
+1つの Heap に入る Forge Energy の量です。既定値は1兆です。
+
+**設定 `energy.pushes`**
+
+Heap が接しているブロックにエネルギーを差し出すかどうかです。既定でオンにしてあります。エネルギーは取りに来るものではなく押し出すものだからです。アイテムと液体はその逆です。この設定がこれだけにあるのはそのためです。
+
+**設定 `energy.pushRate`**
+
+1ティックに隣接ブロック1つずつへ差し出す量です。ただし値にかかわらず約20億で頭打ちになります。1回の呼び出しで運べるのがその量だからです。
+
+**設定 `chemical.capacity`**
+
+1つの Heap に入る Mekanism の化学物質の量です。Mekanism が導入されているときだけ使います。外との境目で上限がかからない唯一の資源です。Mekanism も `long` で数えるからです。
+
+**設定 `display.showsContents`**
+
+Heap の見た目です。ここを変えても動作は何も変わりません。
+
+**`public final class AcervusConfig`**
+
+調整できる値はすべてここにあります。Mod の他の場所では値を直接書いてはいけません。
+
+`COMMON` ではなく `SERVER` です。Heap の中身はワールドの状態だからです。クライアントはホストの値を受け取ります。
+
+資源ごとに1つずつセクションを分けています。コメントは1〜2行に抑えています。設定ファイルは1つの設定を探すときに読むもので、通読するものではありません。これらの数値の理由は README に置くべきものです。ここに書いていたときはファイルが壁のようになり、誰も何も見つけられませんでした。
+
+**`private static ModConfigSpec.Builder pop()`**
+
+直前に書いたセクションを閉じます。これで上の各まとまりが1つのセクションとして読めます。
+
+## `AcervusRegistry.java`
+
+**`public final class AcervusRegistry`**
+
+登録です。ブロック1つ・そのアイテム・そのブロックエンティティです。
+
+**`public static Item.Properties carriesItsOwnContents()`**
+
+この Mod のすべてのアイテムはこれで作ります。
+
+わざと素のままにしています。Heap は*空のあいだは*64個までスタックします。何かを持った瞬間にそれを取り上げる規則は `ContentsBlockItem` にあります。そこならここで全アイテムに一律で固定するのではなく、アイテムごとに問い合わせられます。
+
+このメソッドは何も足していませんが残しています。ここのアイテムはすべて`ContentsBlockItem` を通る必要があり、それを示しているのがこの1行だからです。
+
+**`public static final DeferredBlock<HeapBlock> HEAP`**
+
+`noOcclusion` を付けているのは中身を内側に描くためです。自分を不透明と宣言したブロックに接する隣の面は描画が省かれます。このブロックが透かして見せたい面もその対象になります。
+
+**`requiresCorrectToolForDrops` は付けていません。** 金属とガラスのブロックなら自然に書きたくなるものですが、ここでは誤りです。ドロップしない Heap は中身がすべて消えた Heap です。「ツルハシを持ってくるべきだった」といくら言っても20億個のアイテムを失うことは妥当な結果になりません。ツルハシが正しい道具であることは変わりません。ブロックは `mineable/pickaxe` に入っているので素早く壊せるのはツルハシです。それでもツルハシが無いときに失うのは時間であって中身ではありません。
+
+**`public static final DeferredBlock<FluidHeapBlock> FLUID_HEAP`**
+
+同じブロックです。数えるのではなく量る資源のためのものです。
+
+**`public static final DeferredBlock<EnergyHeapBlock> ENERGY_HEAP`**
+
+さらに同じブロックです。区別できる種類をまったく持たない資源のためのものです。
+
+**`public static final DeferredBlock<HorreumBlock> HORREUM`**
+
+ラックです。Heap を収め、そのすべてに1か所から届くようにするブロックです。
+
+Heap と違って不透明です。透かして見るものがないからです。収めているのは中身ではなく Heap です。それぞれの中身は各自のツールチップが示します。`requiresCorrectToolForDrops` は付けていません。この Mod のブロックすべてが付けていないのと同じ理由です。ドロップに失敗すると中にあるものもすべて道連れになります。
+
+**`public static final DeferredHolder<MenuType<?>, MenuType<HorreumMenu>> CARRIED_HORREUM_MENU`**
+
+手に持った同じラックです。`CARRIED_HEAP_MENU` を参照してください。
+
+**`public static final DeferredHolder<MenuType<?>, MenuType<HeapMenu>> CARRIED_HEAP_MENU`**
+
+同じメニューと同じ画面です。ただし対象はワールドにある Heap ではなく手に持ったHeap です。種類を2つにしているのは通信で運ぶものが違うからです。片方は位置を運び、もう片方はどちらの手かを運びます。1つの種類では両方を読めません。
+
+**`public static final DeferredHolder<MenuType<?>, MenuType<ReadoutMenu>> READOUT_MENU`**
+
+中身がアイテムでない3つの Heap のための1つのメニューです。
+
+**`public static final DeferredHolder<MenuType<?>, MenuType<ReadoutMenu>> CARRIED_READOUT_MENU`**
+
+手に持ったものに対する同じ表示画面です。`CARRIED_HEAP_MENU` を参照してください。
+
+**`@SuppressWarnings("DataFlowIssue")` の行末**
+
+バニラのビルダーは使いもしないデータフィクサーの型を要求します
+
+## `AcervusTests.java`
+
+**`public final class AcervusTests`**
+
+Heap が何を持っているかを確かめます。もう1つはホッパーやパイプがやり取りするアイテムハンドラーを通して何を出すかです。この種のブロックで実際に壊れるのはこちらです。
+
+`gradlew runGameTestServer` で実行します。
+
+**`private static final BlockPos OTHER`**
+
+2つ目の Heap です。1つ目の中身をパイプで送り込む先です。
+
+**`private static final int MANY`**
+
+1スタックをはるかに超え、シュルカーボックスも超える数です。偶然に通ることがないようにしています。
+
+**`private static final int HOTBAR_FIRST`**
+
+Heap のメニューにおけるホットバーの最初のスロットです。Heap 自身のスロットの後に3行が続き、その次にあります。
+
+**`public static void tellsTheTruthAndGivesWhatIsAsked(GameTestHelper helper)`**
+
+Heap は本当に持っている量を答え、求められただけ渡します。
+
+2つとも周辺の Mod が動くために必要なものです。そのうち1つは`IItemHandler` の Javadoc からわざと外れています。本当の数を報告することは明示的に許されています。外部ストレージが10万と読むか64と読むかの違いはここから生まれます。1スタックより多く渡すことは書かれた取り決めでは*許されていません*。それでも大量に運ぶ Mod はどれもそれに頼っています。InfChest のハンドラーは1スタックでの制限をせずに `totalCount().min(amount)` を返します。上限なしのアップグレードを付けたパイプがそれを空にできるのはそのためです。
+
+**`public static void givesNoMoreThanWasAskedFor(GameTestHelper helper)`**
+
+1スタックを求めればちょうど1スタックが返ります。上限を決めるのは求めた量です。
+
+**`public static void fillsAndDrainsThroughTheHandler(GameTestHelper helper)`**
+
+ホッパーとあらゆる Mod のパイプが実際に通る経路です。
+
+**`public static void staysOpenToPipesWhenPastAStack(GameTestHelper helper)`**
+
+多くのパイプは入る量を問い合わせず `limit - count` で計算します。唯一のスロットが満杯のスタックを見せていると、1000個持つ Heap もそれらには満杯に見えます。そして黙って受け入れをやめてしまいます。
+
+**`public static void createsNothingUnderInterleavedAccess(GameTestHelper helper)`**
+
+何面から同時に操作されても何も増えず何も失われません。
+
+この種のストレージブロックが複製を起こす原因は3つあり、このテストはその3つをすべて押さえます。1つ目はシミュレーションの答えが実際の答えと食い違うことです。2つ目は挿入が渡されたスタックを黙って書き換えることです。すると呼び出し側はそれを持ち続け*しかも* Heap にも増えます。3つ目は面ごとのハンドラーがそれぞれ自分なりの中身を覚えていることです。ここでは面ごとに別々にハンドラーを求め、合計を入れた量と照らし合わせます。
+
+**`public static void emptyForgetsItsKind(GameTestHelper helper)`**
+
+空になった Heap は何を持っていたかを忘れます。覚えていると次に入れるものを拒みます。しかもブロックにはその理由を示すものが何もありません。
+
+**`public static void carriesItsContentsWhenBroken(GameTestHelper helper)`**
+
+Heap を壊したときに中身をばらまいてはいけません。満杯なら数千万のアイテムエンティティになります。中身は代わりにドロップしたブロックに乗せて運びます。
+
+**`public static void tellsTheClientItIsEmpty(GameTestHelper helper)`**
+
+空になった Heap にも伝える内容が必要です。空のタグを運ぶ更新パケットはブロックエンティティに届く前に捨てられます。そのため空のときに何も書かない Heap はもう持っていない中身を持ったまま描かれ続けます。このテストで押さえるまで実際にそうなっていました。
+
+**`public static void spillsNothingWhenBroken(GameTestHelper helper)`**
+
+Heap を壊して床に残るのは1つでなければなりません。同じ問いに2つの答えがあってはいけません。
+
+これは InfChest が公開して 21.8.1 で直す必要があった複製バグです。ブロックが取り除かれるときに、そのブロックエンティティの親クラスがインベントリをドロップしていました。一方でドロップしたチェストもすべてを運んでいました。そのため1つ壊すと両方の複製が手に入りました。Heap はそもそもコンテナではないのでこれを避けています。しかし「構造上避けている」というのは、まさに黙って成り立たなくなる種類の主張です。だから議論で済ませずここで押さえています。
+
+**`public static void neverVoidsItselfForWantOfAPickaxe(GameTestHelper helper)`**
+
+違うもので Heap を壊したときに失うのは時間でなければなりません。中身であってはいけません。
+
+金属とガラスのブロックには `requiresCorrectToolForDrops` を付けたくなります。実際このブロックにも付いていました。ブロックがどの採掘タグにも入っていなかったので正しい道具は1つもありませんでした。そのため Heap は何もドロップしませんでした。狙いを外した一振りで20億個のアイテムが消えたのです。正しく設定してもここでは割に合わない取引です。中身は取り戻せず、ツルハシを忘れたことは中身を消す理由になりません。
+
+**`public static void writesNumbersShortAndLong(GameTestHelper helper)`**
+
+3桁・小数1桁・単位1つです。そしてその間にある厄介な場合も確かめます。
+
+この種の規則が誤るのは丸めです。999,999,999,999 は1兆には届きません。しかし小数1桁に丸めると下の単位で 1000.0 と読めてしまいます。これは4桁で単位も誤りです。代わりに次の単位へ繰り上げる必要があります。
+
+**`public static void anEmptyHeapWaitsForAPipeNotAGlance(GameTestHelper helper)`**
+
+空の Heap は右クリックされただけでは種類が決まりません。
+
+空の Heap が何のためのものかをパイプが決めることはパイプの役目そのものです。一方で中を見ようと右クリックしただけのプレイヤーを考えます。手に持っていたものにブロックの種類が黙って決まっていたなら、そのプレイヤーは同じ規則に助けられたのではなく引っかかったのです。だから2つは別の問いを立てます。
+
+**`public static void handsOutNothingItStillOwns(GameTestHelper helper)`**
+
+渡すものの中に Heap 自身が持っている実体は1つもありません。
+
+これはスタック単位ではなく10億単位で複製を起こす形です。返したスタックが内部状態を指していると、パイプがそれに行う `grow` がすべてブロックの中に反映されます。パイプはこれを1ティックに何度も行います。そのため数はどの1回の呼び出しでも説明できない速さで膨らみます。InfChest のハンドラーは `item.setCount(...); return item;` で終わっています。そこには「アイテムはすでにコピー済みなので変更しても安全」というコメントが付いています。これは実際に問題を見つけた後に書くコメントです。
+
+**`public static void simulatingChangesNothing(GameTestHelper helper)`**
+
+どうなるかを問い合わせただけで実際にそうなってはいけません。両端のどちらでもです。
+
+**`public static void survivesPullingIntoItself(GameTestHelper helper)`**
+
+Heap から引き出してそのまま同じ Heap に戻すパイプです。小さな誤りを毎秒数十億に変えるループを自分自身に対して回します。
+
+**`public static void twoHeapsInALoopConserveEverything(GameTestHelper helper)`**
+
+ループ状にパイプでつないだ2つの Heap を最大の量で動かします。
+
+これは InfChest を10億単位で複製させた構成です。2つをつなぎ、すべてが向こうへ行ってすぐ戻ってくるようにします。それを毎ティック行い、全量を一度に求めるアップグレードを付けます。1回の呼び出しがわずかに誤っていても見えません。しかし同じ呼び出しが1ティック20億でループすれば見えます。
+
+確かめるのは総合計です。ループではそれだけが意味を持つからです。どちらの Heap もどの時点で満杯や空になっていても正当です。
+
+**`private static void move(IItemHandler from, IItemHandler into)`**
+
+パイプ1回分の仕事です。差し出されたものを全部取り、入りきらなかったものは戻します。
+
+**`public static void saturatesRatherThanWrapsPastTwoBillion(GameTestHelper helper)`**
+
+20億を超えると窓口は頭打ちになります。そして頭打ちになることこそが求められることのすべてです。
+
+アイテムスタックは `int` で数えます。そのためアイテムハンドラーは実際にいくらあっても `Integer.MAX_VALUE` より大きい数を言えません。そこまでは古い API の上限で、Heap が直せるものではありません。NeoForge の新しい資源ハンドラーが `long` で数えるのはそのためです。Heap がしてはいけないのは*桁あふれして回り込む*ことです。負の数を報告するのは小さい数を報告するより悪い結果です。そして合計が `long` で比べる相手がどれもそうでないときにこの計算は間違えやすいのです。
+
+内部の Heap は影響を受けません。数は正しく取り出しも動きます。1回ごとの取り出しでさらに20億を取れるからです。
+
+**`public static void aFluidHeapFillsPastWhatItCanSay(GameTestHelper helper)`**
+
+液体の Heap は液体スタックが数えられる量をはるかに超えて持ちます。そして言える範囲でそれを伝えます。
+
+ここでは境目にあるものがすべて `int` です。スタック・タンク容量・注入と排出のどれもそうです。そのためアイテム側と違って多めに報告する余地がありません。大事なのは上限が縛るのは*言う*量であって*持つ*量ではないことです。1回の呼び出しで全部が決まるわけではありません。呼び出しを繰り返せば Heap は容量いっぱいまで満たされます。
+
+**`public static void anEnergyHeapSaturatesRatherThanWraps(GameTestHelper helper)`**
+
+エネルギーの Heap は `IEnergyStorage` が報告できる量をはるかに超えて持ちます。そして報告する数はどれも回り込まずに頭打ちになります。
+
+3つの中でこれが最も厳しいものです。アイテムハンドラーは1スタックより多く報告することが許されています。液体ハンドラーも少なくとも運ぶのと同じ単位で量ります。しかしエネルギーのインターフェースでは数はすべて `int` です。説明のためだけの2つの値も含めてです。問い合わせることしか知らない相手には1兆を持つ Heap も20億のうち20億と読めます。つまり満杯です。それでも受け入れと受け渡しは正しく行います。
+
+**`public static void anEnergyHeapSimulatesWithoutMoving(GameTestHelper helper)`**
+
+シミュレーションでは両端のどちらでも何も動かしてはいけません。
+
+**`public static void anEnergyHeapOffersItselfToItsNeighbours(GameTestHelper helper)`**
+
+エネルギーの Heap は求められなくても持っているものを隣にあるものへ渡します。
+
+押し出すのは Forge Energy の慣習で、好みの問題ではありません。蓄える側が差し出し、機械は待ちます。「Heap は入れ物だから向こうから取りに来させればよい」と考えた結果、できたのは喜んで満たされるのに何にも何も返さないブロックでした。取り出しのテストはすべて通りました。どのテストも自分で問い合わせていたからです。
+
+**`public static void aCarriedHeapTakesWhatIsWalkedOver(GameTestHelper helper)`**
+
+持ち物の中の Heap は上を歩いて通ったものをインベントリに入る前に取り込みます。
+
+大事なのは最後の確認です。ダイヤモンドが Heap の中にありスロットには*ない*ことです。取り込んだうえでインベントリにも複製を残していたら機能が動いているように見える複製バグになります。
+
+**`public static void aCarriedHeapTakesOnlyItsOwnKind(GameTestHelper helper)`**
+
+それ以外のものは素通りし、普通の方法で拾われます。
+
+**`public static void anEmptyCarriedHeapCommitsToNothing(GameTestHelper helper)`**
+
+持ち運び中の空の Heap は何も自分のものにしません。
+
+ブロックでは空の Heap が何のためのものかをパイプに決めさせます。それがパイプというものだからです。何かの上を歩くのは決定ではありません。最初に拾った花で種類が決まってしまう Heap は一歩で台無しになります。
+
+**`public static void severalCarriedHeapsShareOneStack(GameTestHelper helper)`**
+
+Heap が2つでもダイヤモンド10個は10個のままです。
+
+Heap には順番に問い合わせます。そのため残りの数を Heap の間で受け渡す必要があります。それぞれにスタック全体を渡すと両方が成功を報告し、10個が20個になります。この機能が何もないところからアイテムを生み出しうる唯一の経路です。
+
+**`public static void aStackOfCarriedHeapsTakesNothing(GameTestHelper helper)`**
+
+1つのスロットにある2つの Heap は1組のコンポーネントです。そのため「その」Heap に足すと両方に足されます。拒否するのはシュルカーボックスがスタックしないことで示すのと同じ答えです。
+
+**`public static void aCarriedHeapWaitsOutThePickupDelay(GameTestHelper helper)`**
+
+投げたばかりのアイテムはまだ拾えません。Heap にとっても同じです。
+
+**`public static void whatDoesNotFitIsHandedBack(GameTestHelper helper)`**
+
+Heap が持ちきれなかったものはインベントリ用に返されます。そして Heap とスロットの合計は地面にあった量とちょうど一致します。
+
+スタック全体の場合は何も残らず簡単なほうです。こちらはアイテムエンティティがイベントの後も残り、バニラが残りを処理する経路です。数が二重に数えられうるのはここだけです。
+
+**`public static void theStatisticNamesWhatWasPickedUp(GameTestHelper helper)`**
+
+統計には空気ではなく拾ったものが記録されます。
+
+空になったスタックは `Items.AIR` を返します。ドロップ全体を取り込むとスタックは空になります。減らした後にアイテムを読んでいたら、まるごと拾ったものがすべて空気として黙って記録されていたはずです。対応する Heap を持っているあいだずっとです。バニラは同じ理由で `playerTouch` の冒頭でアイテムを取得しています。こちらも同じです。
+
+**`public static void aCarriedHeapGivesNothingBack(GameTestHelper helper)`**
+
+規則のもう半分です。そして前半が安全である理由でもあります。持ち運び中の Heap はハンドラーを提供しません。そのためパイプもバックパック系の Mod も他の Heap もインベントリのスロットから20億個のアイテムを引き出せません。
+
+**`public static void theSweepTakesWhatArrivedInASlot(GameTestHelper helper)`**
+
+他の方法でスロットに入ったものも回収します。
+
+何かの上を歩くのはアイテムがプレイヤーに届く方法の1つにすぎません。`/give`・クラフトの結果・チェストからのシフトクリックはどれも直接スロットに物を入れます。1つだけ集めて他を集めない Heap は形を持たない規則になります。
+
+**`public static void theSweepLeavesWhatIsInHand(GameTestHelper helper)`**
+
+手に持っているものには触れません。
+
+Heap に取られるはずのものを手元に残せる唯一の場所です。そしてこれは必要です。なければ丸石の Heap を持ち歩くと丸石を1つも手に持てなくなります。
+
+**`public static void theScreenOverAHeldHeapOnlyTakes(GameTestHelper helper)`**
+
+手に持った Heap の画面は中身を見せて預け入れを受けますが何も返しません。
+
+出口はすべて閉じています。目立つものだけではありません。スロットからは拾い上げられず、シフトクリックでも取り出せません。直接問われても何も返しません。1つでも開いていれば規則全体が崩れます。
+
+**`public static void theHeldHeapIsFrozenWhileItsScreenIsOpen(GameTestHelper helper)`**
+
+また画面を開いたまま、その下にある Heap 自体を動かすこともできません。
+
+**`public static void theScreenCommitsAnEmptyHeldHeap(GameTestHelper helper)`**
+
+手に持った空の Heap は意図して種類を決められます。上を歩いたときには決して起きないことです。画面は決定をする場所です。一歩は決定ではありません。
+
+**`public static void whatWasCollectedSurvivesBeingPutDown(GameTestHelper helper)`**
+
+持ち運び中の Heap が集めたものは置き直したときにそのまま残っています。
+
+これは他の持ち運びのテストが通らない往復です。他のテストはアイテム自身の数値を読み戻します。書かれた形がどのブロックにも読み込めないものであっても数値は自分自身とは一致してしまいます。`CustomData#loadInto` はブロックを設置したときに `BlockItem` が行うのと同じ呼び出しです。
+
+**`public static void aHeldFluidHeapReadsAndTakes(GameTestHelper helper)`**
+
+手に持った液体の Heap は運んでいる中身を表示します。スロットに入れたバケツはその中へ空けられます。
+
+内向きだけで、満杯のときに限りません。ブロックのほうは容器が満杯かどうかを確かめます。ブロックは外へ注ぎ出すこともできるので、半分空のバケツをどちらへ向けるつもりかを知る必要があるからです。ここでは向きが1つなので問いはありません。
+
+**`public static void aHeldEnergyHeapReadsAndTakes(GameTestHelper helper)`**
+
+手に持ったエネルギーの Heap はバッテリーで同じことをします。充電済みでもそうでなくてもです。
+
+開発環境ではバッテリーが手に入りにくいです。そのためこのテストは Heap 側を直接動かします。そして容器スロットでは確かめられない1つのことを確認します。入ったものは残り、何も出てこないことです。
+
+**`public static void aHeldFluidHeapSurvivesBeingPutDown(GameTestHelper helper)`**
+
+手に持った Heap が集めたものは置き直したときにそのまま残っています。表示値だけではこの往復を確かめられません。書かれた形がどのブロックにも読み込めないものでも表示値は自分自身とは一致してしまうからです。
+
+**`public static void aHeldReadoutHandsBackWhatIsInItsSlot(GameTestHelper helper)`**
+
+手に持った表示画面は容器を受け取り、閉じるときに返します。
+
+容器スロットはアイテムではなく画面に属します。Heap に保存すると持ち物の中の Heap にバケツを置き忘れられることになります。それは誰も求めていない2つ目の収納です。だから閉じるときに飲み込んではいけません。
+
+**`public static void everyHeldHeapCanBeSaved(GameTestHelper helper)`**
+
+手で書き込めるアイテムの Heap はすべて保存に耐えなければなりません。
+
+これが欠けていたテストで、そのせいでワールドを1つ失いました。`BLOCK_ENTITY_DATA`は `CustomData.CODEC_WITH_ID` で保存されます。これは自分のブロックエンティティを名乗らないタグを拒否します。しかもプレイヤーのインベントリの保存の中で拒否します。そのため失敗はアイテムの消失ではなくクラッシュになります。それまで何も捕まえられませんでした。通信用のコーデックは確認しないからです。そしてどのテストも書いたのと同じコードで数値を読み戻していたからです。それらは互いに一致していましたがゲームが受け入れない形についての一致でした。
+
+そこでこのテストはクラッシュしたのと同じ呼び出しでゲームに問い合わせます。
+
+**`private static void saves(ItemStack stack, HolderLookup.Provider registries, String what)`**
+
+サーバーがすべてのプレイヤーに対して1分に1回、ずっと行う呼び出しです。
+
+**`public static void whatGivesIsWhereTheHeapIsKept(GameTestHelper helper)`**
+
+同じ Heap でもアイテムの置き場所によって渡したり渡さなかったりします。
+
+持ち物の中では渡しません。コントローラーの中では渡します。コントローラーは設置されたブロックで、設置することがその代価だからです。読み取りのコードはどちらでも同じです。違うのは Heap が見つかった場所で設定される1つのフィールドだけです。そこでこのテストはクラスではなくそのフィールドが決め手になっていることを3種類すべてで確かめます。
+
+**`public static void anEmptiedStoredHeapForgetsWhatItHeld(GameTestHelper helper)`**
+
+空になるまで抜き取られた保管中の Heap は種類を忘れ、コンポーネントもまるごと失います。そのため他の空の Heap とまたスタックします。次に入れるものがアイテムのどこにも説明のない理由で拒まれることもありません。
+
+**`public static void aRackOffersEveryKindItHolds(GameTestHelper helper)`**
+
+ラックは収めている Heap の種類ごとに、その種類が使う窓口を通して提供します。
+
+意図して混ぜています。同じラックにアイテムの Heap と液体の Heap を1つずつ入れます。そしてそれぞれアイテムハンドラーと液体ハンドラーから触ります。ラック自体は何も保管しません。そのためこのテストが本当に確かめるのは、スロットを Heap として読みそれを通して書き戻す往復が壊れないことです。
+
+**`check(tanks != null && tanks.getTanks() == 1,` の中**
+
+タンクはラックのスロットごとではなくラック内の液体の Heap ごとに1つです。スロット3に入れた Heap はラック唯一の液体の Heap なのでタンク0になります。そうしないと、ブロックのタンクを一覧にするものはずっと「空」と表示するバーを11本描くことになります。
+
+**`public static void aRackFillsWhatItAlreadyHoldsFirst(GameTestHelper helper)`**
+
+注入ではまずその液体をすでに持つ Heap を探します。空の Heap の種類を決めるのはその後です。逆の順だと同じ液体を持つ Heap がすぐ横にあるのに、使いかけの同じタンクでラックが埋まっていきます。
+
+**`public static void aRackOfEnergyHeapsIsOnePool(GameTestHelper helper)`**
+
+エネルギーには種類がありません。そのためエネルギーの Heap を収めたラックは1つの共有の蓄えで、合計も1つです。
+
+**`public static void aRackSimulatesWithoutMoving(GameTestHelper helper)`**
+
+シミュレーションでは3つの窓口のどれでも何も動かしてはいけません。
+
+**`public static void aRackCarriesItsHeapsWhenBroken(GameTestHelper helper)`**
+
+ラックは壊されたときに Heap を運びます。そしてそれらは保存に耐えなければなりません。
+
+ラック自身の中身は `ContainerHelper` を通ります。これは一度クラッシュしたプレイヤーのインベントリとは別の経路です。書いたコードで読み戻すのはまさにあの問題を見逃した確認方法です。そこでこのテストはゲームにアイテムを保存させます。
+
+**`public static void takingOneHeapOutOfACarriedRackKeepsTheRest(GameTestHelper helper)`**
+
+持ち運び中のラックから Heap を1つ取り出しても残りの11個は元の場所に残ります。
+
+以前はそうなりませんでした。ブロックエンティティは Heap を `Heaps` の下に入れ子にして書きます。持ち運び中のラックはそうせず、コンポーネント全体として書いていました。そのため1回書くと他の3つの読み手が何も見つけられなくなりました。ブロック・ツールチップの文字・ツールチップの絵の3つです。Heap が壊れたことは一度もありません。何も読めなかっただけです。
+
+そこでこのテストは1つで書き、他で読みます。これを捕まえられたのはこの形のテストだけです。
+
+**`HorreumBlockEntity placed` の中**
+
+設置されたラックが読むのと同じ方法で読み戻します。何も見つけられなくなったのはこの読み手でした。
+
+**`public static void everyItemHasARecipe(GameTestHelper helper)`**
+
+この Mod が登録するアイテムはすべてクラフトできます。
+
+Mod が大きくなっても壊れない向きで書いています。5つを手で名指しするのではなくアイテムのレジストリに Acervus のものを問い合わせます。そのため後から追加して忘れたアイテムは、遊んでいる途中で気付くのではなくここで失敗します。
+
+レシピはデータ生成が書いたものではなく、ゲームが読み込んだものとして読みます。ガスの Heap にとってはこの違いが決め手になります。そのレシピファイルは Mekanism の有無にかかわらず同梱されます。Mekanism がなければアイテム自体が存在しません。そのため比較の両側から一緒に消え、テストはそのまま通ります。このテストに見えないのは*拒否された*レシピファイルです。それはゲームに痕跡を残さずログにエラーが出るだけです。
+
+**`public static void emptyOnesStack(GameTestHelper helper)`**
+
+空のものはスタックします。これは規則のうち便利さのための半分です。空の Heap 64個は空の Heap 64個で、中に複製されるものは何もありません。
+
+5つの名前ではなくレジストリに問い合わせます。これが再発するとしたら後から追加されて `ContentsBlockItem` を通らなかったアイテムだからです。
+
+**`public static void fullOnesDoNot(GameTestHelper helper)`**
+
+何かを持っているものは1個までしかスタックしません。これは欠けるとバグになる側の半分です。2個のスタックは中身1組に個数2が付いたものです。そのため満たすと「両方」が満たされ、分けると中身が複製されます。
+
+Heap とラックの両方で確かめます。両者は別の経路で中身にたどり着くからです。またアイテム経由ではなく `ItemStack` 経由で読みます。ゲームが問うのと同じことを問うためです。
+
+**`CarriedHeap.stored(registries, heap).extract(64, false)` の中**
+
+そして元に戻ります。空にすれば他と同じ空のものです。
+
+**`public static void aStackOfHeapsHasNoScreen(GameTestHelper helper)`**
+
+重なった Heap には画面がありません。スタックに対する画面はその中のすべてのHeap に対する画面になるからです。
+
+もう1つの入口である `Carried.absorb` は書かれたときからスタックを拒否しています。こちらは拒否していませんでした。そしてプレイヤーが複数クラフトして分けずにスニーククリックすればたどり着く入口です。
+
+**`public static void aStackHoldingSomethingIsNotPlaced(GameTestHelper helper)`**
+
+何かを持ったスタックは、どうやってそうなったにせよ設置されません。
+
+この状態は通常のプレイでは起こりません。スタックは満たせず、満杯のものはスタックできないからです。そこでテストではコマンドや他の Mod のインベントリ処理がするのと同じやり方で無理にこの状態を作ります。複製が起きるのは設置の時点で、画面も書き込みもまったく要りません。中身はアイテムに乗っていて設置したブロックすべてに複製されます。一方でスタックは短くなるだけです。
+
+**`private static long carriedCount(Player player, int slot)`**
+
+インベントリのそのスロットにある Heap が持っている量です。
+
+**`private static ItemStack carried(GameTestHelper helper, ItemStack contents)`**
+
+本物の Heap が持つのと同じ中身を持つ Heap のアイテムです。壊したときと同じ形で書きます。
+
+## `Carried.java`
+
+**`public final class Carried`**
+
+持ち歩いている Heap はアイテムを回収します。
+
+入り口は2つあります。アイテムがプレイヤーに届く経路が2つあるからです。1つは歩いて拾うものでインベントリが目にする前に横取りします。もう1つは既にスロットに入っているもの（`/give`・クラフトの結果・チェストから）で後から吸い上げます。プレイヤーにとって両者の意味は同じです。**Heap が持っているものはもうスロットを使いません。**
+
+外には何も出てきません。その規則と理由は `CarriedHeap` にあります。
+
+何かを*既に持っている* Heap だけが取り込みます。`HeapBlockEntity.holds` が`accepts` と区別しているのと同じ区別です。そうしないと空の Heap は最初に歩いて拾ったものに決まってしまいます。これは偶然による決定です。空の Heap の中身を決めるのは画面の役目です。
+
+**`public static void onPickup(ItemEntityPickupEvent.Pre event)`**
+
+プレイヤーが既に持ち歩いている Heap へ空中のアイテムを取り込みます。インベントリがそれを目にする前に行います。
+
+取り込み以降の処理はすべてバニラが行うはずだったことです。拾うアニメーションとその音・統計・拾ったときのトリガーです。ここで行うのは `ItemEntity#playerTouch` がこれらを`Inventory#add` が何かを受け取ったときにしか行わないからです。そしてこの仕組みの要点はインベントリが一度も受け取らないことにあります。
+
+**`if (!event.canPickup().isTrue()` の中**
+
+バニラがこのイベントの後に確認する2つの条件を、イベントの前に確認します。投げたばかりのアイテムと落とした本人のために取り置かれているアイテムは、まだ自由に取れません。TRUE は別のリスナーが既に両方を免除したことを意味します。
+
+**`Item taken` の中**
+
+縮める前に読みます。空になったスタックは `Items.AIR` を返します。なので後から問い合わせると、拾い切った分の統計が黙ってすべて空気に付いてしまいます。`ItemEntity#playerTouch` がアイテムを使う場所ではなく先頭で取得しているのはこのためです。
+
+**`entity.discard()` の中**
+
+インベントリに残すものは何もありません。そして空のスタックを持ったアイテムエンティティは、いつまでもそこで当たり判定を受け続けることになります。
+
+**`public static void onTick(PlayerTickEvent.Post event)`**
+
+別の経路でスロットに届いたもの（`/give`・クラフトの結果・チェストからのシフトクリック）をすべて、それを持ち歩いている Heap へ吸い上げます。
+
+コンテナを開いている間は行いません。そのときプレイヤーは意図して物を動かしています。動かす元の1つが Heap かもしれません。裏で吸い上げが走るとそれをすぐ元に戻してしまいます。
+
+**`public static void sweep(Player player)`**
+
+プレイヤー自身の収納スロットにあるものを取り込みます。
+
+**手に持っているものは除きます。**Heap に取られるはずのものを手元に残せる唯一の場所でこれは無くてはなりません。これが無いと丸石の Heap を持ち歩いている間は丸石を1つも手に持てなくなります。着ている防具も同じ理由で触りません。
+
+**`public static int absorb(Player player, ItemStack incoming)`**
+
+`incoming` のうち入る分だけを、このプレイヤーが持ち歩いている Heap に入れます。スタックからは取り除きません。
+
+Heap を探すのは全スロットで、手と防具も含みます。手に持った Heap が回収するのは誰もが期待することです。どのスロットを*取り込み元*として見るかは別の問題で、`sweep` で決めています。
+
+戻り値は取り込んだ数です。どれかの Heap が既にそれを持っていない限り0です
+
+**`private static int absorb(Player player, ItemStack heap, ItemStack incoming, int wanted)`**
+
+`wanted`: 最大でこの数までです。1つのスタックから複数の Heap を満たす呼び出し側が
+              同じアイテムを二重に約束できないようにするためです
+戻り値はこの Heap が取り込んだ数です
+
+**`if (!isHeap(heap) || !ContentsBlockItem.alone(heap))` の中**
+
+Heap は1つだけで、積み重ねではないこと。1つのスロットにある複数の Heap は全体で1組のコンポーネントを共有します。なので「その」Heap に足すと全部に足されます。シュルカーボックスがそもそもスタックしないことで避けている複製と同じです。
+
+**`public static InteractionResultHolder<ItemStack> open(Player player, InteractionHand hand,`**
+
+手に持った Heap を開く操作です。スニークして空中を右クリックします。
+
+空中なのは、ブロックを右クリックすると Heap が設置されるからです。それは今後も動く必要があります。`useOn` が先に走り、外れたときだけここに届きます。スニークなのはHeap を手に持って普通に右クリックすると、既に目の前の Heap への操作になっているからです。
+
+4つの Heap すべてがこれを行い、違うのはメニューだけです。なので操作は一度だけ書いています。開くのはブロック自身の画面です。違いは1つだけで画面にもはっきり書いてあります。何も取り出せません。
+
+**1つずつです。**空の Heap のスタックに対する画面は、その全部に対する画面です。入れたものはすべての Heap に入り、後で分けるとそれが複製されます。これはもう一方の入り口で `absorb` が行っているのと同じ防御です。
+
+**`private static boolean carriesAHeap(Player player)`**
+
+入れ子の走査の前に1回だけ走査します。Heap を持っていないプレイヤーの負担はほぼゼロになります。
+
+## `CarriedHeap.java`
+
+**`public final class CarriedHeap implements Pile`**
+
+持ち歩いている Heap を `Pile` として読んだものです。
+
+Heap は壊しても中身を保つので、インベントリ内の Heap は既に完全な Heap です。数値は `BLOCK_ENTITY_DATA` に入っていて誰も見ていないだけです。これはそれを見るためのものです。ブロックと同じ形で答えるのでスロットと画面は自分がどちらの上にいるかを知らずに済みます。
+
+**取り込みますが渡しません。**`gives()` は `false` で、出口はすべてその後ろで閉じています。この非対称は設計そのものであって、作りかけの半分ではありません。採掘しながら回収できることが Heap にスロット1つ分の価値を与えます。一方でポケットから何でも20億個取り出せたら、他の物を持ち歩く理由がすべて無くなります。取り出すには今でもどこかにブロックを設置する必要があります。それはその場所での意図的な行為です。`gives()` より下はすべて省略せずに書いてあります。なのでその判断が変わる日が来ても、変更はメソッド1つで済みます。
+
+スタックは保持せず毎回取り直します。画面を開いている間にアイテムは動かされたり入れ替えられたり捨てられたりします。オブジェクトを保持するともうどこにも無いスタックに書き込むことになります。
+
+**`private static final String LEGACY_COUNT`**
+
+以前ここで数量を呼んでいた名前です。現在の名前が無いときに読みます。4つのブロックが1つの語に揃える前に保存された Heap も中身を保てるようにするためです。
+
+**`private CustomData read`**
+
+最後に解析したサンプルとその元のデータです。描画ループが解析を1回で済ませるためです。
+
+**`public static CarriedHeap of(HolderLookup.Provider registries, ItemStack stack)`**
+
+特定のスタックです。呼び出し側がそれを動かないよう押さえています。
+
+**`public static CarriedHeap of(Player player, ItemStack stack)`**
+
+同じものです。レジストリを知っている一番近いものがプレイヤーである場合に使います。
+
+**`public static CarriedHeap inHand(Player player, InteractionHand hand)`**
+
+問い合わせた瞬間にその手にあるものです。
+
+**`public static CarriedHeap stored(HolderLookup.Provider registries, ItemStack stack)`**
+
+コントローラーに差し込まれた Heap です。コントローラーは設置されたブロックなので渡します。
+
+**`public boolean gives()`**
+
+何かを取り出してよいかどうかです。アイテムが何であるかではなく*どこにあるか*で決めます。理由は `Held.gives()` を参照してください。同じ規則で同じフィールドです。
+
+**`return isEmpty() || ItemStack.isSameItemSameComponents(sample(), stack)` の中**
+
+意図してブロックと同じ答えを返します。他の Heap についても同じです。種類によって Heap の振る舞いが違うのは誰にも見えない規則になるからです。
+
+**`public boolean holds(ItemStack stack)`**
+
+これが既に持っているものかどうかです。人が問われるのはこちらの問いです。
+
+**`tag.remove(SAMPLE)` の中**
+
+空になった Heap は種類を忘れます。ブロックでもここでも同じです。覚えていると次に入れたものを拒みますが、その理由を示すものが何もありません。
+
+**`public void setChanged()`**
+
+何もしません。アイテムはインベントリの中にあり、インベントリが自分で変更を送ります。
+
+**`private void write(ItemStack heap, CompoundTag tag)`**
+
+空になった Heap はコンポーネントごと失います。空のタグを持っているせいで見た目が変わることなく、他の空の Heap と再びスタックできるようにするためです。
+
+**`setBlockEntityData` を通し、`CustomData.of` は決して使いません。**このコンポーネントは `CustomData.CODEC_WITH_ID` で永続化されます。これはブロックエンティティを示す`id` が無いタグを拒みます。しかもプレイヤーのインベントリを保存している最中に拒むので、ワールドが落ちます。それより前に捕まえるものはありません。ネットワーク側のコーデックは確認しないので、手で書いた Heap は最初の自動保存までは何の問題も無く見えます。`Held.write` を参照してください。
+
+## `ContentsBlockItem.java`
+
+**`public abstract class ContentsBlockItem extends BlockItem`**
+
+この Mod のすべてのアイテムです。ブロックが持っていたものをアイテム側で運びます。
+
+**そもそもなぜ1つのクラスを共有するのか。**コンポーネントは `ItemStack` に属しその中の各アイテムには属しません。なので1つのスタックにある2つは2つの容器ではありません。1組の中身の横に個数2が付いているだけです。そのスタックを満たすと「両方」が満たされます。分けると中身が複製されます。そこから*設置*すると何も書き込まれないまま、設置したすべてのブロックに中身が複製されます。画面を開くことについての規則だけでは足りなかった理由はこの最後の1つです。設置による複製はまったく音もなく起きます。
+
+**規則：空の間だけスタックします。**「決してスタックしない」ではありません。空のHeap 64個は空の Heap 64個です。それを持ち歩けることこそが便利さのすべてです。何かを持った瞬間に単独になり、再び空になるとスタックに戻ります。
+
+導き出すもので、書き込んでおくものではありません。`getMaxStackSize` は最後に中身を書いた処理が書き込んだ答えを持つのではありません。アイテムが何かを持っているかを*問い合わせます*。中身を書く場所は4つあります。2つの画面・ブロックの破壊・中クリックです。いつか5つ目が加わり、書き込みを忘れても誰も気付かないでしょう。問いは記述のようには忘れられません。
+
+その問いは `BLOCK_ENTITY_DATA` 1つです。これらすべてが使っていて中身の最後が無くなると空にされるのではなく*取り除かれます*。`Held.write` を参照してください。なので「何かを持っているか」と「スタックするか」は同じ問いを2回聞いているだけです。食い違えないのはそのためです。
+
+**`public static boolean holdsSomething(ItemStack stack)`**
+
+このアイテムに何かが入っているかどうかです。アイテム自身だけに問います。
+
+**`public static boolean alone(ItemStack stack)`**
+
+これが積み重ねではなく1つだけかどうかです。
+
+アイテムに中身を*入れる*ものはすべて先にこれを問います。スタックは全体を満たさずには満たせないからです。入り口は `Carried.absorb` と`Carried.open` の2つです。
+
+**`public InteractionResult place(BlockPlaceContext context)`**
+
+何かの理由で中身を持ってしまったスタックは設置しません。
+
+通常のプレイではここに届きません。スタックは満たせず、満たしたものはスタックできないからです。これは規則が外から破られた場合のためにあります。中身と個数の両方を指定するコマンドや、`getMaxStackSize` を問わずに統合する他 Mod のインベントリ処理などです。そうしたスタックを設置することこそが実際に複製が起きる場所で、しかも満杯のブロック1つずつ起きます。
+
+黙って空のものとして設置せず、はっきり拒否します。何も言わずに中身を失うと、これが防いでいる不具合とまったく同じに見えるからです。
+
+## `Counts.java`
+
+**`public final class Counts`**
+
+アイテムの数をどう書くかです。
+
+形式は2つあり、どちらを使うかは読み手が何をしているかを表します。部屋の向こうのブロックをちらっと見るときや整理中に画面を見るときは、大きさが欲しいです。*約20億*です。13桁は大きさではなく壁です。詳細を求めるときは数そのものが欲しいです。なので描画するのは短い形式です。正確な形式は誰かが求めたときに出します。
+
+両方をここに置き、描画する2か所には置きません。同じ中身についてブロックとその画面が食い違うのは、誰も気付かないのに誰もが信用しなくなる類のことだからです。
+
+**`private static final long SMALLEST_UNIT`**
+
+最小の単位より下では数値は既に3桁です。それが目標です。
+
+**`private static final long[] UNITS`**
+
+国際単位系の接頭辞を大きい順に並べています。`long` の全範囲が6つの1文字で覆えます。`Long.MAX_VALUE` は約 9.2E です。英語のショートスケールは小さい側ではより自然に読めます。ただし T で尽きて、その先は誰も知らない綴りに続きます。これらは AE2 が保存アイテム数に付けるものでもあります。なので使ったことがある人は既に覚えています。
+
+**`public static String exact(long count)`**
+
+すべての桁を区切って表示します。ツールチップなど読み手が求めた場所用です。
+
+**`public static String brief(long count)`**
+
+最大3桁・小数は最大1桁・単位付きです。`100M`・`2.1G`・`999.9T`。
+
+要は3桁であることです。一目で収まる数です。これによりここでは区切りも不要になります。4桁目が無いので区切る必要が無いからです。一方 `exact` はカンマを残します。
+
+**`if (tenths((double) count / UNITS[unit]) >= 10_000L && unit > 0)` の中**
+
+丸めると 999.97G が 1000.0G になることがあります。4桁で単位も間違っています。そうなったときは数が次の単位まで育ったということです。
+
+**`return Long.toString(count);` の行末**
+
+到達しません：単位以上の値はどれかの単位で見つかっています
+
+**`private static final long PER_BUCKET`**
+
+1バケツは1000ミリバケツです。これがあるのはそのためだけです。
+
+**`public static String buckets(long millibuckets)`**
+
+液体の量をバケツ単位で言います。
+
+ゲームの配管が数える単位はミリバケツです。これはあらゆる数値の3桁を無駄にします。20億個のアイテムを数える同じ `int` は200万バケツを数えます。単位そのものは私たちには変えられません。しかし*表示する*単位は変えられます。そしてプレイヤーが数えるのはバケツです。
+
+1バケツ未満では丸める先が無いので、そのまま言います。
+
+**`public static String exactBuckets(long millibuckets)`**
+
+ミリバケツ単位ですべてを表します。詳細を求められたとき用です。
+
+**`private static String mantissa(double value)`**
+
+小数1桁です。それが0になるときは小数を付けません。
+
+## `EnergyHeapBlock.java`
+
+**`public class EnergyHeapBlock extends BaseEntityBlock`**
+
+Energy Heap です。
+
+独自の操作はありません。電気のバケツで右クリックするようなものは無いからです。エネルギーはケーブルを通って出入りします。ブロックに別の操作まであれば既に入り口のあるものに対して操作をこしらえることになります。
+
+**`public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,`**
+
+サーバー側のみです。押し出すのはワールドがすることで、クライアントが口を出すことではありません。
+
+**`protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,`**
+
+素手のとき：数値表示の画面を開きます。
+
+**`public List<ItemStack> getDrops(BlockState state, LootParams.Builder params)`**
+
+中身は落としたブロックに乗って運ばれます。理由は `HeapBlock.getDrops` にあります。
+
+## `EnergyHeapBlockEntity.java`
+
+**`public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVessel`**
+
+Energy Heap が持つもの：数値1つだけです。
+
+3つのうち最も単純です。その違いは言葉にしておく価値があります。エネルギーには「何であるか」がありません。Item Heap と Fluid Heap はどちらも量の横にサンプルを持ちます。「5000」は「何が」が無ければ意味を持たないからです。そのため両者は別のものを差し出されたときにどうするかにも答える必要があります。エネルギーはエネルギーです。なのでこれにはサンプルが無く、種類で固定することもできません。満杯であること以外で何かを拒むこともありません。
+
+**`private static final String AMOUNT`**
+
+すべての Heap が使うのと同じ名前です。理由は `HeapBlockEntity` を参照してください。
+
+**`public EnergyHeapHandler handler()`**
+
+ブロック全体で1つのハンドラーを持ち、すべての面に渡します。
+
+**`public int receive(int offered, boolean simulate)`**
+
+戻り値は受け取った量です。差し出された量を超えることはありません
+
+**`public int give(int wanted, boolean simulate)`**
+
+戻り値は渡した量です。求められた量を超えることはありません
+
+**`public Component contentName()`**
+
+エネルギーには種類が無いので、名付けるものがありません。
+
+**`public static void serverTick(Level level, BlockPos pos, BlockState state, EnergyHeapBlockEntity heap)`**
+
+持っているものを、触れている相手に毎ティック差し出します。
+
+Energy Heap は押し出します。Item Heap と Fluid Heap は押し出しません。これは不整合ではなく、Mod 全体の生態系に合わせたものです。ホッパーはアイテムを取りに来ます。ポンプは液体を取りに来ます。そして電力が欲しい機械は与えられるのを待ってじっとしています。求められたときだけ答える蓄電器は、一度も求めないかまどの横で満杯のまま置かれることになります。実際に様子を見るまで、これはまさにそうなっていました。
+
+隣接ブロックは毎ティック調べず、キャッシュを通して調べます。ケイパビリティの検索はマップの探索です。そしてこれは Heap 1つにつき毎秒20回起きるからです。
+
+**`heap.tickVessels()` の中**
+
+容器スロットを先に、しかも無条件に処理します。スロットにある電池は人からの求めです。押し出しを止める設定はケーブル向けで、人向けではありません。
+
+## `EnergyHeapBlockItem.java`
+
+**`public class EnergyHeapBlockItem extends ContentsBlockItem`**
+
+アイテムとしての Energy Heap です。嘘をつかないよう、何を運んでいるかを示します。
+
+**`public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand)`**
+
+スニークして空中を右クリックすると、手に持っているものの中を見られます。
+
+**`public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(`**
+
+中身を1行の文字ではなく絵として見せます。`HeapContents` を参照してください。どんな場合でも提供します。Heap が空なら描くものは無いとクライアントが判断します。
+
+## `EnergyHeapHandler.java`
+
+**`public class EnergyHeapHandler implements IEnergyStorage`**
+
+Energy Heap がケーブルと機械に見せる窓口です。
+
+`IEnergyStorage` の数値はすべて `int` です。報告するだけの2つも同じです。なのでアイテム側と違い、20億を超えて言える余地はどこにもありません。そのため報告する2つの数値はどちらも上限で止まります。1兆を持つ Heap も問い方しか知らない相手には満杯に見えます。
+
+これは保存の問題ではなく表示の問題です。`receiveEnergy` と`extractEnergy` は1回の呼び出しごとに上限があり、1回の呼び出しは全期間ではありません。代わりに犠牲になるのは、あらゆるエネルギー表示が描く `stored / capacity` のバーです。これは20億分の20億の割合で止まったままになります。ここでは正直さと正確さを両立する方法がありません。ほぼ本当と言える最大の数を言う方が2つのうちまだ間違いが少ない方です。
+
+ここでは何も覚えません。理由は他の2つと同じです。
+
+## `FluidHeapBlock.java`
+
+**`public class FluidHeapBlock extends BaseEntityBlock`**
+
+Fluid Heap です。
+
+満たすのも空けるのもすべて `FluidUtil` に任せています。ゲーム本体のタンクもこれを使っています。手に持ったものが満杯のバケツか空のバケツか・液体をどちら向きに動かすか・どれだけ入るか・何を返すかを判断します。ここでそれを書くと、バケツの処理を作り直した挙句に誰かの Mod の容器で微妙に間違えることになります。
+
+**`public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,`**
+
+サーバー側のみです。
+
+**`protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,`**
+
+素手のとき：数値表示の画面を開きます。
+
+**`return held.isEmpty() ? ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION` の中**
+
+クライアントには成功したかどうかが分かりません。推測を間違えると、サーバーが既に空にしたバケツが手に残ります。
+
+**`public List<ItemStack> getDrops(BlockState state, LootParams.Builder params)`**
+
+中身は落としたブロックに乗って運ばれます。理由は `HeapBlock.getDrops` にあります。
+
+## `FluidHeapBlockEntity.java`
+
+**`public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVessel`**
+
+Fluid Heap が持つもの：1種類の液体と、そのミリバケツ単位の量です。
+
+形は `HeapBlockEntity` と同じで、理由も同じです。ブロックが保持する `long` の量と、保存物が何であるかだけを運ぶサンプルです。2つがまだ1つのクラスでないのは意図的です。どの部分が本当に共通でどれが似て見えるだけかは3つ目の資源が教えてくれます。2つから推し量るのは当て推量です。
+
+端の上限は見た目より低いです。`FluidStack` は`int` で数え、`IFluidHandler` のメソッドもすべて `int` です。なのでFluid Heap が*言える*量はどれだけ持っていても約200万バケツで止まります。アイテムと同じく、答えは一周させずに上限で止めることです。
+
+**`private FluidStack sample`**
+
+何であるかだけを持ちます。液体とそのコンポーネントで、量は常に1です。
+
+**`public FluidHeapHandler handler()`**
+
+ブロック全体で1つのハンドラーを持ち、すべての面に渡します。
+
+**`public FluidStack contents()`**
+
+中身すべてです。液体のスタックが数えられる上限で止めます。
+
+**`public boolean holds(FluidStack stack)`**
+
+これが既に Heap の持っているものかどうかです。人が問われるのはこちらの問いです。
+
+**`public int insert(FluidStack stack, boolean simulate)`**
+
+戻り値は差し出された液体のうち取り込んだ量です。0のこともあります
+
+**`public FluidStack extract(int wanted, boolean simulate)`**
+
+戻り値は取り出したものです。それだけあれば求められた量です
+
+**`sample` の中**
+
+最後の1滴と一緒に忘れます。次に注いだものが、ブロック上の何も説明しない理由で拒まれないようにするためです。
+
+**`public String brief(long value)`**
+
+バケツで表します。ミリバケツはあらゆる数値の3桁を無駄にするからです。
+
+**`protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries)`**
+
+量が0のときも書き込みます。`HeapBlockEntity.saveAdditional` を参照してください。
+
+## `FluidHeapBlockItem.java`
+
+**`public class FluidHeapBlockItem extends ContentsBlockItem`**
+
+アイテムとしての Fluid Heap です。独自のクラスが必要な理由はこうです。Heap は拾ったときに中身を運びます。なので200万バケツを持つものもそう示さなければ空のものとまったく同じに見えます。
+
+**`public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand)`**
+
+スニークして空中を右クリックすると、手に持っているものの中を見られます。
+
+**`public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(`**
+
+中身を1行の文字ではなく絵として見せます。`HeapContents` を参照してください。どんな場合でも提供します。Heap が空なら描くものは無いとクライアントが判断します。
+
+## `FluidHeapHandler.java`
+
+**`public class FluidHeapHandler implements IFluidHandler`**
+
+Fluid Heap がパイプとタンクに見せる窓口です。
+
+タンクは1つです。中身について本当のことを言い、求められたものを渡します。アイテム側との違いは上限の位置だけです。アイテムのハンドラーはスタックを超える量を報告してよいと文書化されています。一方`IFluidHandler` の数値はすべて `int` で、それより上を報告する手段がありません。なのでどちらも上限で止まります。ただしこちらは選んだからではなく、そうするしかないから止まります。
+
+ここでは何も覚えません。どのメソッドも呼ばれたときにブロックエンティティを読みます。理由はアイテム側と同じです。キャッシュした答えは真実の2つ目の写しで2つあれば食い違います。
+
+**`return heap.holds(resource) ? heap.extract(resource.getAmount(), action.simulate())` の中**
+
+特定の液体を求められた場合：それでなければ何も渡しません。同じ量の別のものを黙って渡すことはしません。
+
+## `HasVessel.java`
+
+**`public interface HasVessel`**
+
+容器を置く場所を持つ Heap です。
+
+`Heaped` と分けているのは、メニューが3つのブロックエンティティのどれも名指しせずにスロットを見つけられるようにするためです。これは Gas Heap にとって重要です。そのクラスは Mekanism が無いゲームでは名前を出すことすらできないからです。
+
+## `HeapBlock.java`
+
+**`public class HeapBlock extends BaseEntityBlock`**
+
+ブロック本体です。このブロックがすることは二つのどちらかだけです。何かを入れるか、何かを取り出すかです。
+
+画面はありません。中身はブロックそのものに描かれます。それがこのブロックの狙いであり、画面を作っても見せるものが無い理由でもあります。
+
+**`protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos,`**
+
+Heap がすでに持っている物を手に持っていれば入れます。スニーク中ならプレイヤーが持っている分を全部入れます。それ以外の物を持っているとき、または何も持っていないときは画面の処理に回ります。
+
+問うのは `accepts` ではなく `HeapBlockEntity.holds` です。空の Heap は何でも受け入れます。そのため中を見ようとして右クリックしたプレイヤーは、手に持っていた物に黙って決めてしまうことになります。空の Heap を何に使うかは意図して決めるべきことで、画面かパイプを通して決めます。
+
+**`protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,`**
+
+素手なら画面を開きます。
+
+取り出しはここではなく画面の側にあります。誰も教わっていない操作でしか使えないブロックは誰にも使えません。画面ができるまでのこのブロックがまさにそうでした。
+
+**`private static int insertEveryMatch(Player player, HeapBlockEntity heap)`**
+
+プレイヤーが持っている一致するスタックを一度の操作で全部入れます。インベントリを1スタックずつ空けていく作業こそ、このようなブロックが無くすためにあるものです。
+
+**`public List<ItemStack> getDrops(BlockState state, LootParams.Builder params)`**
+
+**中身はアイテムに乗って運ばれます。** Heap はチェストより何桁も多く入ります。それを地面にばらまいてうまく終わる方法はありません。20億個のアイテムは3100万体のエンティティです。そこで中身はドロップしたブロックに書き込みます。シュルカーボックスが自分の中身を持ち運ぶのと同じです。Heap は先に空にする物ではなく、そのまま動かす物です。
+
+これはルートテーブルに付け足すのではなく置き換えます。Heap が何を落とすかの答えを一つにするためです。答えが二つあると互いに一致させる必要が出ます。
+
+**`public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,`**
+
+中クリックでブロックを取ったときも中身ごと返すべきです。
+
+## `HeapBlockEntity.java`
+
+**`public class HeapBlockEntity extends BlockEntity implements Pile`**
+
+Heap が持つもの。1種類のアイテムと、その個数です。
+
+個数はスロットの一覧ではなく単なる `int` です。スロットは最大1スタックまでを置く場所です。このブロックはそう動かないことがそもそもの存在理由です。20億個のアイテムをスロットに分けると3100万スロットになります。
+
+見本の個数は常に1です。見本は保管している物の正体（アイテムとコンポーネント）だけを表し、それ以外は持ちません。いくつあるかはもう一つのフィールドが持ちます。二つを分けておくことで、スタックの個数が合計に紛れ込むのを防いでいます。
+
+**個数は `long` で、その代償はありません。** アイテムスタックは `int` で数えます。しかしこの数を運ぶアイテムスタックはありません。Heap から出ていくのは最大1スタックで、合計そのものではなく合計から計算した物です。そのため合計はいくら大きくてもかまいません。気を付けるのは外の世界が `int` で尋ねてくる三か所だけで、そこでは返す値を範囲内に収めます。
+
+**これは決して `net.minecraft.world.Container` を実装してはいけません。** ブロックが両方を提供しているとき、ホッパーはアイテムハンドラーよりコンテナの経路を優先します。数十億を64個ずつのスロットで表そうとするコンテナは、まさに壊れる形です。InfChest はホッパーをその経路から外すために Mixin を追加する必要がありました。そもそもコンテナでないことは同じ修正を先に済ませたものです。
+
+**`private static final String AMOUNT`**
+
+どの Heap も保管量に使う共通の名前です。
+
+以前ここでは `Count` でした。ほかの二つでは `Amount`、四つ目では `Stored` でした。一つの概念に三つの名前があったため、`/data merge block` が一つの Heap では動き、残りでは黙って何もしませんでした。以前に保存された Heap が中身を失わないよう、古い名前も読み込みます。
+
+**`public ItemStack sample()`**
+
+保管している物の正体で、個数は1です。書き換えられる形で渡すことはありません。
+
+**`public HeapItemHandler handler()`**
+
+ブロック全体で一つのハンドラーで、どの面にも同じものを渡します。
+
+問い合わせごとには作りません。一つの Heap にハンドラーのオブジェクトが二つあれば、古い答えが残りうる場所が二つになります。同じ中身について二者に違うことを伝えるのは、保管ブロックが何もないところからアイテムを生み出してしまう原因になります。
+
+**`public ItemStack stack()`**
+
+中身を最大1スタック分だけ表したものです。人が画面で見るものです。
+
+**`public ItemStack contents()`**
+
+中身の全部を一つのスタックとして表したものです。自動化の側に見せるのはこちらです。アイテムハンドラーは1スタックより多く報告してよいことになっています。そうしない Heap はすべてのパイプと保管ネットワークに64個しか持っていないと伝えることになります。
+
+**`shown.setCount((int) Math.min(Math.min(count, most), Integer.MAX_VALUE))` の中**
+
+合計がどれほど大きくても、アイテムスタックは `int` で数えます。
+
+**`public boolean accepts(ItemStack stack)`**
+
+これを入れられるかどうかです。空の Heap は何でも受け入れます。だからパイプやホッパーがその用途を決められます。
+
+**`public boolean holds(ItemStack stack)`**
+
+これが Heap の *すでに* 持っている物かどうかです。`accepts` より厳しい問いで、人に対して問うべきなのはこちらです。
+
+違いが出るのは空の Heap です。空の Heap の用途を自動化が決めるのは自動化の目的そのものです。一方で中を見ようと右クリックしただけのプレイヤーが、たまたま手に持っていた物にブロックを黙って決めてしまったなら、それは罠にかかったということです。
+
+**`public int insert(ItemStack stack, boolean simulate)`**
+
+スタックのうち受け取った個数を返します。0のこともあります
+
+**`int taken` の中**
+
+差し出されたスタックは `int` で数えます。そのため合計がどれほど大きくても、受け取る量は常に `int` に収まります。
+
+**`public ItemStack extract(int amount, boolean simulate)`**
+
+取り出した物を返します。それだけの量があれば要求された分だけ返します。
+        1スタックに制限はしません。理由は `HeapItemHandler` を見てください。
+        1スタックが欲しいときは1スタック分を指定して呼んでください。
+
+**`sample` の中**
+
+最後の1個と一緒に見本も捨てます。以前持っていた物を覚えている Heap は、次に入れる物を見た目では分からない理由で拒んでしまいます。
+
+**`level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), Block.UPDATE_ALL)` の中**
+
+中身は描画されます。変化を知らされないクライアントは古い中身を描き続けます。
+
+**`protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries)`**
+
+個数は0のときも書き込みます。これは形だけのものではありません。
+
+空のタグを運ぶ更新パケットは、ブロックエンティティに届く前に捨てられます。`IBlockEntityExtension#onDataPacket` が `!tag.isEmpty()` で弾いているからです。そのため空になったばかりの Heap は何も保存しません。クライアントが受け付けるものも何も送りません。そして直前まで持っていた物を持ったまま描かれ続けます。一つのフィールドを常に書くことで、空になったこともクライアントに伝わります。
+
+**`count` の中**
+
+getLong は `int` として書かれたタグも読めます。そのため合計の幅を広げる前に保存された Heap も、移行の手順なしで戻ってきます。新しいキーが無いときに古いキーを読むのも同じ理由です。
+
+**`public CompoundTag getUpdateTag(HolderLookup.Provider registries)`**
+
+クライアントにも同じフィールドを送ります。クライアントはそれを描くからです。
+
+## `HeapBlockItem.java`
+
+**`public class HeapBlockItem extends ContentsBlockItem`**
+
+アイテムとしての Heap です。
+
+存在する理由はツールチップだけです。Heap は拾われるときに中身を持ったままです。そのためインベントリにある一つが何かを20億個持っていても、空のものとまったく同じに見えます。中身を示すことはここでは親切の範囲ではありません。それが無ければこのアイテムは嘘をつくことになります。
+
+**`public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand)`**
+
+スニークして空中を右クリックすると、手に持っている Heap の中を見られます。
+
+空中にしたのは、ブロックへの右クリックが Heap の設置操作で、それは動き続ける必要があるからです。先に `useOn` が走り、外れたときだけここに来ます。スニークにしたのは、Heap を手に持っての普通の右クリックには、目の前の Heap に対してすでに意味があるからです。
+
+開く画面はブロックと同じものです。スロットも数字も同じです。違いは一つだけで、画面にもはっきり書いてあります。何も取り出せません。`CarriedHeap` を見てください。
+
+**`public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(`**
+
+中身を一行の文字ではなく絵として示します。`HeapContents` を見てください。どんな場合でも提供します。Heap が空なら描く物が無いとクライアントが判断します。
+
+**`CarriedHeap heap` の中**
+
+ここでタグから直接読まず、スロットと画面が読むのと同じクラスを通して読みます。一つのフィールドを三か所で読めば、キーの綴りが食い違いうる場所が三つになります。個数ではすでに一度それが起きました。
+
+**`if (stack.getCount() == 1 && AcervusConfig.SPEC.isLoaded()` の中**
+
+それが本当である間だけ表示します。プレイヤーがスロットに入ると思っていたアイテムに対して、このアイテムが黙って行っていることだからです。満杯の Heap や、設定がオフのゲームでは何も表示しません。
+
+## `HeapContents.java`
+
+**`public record HeapContents(ItemStack of) implements TooltipComponent`**
+
+「この中身を描いて」という要求です。対象は Heap か、Heap を並べたラックです。
+
+一行の文字は絵と同じことを伝えますが、伝わるのが遅くなります。Heap が九つ入ったラックなら同じことを九回言います。そうなると誰もどれも読みません。そこで中身の種類ごとに、名前と量の横に小さなアイコンを付けます。ラックは開かなくても一目で分かる一覧になります。
+
+**これはアイテムそのものを運び、そこから計算した物は何も持ちません。** 手抜きではありません。`Item#getTooltipImage` にはスタックだけが渡され、ほかには何も渡されません。Heap を読むにはレジストリが必要です。レジストリはツールチップを描くクライアントからは届きますが、ここからは届きません。そこで読み取りは描画と一緒に `io.github.capsicum0907.acervus.client.HeapContentsTooltip` で行います。このクラスは、どのゲームのどのクラスが知っても安全な一つのことだけを持ちます。どのスタックについて尋ねているかです。
+
+## `HeapItemHandler.java`
+
+**`public class HeapItemHandler implements IItemHandler`**
+
+Heap がホッパー・パイプ・その他アイテムを動かすものに見せる窓口です。
+
+スロットは一つです。そこにある物は Heap にある物です。そこから取ると要求された分だけ取れます。
+
+<h2>意図して1スタックを超える理由</h2>
+
+`IItemHandler` の Javadoc は大きさについて二つのことを述べています。ここで守っているのはそのうち一つだけです。
+- `getStackInSlot`：「結果のスタックの個数はアイテムスタックの最大個数より大きく *てもよい*」。これは守ります。Heap が本当の保管量を伝える理由もこれです。1スタックに丸めるのは慎重さではなく嘘です。外部の保管システムがそれを読むと、10万個ある物を64個と報告します。InfChest はそうしていて、そのせいで Refined
+    Storage での表示が正しくなりません。
+- `extractItem`：結果は「`amount` *かつ* `getMaxStackSize()` 以下でなければならない」。**守りません。** 出てくる量を制限するのは `amount` だけです。
+
+二つ目を破っているのは見落としではありません。大量に動かす Mod はどれも、それが破られている前提で動いています。InfChest 自身のハンドラーも `totalCount().min(amount)` で、スタックの制限はありません。無制限のアップグレードを付けたパイプで InfChest を空にできるのはまさにそのためです。この条項を守ると、Heap は1回の呼び出しにつき1スタックまでになります。1回だけ尋ねるパイプに対しては1ティックに1スタックです。スロットをいくら増やしても、それを正直に取り戻すことはできません。
+
+その代わり、1スタックより多く要求する呼び出し側は受け取った物を保持できる必要があります。それができない呼び出し側は64を要求して64を受け取ります。20億を要求する呼び出し側は、20億を受け取れると表明したことになります。この Mod が責任を負う保証は線の反対側にあるもので、そちらは厳密に守っています。シミュレーションは何も変えません。差し出されたスタックは書き換えません。すべての面が一つのハンドラーを共有します。ここでは何も記憶しません。
+
+入れる側も出す側も全方向を向いています。Heap に正面はありません。
+
+**`public int getSlotLimit(int slot)`**
+
+容量です。これで `limit - count` が残りの空きになります。
+
+## `HeapMenu.java`
+
+**`public class HeapMenu extends AbstractContainerMenu`**
+
+画面のサーバー側の半分です。設置された Heap にも、手に持った Heap にも使います。
+
+Heap はボタンではなく二つのスロットとして見せます。入れる `IntakeSlot` と、取り出す `HeapSlot` です。中身はアイテムです。アイテムと同じように、誰もがすでに知っているクリックで扱えるべきです。横にボタンを置くと、プレイヤーがすでにできることのために新しく覚えることが増えます。
+
+個数はメニューのデータとしては送りません。メニューのデータのフィールドは通信上では `short` なので、Heap が伝えられる量が32767までになってしまいます。ブロックエンティティは描画のためにすでにクライアントへ同期されています。アイテムもインベントリの一部としてすでに同期されています。そのためどちらの場合も、画面は Heap がある場所から直接読みます。
+
+二つの違いは `Source` にまとめてあります。Heap がどこにあるか・画面をいつ閉じるか・手に持った Heap の場合は画面が開いている間プレイヤー自身のどのスロットを固定するか、の三つです。
+
+**`private static final int IN_X`**
+
+生成した画面テクスチャのスロット位置に合わせてあります。
+
+**`public interface Source`**
+
+Heap がどこに置かれているかと、それがその上の画面にとって何を意味するかです。
+
+**`Pile pile()`**
+
+`null` にはなりません。無くなった Heap は `Pile.NONE` を返します。
+
+**`default int frozen()`**
+
+この画面が開いている間は動かしてはいけないホットバーのスロットです。無ければ -1 です。
+
+これがあるのは手に持った Heap だけで、そのスロットは Heap そのものです。自分の画面の下からそれを動かすと、画面は別の場所にあるスタックに書き込み続けることになります。
+
+**`addSlot(new IntakeSlot(source::pile, IN_X, HEAP_Y))` の中**
+
+Heap が無くなっていても無条件に追加します。以下のスロット番号はここから数えます。最初のスロットが欠けると、シフトクリックで物を移す範囲が黙ってずれてしまいます。
+
+**`public static HeapMenu at(int id, Inventory inventory, BlockPos pos)`**
+
+ワールドに設置された Heap の画面です。
+
+**`public static HeapMenu inHand(int id, Inventory inventory, InteractionHand hand)`**
+
+手に持った Heap の画面です。スニークして空中を右クリックすると開きます。
+
+**`if (!slot.mayPickup(player))` の中**
+
+固定されたスロットは開いている Heap そのものです。誰もが最初に試すのはそこへのシフトクリックです。Heap を自分自身の中に入れさせてはいけません。
+
+**`private ItemStack outward(Pile heap)`**
+
+Heap から出してプレイヤーへ移します。1スタックずつ移し、空でない物を返すことでゲームにもう一度尋ねさせます。こうしてシフトクリックは Heap か空きのどちらかが尽きるまで続きます。
+
+**`ItemStack taken` の中**
+
+明示的に1スタック分を指定します。取り出しはもう1スタックに制限されていません。ここで全部を要求すると、満杯のインベントリに Heap を空けてしまいます。
+
+**`heap.insert(taken, false);` の行末**
+
+入りきらなかった分は元の場所に戻します
+
+**`private ItemStack inward(Pile heap, Slot slot)`**
+
+Heap へ移します。全部を一度にです。ここで順番を待たせる理由はありません。
+
+**`private record AtBlock(Level level, BlockPos pos, ContainerLevelAccess access) implements Source`**
+
+ワールドに設置された Heap です。プレイヤーがブロックの近くにいる間は有効です。
+
+**`private record InHand(Player player, InteractionHand hand, CarriedHeap heap) implements Source`**
+
+手に持った Heap です。その手がまだ Heap を持っている間は有効です。
+
+**`static final class Frozen extends Slot`**
+
+この画面の対象である Heap が入った、プレイヤー自身のスロットです。
+
+両方向を拒むことで、入れ替えのクリックも防げます。別のスロットの上で数字キーを押すと、入れ替える前にこのスロットが確認されるからです。
+
+## `HeapSlot.java`
+
+**`public class HeapSlot extends Slot`**
+
+スロットの形をした Heap への窓口です。アイテムの Heap の画面の Out スロットです。
+
+狙いは新しく覚えることを無くすことです。クリックで1スタックを取り、右クリックで半分を取り、シフトクリックで入る分だけ移します。どれもゲーム自身のスロットの処理で、ここには一つも書いていません。入れるのは `IntakeSlot` の役目です。ここに書いてあるのは「最大1スタックを持つスロット」と「数十億を持つ Heap」の間の変換だけです。
+
+その変換は一つの規則です。**スロットは窓口を見せ、スロットに値を設定することは差分だけ合計を変えることを意味します。** ゲームがスロットに入るどの経路も、最後には「スロットは今これを持っている」と言います。それを代入ではなく差分として読むことで、誰も数え上げていない経路もきちんと動きます。
+
+二つの大きさの上限は意図して別の値にしています。ゲームがそれを尋ねる理由が違うからです。引数なしで尋ねるときは、どれだけ取り出すかを決めています。答えは1スタックなので、取り出しはほかのどこでも同じように動きます。特定のスタックについて尋ねるときは、どれだけ入るかを決めています。答えは Heap の空きです。そこで普通の1スタックを返すと、5000個の Heap が満杯に見えてしまいます。
+
+Heap は保持せずに毎回取りに行きます。画面が開いている間にブロックが壊されることも、アイテムが手から離れることもあります。どちらの場合も `Pile.NONE` が残ります。存在しない Heap は空の Heap とまったく同じに答えます。そのため以下のどのメソッドにも `null` の確認が要りません。
+
+**`private static final SimpleContainer UNUSED`**
+
+親のコンストラクタがコンテナを必要とします。誰もそれを読みません。
+
+**`public boolean mayPickup(Player player)`**
+
+出さない Heap からは、クリックでもシフトクリックでも取り出せません。
+
+**`public int getMaxStackSize()`**
+
+一度に出る量です。そのアイテムの1スタックがいくつであれ、1スタックです。
+
+**`public int getMaxStackSize(ItemStack stack)`**
+
+入る量です。Heap に空きがある分すべてです。
+
+**`public void set(ItemStack stack)`**
+
+差分の規則です。空のスタックは、スロットがもう空だと呼び出し側が思っていることを意味します。実際すでに空です。Heap は空にした処理の時点で変わっています。
+
+**`public ItemStack safeInsert(ItemStack stack, int increment)`**
+
+継承せずに書いてあります。継承した版は空きを `getMaxStackSize(stack) - getItem().getCount()` で計算して、合計を代入します。これは差分の規則が遠回りして同じ所に着くだけです。そして上の二つの上限を読む順番を間違えうる場所が一つ増えます。
+
+**`public void onQuickCraft(ItemStack oldStack, ItemStack newStack)`**
+
+数えるものはありません。このスロットはどのクラフトにも関わりません。
+
+## `Heaped.java`
+
+**`public interface Heaped`**
+
+すべての Heap に共通するものです。見た目より少ないことが分かりました。
+
+今は四つ書かれています。本当に共有されている部分は、量・容量・持っている物の名前・量を書き出す方法です。それ以外は一つごとに違います。どう保管するか・「種類」が何を意味するか・窓口がどの API を話すか・自分から押し出すか待つか、です。それらをまとめると分岐だらけの基底クラスができていたはずです。
+
+そのためこれは表示に必要なものだけです。四つのうち三つにはアイテムが入っていないので、画面を組むためのスロットがありません。これはそのために存在します。どれでも読める一つの画面は、それぞれ一つしか読めない三つの画面より価値があります。
+
+**`long amount()`**
+
+入っている量です。その資源自身の単位で表します。
+
+**`long capacity()`**
+
+入る量です。同じ単位で表します。
+
+**`Component contentName()`**
+
+持っている物（液体・ケミカルなど）です。資源に種類が無いときは空です。
+
+**`String brief(long value)`**
+
+量の短い表記です。付けるべき単位も含みます。
+
+**`String exact(long value)`**
+
+量のすべての桁です。詳細を求められたときに使います。
+
+**`int tint()`**
+
+ゲージの塗りの色です。ブロックのガラスの色でもあります。
+
+**`default boolean hasKinds()`**
+
+この資源に種類があるかどうかです。
+
+エネルギーにはありません。エネルギーの種類というものは存在しないので、名前を付ける物も描く物もありません。画面はそれを示す枠を省きます。何も入ることのない空の四角を見せはしません。
+
+**`default net.minecraft.resources.ResourceLocation contentTexture()`**
+
+中身を表すスプライトです。画面が別の方法で求める必要があるときは `null` です。ケミカルは自分のアイコンを持っています。液体のアイコンはクライアントにしか無いので、液体の Heap はここを `null` にして画面がクライアント側で探します。
+
+**`default int contentTint()`**
+
+そのスプライトを描く色です。
+
+**`default boolean gives()`**
+
+中から何かを出してよいかどうかです。
+
+設置された Heap は出します。ポケットの中の Heap は出しません。`Pile.gives()` と同じ規則・同じ語にしています。二つ目の Heap でこれに出会った読み手が同じことを二度覚えなくて済むようにするためです。`Held` を見てください。
+
+**`Heaped NONE`**
+
+存在しない Heap です。画面が開いている間にブロックが壊されたか、アイテムが手から離れた場合です。`null` ではなくこれを返すことで、読むたびに確認を入れずに画面を書けます。
+
+## `Held.java`
+
+**`public abstract class Held implements Heaped`**
+
+設置されずに持ち運ばれている Fluid Heap・Energy Heap・Gas Heap です。
+
+中身はアイテムに乗って運ばれます。Heap が採掘されても中身が残るのはそのためです。つまりポケットの中の Heap は、読む者がいないだけの満杯の Heap です。これがその読み取りです。表示がすでに使っているのと同じ言葉で読むので、一つの画面で両方に対応できます。
+
+**受け取りはしますが出しはしません。** `gives()` は `false` です。アイテムの Heap が同じ理由で従っているのと同じ規則です。置くブロックも立ち寄る場所も無しに、インベントリのスロットから何かを1兆も取り出せたら、保管部屋を作る理由がすべて無くなります。持ち運び中でもできるのは `draw` です。バケツ・バッテリー・タンクの中身を自分に空けられます。何かを注ぎ込む方向は何も代価が要らないからです。
+
+スタックは保持せずに毎回新しく取りに行きます。画面が開いている間にアイテムが動かされたり、入れ替えられたり、捨てられたりすることがあります。もうどこにも無いスタックに書き込むと、書いた内容が失われます。
+
+**`public final boolean gives()`**
+
+中から何かを出してよいかどうかです。アイテムが何かではなく、*アイテムがどこにあるか* で決まります。
+
+ポケットの中の Heap は出しません。その理由はアイテムではありませんでした。置く物も立つ場所も無しに、インベントリのスロットから何かを1兆も取り出せたら、保管部屋を作る理由がすべて無くなるからです。代価はブロックを一つ置くことです。`HorreumBlockEntity` に差し込まれた Heap はその代価をコントローラーが払っています。そのため同じ読み取りのコードが逆の答えを返します。一つのフィールドを、Heap が見つかった場所で設定します。
+
+**`protected abstract BlockEntityType<?> type()`**
+
+これがどのブロックのアイテムかです。書き込む中身にはその名前が必要です。
+
+**`protected final void write(CompoundTag tag, boolean empty)`**
+
+中身を書き戻します。何も残っていなければコンポーネントごと取り除きます。空になった Heap がほかの空の Heap と重なるようにするためです。空のタグを持っているせいで違う物に見えることを防ぎます。
+
+**`CustomData.of` ではなく必ず `setBlockEntityData` を通します。** コンポーネントは `CustomData.CODEC_WITH_ID` で保存されます。これはブロックエンティティを示す `id` の無いタグを拒みます。しかもプレイヤーのインベントリを保存している最中に拒むので、ワールドが落ちます。これより前に気付かせてくれるものはありません。ネットワーク用のコーデックは確認しないので、手で書いた Heap は最初の自動保存までまったく問題なく見えます。
+
+## `HeldEnergyHeap.java`
+
+**`public final class HeldEnergyHeap extends Held`**
+
+持ち運ばれている Energy Heap です。従う規則は `Held` を見てください。
+
+**`private static final String LEGACY_STORED`**
+
+以前ここで量に使っていた名前です。今の名前が無いときに読みます。
+
+**`public static HeldEnergyHeap of(HolderLookup.Provider registries, ItemStack stack)`**
+
+持ち運ばれている Heap です。受け取りはしますが出しはしません。
+
+**`public static HeldEnergyHeap inHand(Player player, InteractionHand hand)`**
+
+その手にある物です。尋ねた時点で何であってもかまいません。
+
+**`public static HeldEnergyHeap stored(HolderLookup.Provider registries, ItemStack stack)`**
+
+コントローラーに差し込まれた Heap です。コントローラーは設置されたブロックなので、これは出します。
+
+**`public boolean hasKinds()`**
+
+エネルギーには種類が無いので、名前を付ける物も描く物もありません。
+
+**`public int receive(int offered)`**
+
+受け取った量を返します。差し出された量を超えることはありません
+
+**`public int give(int wanted)`**
+
+渡した量を返します。この Heap が `gives()` でない限り何も渡しません。
+        持ち運び中のものは決して出しません
+
+**`write(tag, left <= 0)` の中**
+
+忘れるべき見本はありません。エネルギーでは、空かどうかは量だけで決まります。
+
+## `HeldFluidHeap.java`
+
+**`public final class HeldFluidHeap extends Held`**
+
+持ち運ばれている Fluid Heap です。従う規則は `Held` を参照してください。
+
+**`public static HeldFluidHeap of(HolderLookup.Provider registries, ItemStack stack)`**
+
+持ち運ばれている Heap です。受け入れはしますが出しはしません。
+
+**`public static HeldFluidHeap inHand(Player player, InteractionHand hand)`**
+
+その手にある Heap です。尋ねた瞬間に何を持っているかで決まります。
+
+**`public static HeldFluidHeap stored(HolderLookup.Provider registries, ItemStack stack)`**
+
+コントローラーに差し込まれた Heap です。コントローラーは設置されたブロックなので出します。
+
+**`public FluidStack sample()`**
+
+素性だけを表します。液体とそのコンポーネントで、量は常に1です。
+
+**`public String brief(long value)`**
+
+バケツ単位で表します。ミリバケツにするとどの数値も意味なく3桁ずつ長くなるためです。
+
+**`public int insert(FluidStack stack, boolean simulate)`**
+
+差し出された液体のうち受け入れた量を返します。0 のこともあります
+
+**`public FluidStack extract(int wanted, boolean simulate)`**
+
+取り出した分を返します。この Heap が `gives()` でない限り何も返りません
+        持ち運ばれている Heap は決して該当しません
+
+**`tag.remove(SAMPLE)` の中**
+
+最後の一滴と一緒に忘れます。ブロック側と同じです。覚えたままだと次に注がれたものを拒んでしまい、その理由を示す手段がありません。
+
+## `HorreumBlock.java`
+
+**`public class HorreumBlock extends BaseEntityBlock`**
+
+ラックです。右クリックで Heap を出し入れします。
+
+それ以外は何もしません。独自の操作を持たないのは、すべてを中の Heap を通して行うからです。Heap はすでにそのやり方を知っています。ブロックが加えるのは、パイプが全部の Heap に届く場所を一つにまとめることだけです。
+
+**`public List<ItemStack> getDrops(BlockState state, LootParams.Builder params)`**
+
+Heap は壊したラックのドロップに載ったまま運ばれます。理由はいつもより切実です。
+
+ばら撒くと Heap のアイテムが9個床に落ちます。一見無害ですが、Heap が何を抱えているかを思い出すと話が変わります。20億のスタックが9つ、エンティティの山として転がるのです。置き去りにされることも燃えることも、別のホッパーに拾われることもあります。Heap は運ぶ物であり、それを並べたラックも同じです。
+
+**`public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,`**
+
+ミドルクリックすると中身ごと返ってきます。Heap と同じです。
+
+## `HorreumBlockEntity.java`
+
+**`public class HorreumBlockEntity extends BlockEntity`**
+
+Heap を並べたラックであり、全部の Heap に届く場所を一つにまとめたものです。
+
+Heap はすでに中身をアイテムとして持ち運ぶので、ラック自体には保管場所が要りません。Heap のアイテムを入れるスロットが並んでいるだけです。外に見せる窓はどれもそのスロットの中身への見え方です。何もコピーせず、同期を保つ必要もありません。Heap を抜くと中身も一緒に出ていきます。もともと他のどこにも無かったからです。
+
+**中の Heap は出します。** ポケットの中の Heap は出しません。その理由はアイテムにあったわけではありません。Heap から引き出す代価はブロックを置くことだ、というのが理由でした。これがそのブロックです。`Held.gives()` を参照してください。
+
+意図的に混在させています。一つのラックにアイテム・液体・エネルギー・ガスの Heap を並べられ、種類ごとに対応する窓を出します。4つのラックに分けると、一つのことを言うのにブロック4つとパイプ4系統が要ります。
+
+**これには決して `net.minecraft.world.Container` を実装しないこと。** 理由は`HeapBlockEntity` と同じです。ホッパーはコンテナの経路を優先します。そこで見つかるのはHeap の*アイテム*です。中身ではなく Heap そのものを運び去ってしまいます。非常に高くつく誤解です。
+
+**`public static final int SLOTS`**
+
+ラックが持てる Heap の数です。
+
+設定ではありません。画面はスロットを9つ描いた一枚の絵です。変えられる数にするならその絵が描ける数でなければなりません。
+
+**`public NonNullList<ItemStack> heaps()`**
+
+Heap のアイテムそのものです。その場で読み書きします。
+
+**`public HorreumItemHandler items()`**
+
+ブロック全体で種類ごとに一つずつのハンドラです。`HeapBlockEntity.handler` を参照してください。
+
+**`public <T> T read(int slot, net.minecraft.world.item.Item kind,`**
+
+そのスロットの Heap を求められた種類として読んだものです。スロットの中身が別物なら`null` です。空きスロットか、種類の違う Heap の場合です。
+
+窓はどれもこれを使って作ります。だから特定の読み手を知る代わりに読み手を受け取ります。ラックは液体が何かを気にしません。
+
+**`public <T> List<T> readAll(net.minecraft.world.item.Item kind,`**
+
+その種類の Heap が入ったすべてのスロットです。スロット順に並びます。
+
+**`public static NonNullList<ItemStack> readHeaps(ItemStack rack, HolderLookup.Provider registries)`**
+
+ラックのアイテムへ Heap を書き込み、そこから読み戻します。
+
+**書き込みも読み込みもここだけで行います。** 以前は4か所がそれぞれ形を自前で綴っていました。ブロックエンティティ・ツールチップの文字・ツールチップの絵・持ち運び中のラックの画面です。そして持ち運び中の画面だけ綴り方が違っていました。アイテムの一覧を `Heaps` の下に入れ子にせず、コンポーネント全体として書いていたのです。一度書き込むと残りの3つは何も見つけられなくなります。そのため鞄の中のラックから Heap を1つ取り出すと残りの11個が消えたように見えました。実際には残っていましたが、読めるものがありませんでした。
+
+個数でも以前同じ過ちがありました。ある Heap では `Count` で、3つでは `Amount`だったときです。複数の場所で知られている形は、いずれ自分自身と食い違う形です。
+
+**`public static void writeHeaps(ItemStack rack, NonNullList<ItemStack> heaps,`**
+
+`setBlockEntityData` を通します。これはブロックエンティティを名指しします。`Held.write` を参照してください。
+
+**`public static boolean isHeap(ItemStack stack)`**
+
+そのアイテムをラックのスロットに入れてよいかどうかです。
+
+**`public void changed()`**
+
+中の何かが変わりました。Heap は画面に描かれ、量はアイテム自体から読みます。そのため知らされないクライアントは最後に見たものを表示し続けます。
+
+**`tag.put(HEAPS, saved(heaps, waiting, registries))` の中**
+
+すべてのスロットが空でも書き込みます。理由は `HeapBlockEntity#saveAdditional` に書いたとおりです。空の更新タグはクライアントに届く前に捨てられるので、空になったことが伝わらなくなります。
+
+## `HorreumBlockItem.java`
+
+**`public class HorreumBlockItem extends ContentsBlockItem`**
+
+アイテムとしてのラックです。専用のクラスが要る理由はどの Heap とも同じです。中身を持ち運ぶので、満杯でも空でも見た目が同じだからです。
+
+文字は Heap の数を示します。その下の絵は各 Heap の中身を1行ずつ示します。9行の文章では誰も最後まで読まないツールチップになります。アイコンはそのためにあります。
+
+**`public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand)`**
+
+スニークしながら空中を右クリックすると、手に持ったラックの中を見られます。
+
+**`public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(`**
+
+中身を1行の文字ではなく絵として出します。`HeapContents` を参照してください。どんなアイテムにも出しておき、Heap が空なら描くものは無いとクライアントが判断します。
+
+## `HorreumEnergyHandler.java`
+
+**`public class HorreumEnergyHandler implements IEnergyStorage`**
+
+ケーブルから見た、エネルギーの Heap を並べたラックへの窓です。
+
+アイテムや液体と違い、`IEnergyStorage` には添字がまったくありません。エネルギーには種類が無いので、スロット番号で区別するものが無いのです。そのためエネルギーの Heap を並べたラックは**一つのプール**です。合計は足し合わせます。入ってくる分は順に満たし出ていく分は順に抜きます。
+
+足し合わせるところで `int` の限界が表に出ます。9つの Heap を並べたラックは、1つの Heap が表せる量の9倍を持てます。他の箇所と同じく、答えは折り返さずに飽和させることです。20億は間違った答えですが、負の数は壊れた答えです。
+
+**`taken +` の中**
+
+シミュレーションでは何も動かしてはいけません。そのため仮に満たしたときの受け入れ量は、満たして戻すのではなく空き容量から計算します。
+
+**`private int saturated(java.util.function.ToLongFunction<HeldEnergyHeap> of)`**
+
+`long` で足し合わせ、`int` に収まる最大値で渡します。
+
+## `HorreumFluidHandler.java`
+
+**`public class HorreumFluidHandler implements IFluidHandler`**
+
+パイプやポンプから見た、液体の Heap を並べたラックへの窓です。
+
+**タンクはラックのスロットごとではなく、実際に入っている液体の Heap ごとに1つです。** これは方針の反転で、決め手はインターフェースです。`fill` と `drain` はタンクの添字をまったく取りません。振り分けは下にあるこのクラス独自のものです。したがって添字はタンクを*読む*ためにしか使われず、それも尋ねられたティックの中だけです。ティックをまたいで添字を持ち続けるものは無いので、Heap を出し入れして番号が変わっても何も壊れません。
+
+固定の12タンクは慎重な答えでしたが、目に見える代償がありました。ブロックのタンクを一覧にするもの（最もわかりやすいのは Jade）は、液体の Heap が1つだけのラックに12本のバーを描いていました。そのうち11本はずっと「空」と表示したままでした。アイテム側は固定スロットのままです。`IItemHandler` は挿入と取り出しで本当に添字を取るからです。`HorreumItemHandler` を参照してください。
+
+注入は**空のタンクより先に、すでにその液体を入れているタンクへ**振り分けます。逆にすると、バケツ1杯の水が最初に見つかった空の Heap を占めてしまいます。ラックは同じ液体の使いかけのタンクで埋まっていきます。
+
+**`private List<HeldFluidHeap> tanks()`**
+
+ラック内の液体の Heap です。スロット順に並びます。スロットは変わるので毎回読み直します。
+
+**`int filled` の中**
+
+タンクを2回たどります。まずこの液体をすでに入れているものすべてをたどり、その後で空のものだけをたどります。1回で済ませると、隣に同じ液体の Heap が半分入ったままなのに空の Heap を使ってしまいます。
+
+**`public FluidStack drain(FluidStack resource, FluidAction action)`**
+
+種類を指定した抜き取りです。その液体を入れている Heap だけが応じます。
+
+**`public FluidStack drain(int maxDrain, FluidAction action)`**
+
+量だけを指定した抜き取りです。何か入っている最初の Heap が応じ、出てくるのはすべて一種類の液体です。2つの Heap を混ぜて1回で抜くと、半分が溶岩のスタックをでっち上げることになります。そんな液体のスタックはありえません。
+
+## `HorreumItemHandler.java`
+
+**`public class HorreumItemHandler implements IItemHandler`**
+
+ホッパー・パイプ・ストレージネットワークから見た、アイテムの Heap を並べたラックへの窓です。
+
+**ハンドラのスロットはラックのスロットごとに1つです。中身にかかわらず常に9つです。** スロットの添字はパイプがティックをまたいで覚える唯一のものです。そのため Heap を取り出したり隣に液体の Heap を入れたりしても動いてはいけません。アイテムの Heap 以外が入ったラックのスロットは、空で何も受け付けないハンドラのスロットとして読めます。空きスロットとはまさにそういうものです。
+
+それ以外は `HeapItemHandler` を添字1つ分広げたものです。そこに記した`IItemHandler` の Javadoc からの2つの逸脱も含みます。本当の個数を報告することそして取り出しの上限をスタックではなく要求された量にすることです。
+
+**`private CarriedHeap at(int slot)`**
+
+そのスロットの Heap です。出せる状態で返し、無ければ `null` です。
+
+**`return heap.sample().copyWithCount((int) Math.min(heap.count(), Integer.MAX_VALUE))` の中**
+
+個数全体を、スタックが運べる量で飽和させて返します。64に切り下げると外部ストレージが Heap の量を誤って報告します。
+
+**`return taken >` の中**
+
+差し出されたスタックは決して変更しません。返すのは余った分だけです。
+
+**`public int getSlotLimit(int slot)`**
+
+スロットが空だったらどれだけ入るかです。非常に多くのパイプがここから空き容量を計算します。1スタック分で答えると Heap が満杯に見えてしまう理由は`HeapItemHandler` を参照してください。
+
+## `HorreumMenu.java`
+
+**`public class HorreumMenu extends AbstractContainerMenu`**
+
+ラックの画面です。Heap だけを受け付ける12個のスロットがあり、他には何もありません。
+
+読み取り表示はありません。Heap のアイテムはどれも自分のツールチップで中身を示します。その行があるのは、満杯の Heap と空の Heap が見た目では同じだからです。ラックが各スロットの横でそれを繰り返すと同じことを二度言うことになり、食い違う恐れもあります。
+
+**`private static final int RACK_X`**
+
+生成した画面テクスチャ上のスロット位置に合わせてあります。
+
+**`public interface Source`**
+
+ラックがどこにあるかです。ワールドに置かれているか、手に持たれているかです。
+
+`HeapMenu.Source` と同じ形で、理由も同じです。スロットも画面もどちらなのかを気にしないので、違うのは見つけ方だけです。
+
+**`NonNullList<ItemStack> heaps()`**
+
+12個のスロットです。その場で読み書きします。`null` にはなりません。
+
+**`void changed()`**
+
+中の何かが変わったので、書き留める必要があります。
+
+**`default int frozen()`**
+
+この画面を開いている間固定されるホットバーのスロットです。無ければ -1 です。
+
+**`public static HorreumMenu at(int id, Inventory inventory, BlockPos pos)`**
+
+ワールドに置かれたラックの画面です。
+
+**`public static HorreumMenu inHand(int id, Inventory inventory, InteractionHand hand)`**
+
+持ち運び中のラックの画面です。スニークしながら空中を右クリックすると開きます。
+
+中の Heap は動かせますが、*Heap の*中身には手が届きません。持ち運ばれているものは中身への窓を出さないからです。鞄から Heap を取り出すのはアイテムを動かすことであり保管庫から引き出すことではありません。
+
+**`private record AtBlock(Level level, BlockPos pos, ContainerLevelAccess access,`**
+
+ワールドに置かれたラックです。プレイヤーが近くにいる間だけ有効です。
+
+**`public NonNullList<ItemStack> heaps()`**
+
+他の誰も持っていない一覧です。ブロックが消えてから画面がそれに気づくまでの間に使います。書き込んでも何も変わりませんが、それがまさに正しい動きです。
+
+**`private record InHand(Player player, InteractionHand hand,`**
+
+持ち運び中のラックです。その手がまだラックを持っている間だけ有効です。
+
+Heap はアイテムから一度だけ読み出し、変更のたびに書き戻します。落としても残るのはアイテムなので、正本はアイテム側のコピーです。
+
+**`public void changed()`**
+
+`setBlockEntityData` を通します。これはタグの中でブロックエンティティを名指しします。`Held.write` を参照してください。他の方法で書くと次の自動保存でワールドが落ちます。
+
+**`private class HeapRackSlot extends Slot`**
+
+ラックのスロット1つです。出どころの一覧を直接読み書きします。
+
+**1スロットに Heap は1つです。** 1つのスロットに Heap が2つあると、コンポーネントは2つで共有する1組になります。そのため「その」Heap を満たすと両方が満たされます。シュルカーボックスはスタックしないことでこの複製を避けています。持ち運び中の Heap も同じ規則に従います。
+
+## `Mods.java`
+
+**`public final class Mods`**
+
+どの任意 Mod が入っているかです。
+
+そうした Mod に属するものを**決して名指ししてはいけない**クラスです。守る対象のメソッドにせず独立したクラスとして存在する理由は、まさにそれだけです。
+
+これは痛い目を見て学びました。以前の判定は `GasHeap.present()` でした。読めばまさに正しそうですが、動くはずがありません。静的メソッドを呼ぶとそのクラスが初期化されます。そして `GasHeap` は静的フィールドに`BlockCapability<IChemicalHandler, …>` を持っています。そのため「Mekanism はあるか」と尋ねると、確かめるために Mekanism のクラスを読み込んでいました。Mekanism が無いとMod は構築中に `NoClassDefFoundError` で落ちました。**見張り役は、自分が見張る扉の向こうには置けません。**
+
+使う箇所はすべて短絡評価です。`Mods.mekanism() && GasHeap.ITEM.get() == …` のように書きます。右辺に届くのは答えが「はい」のときだけです。存在しないクラスに触れるメソッド本体も実行されない限り問題ありません。
+
+**`public static boolean mekanism()`**
+
+このゲームにそもそも Gas Heap が存在するかどうかです。
+
+**`public static boolean refinedStorage()`**
+
+Heap の本当の合計を伝えられるストレージネットワークがあるかどうかです。
+
+## `Pile.java`
+
+**`public interface Pile`**
+
+一種類のアイテムの Heap です。どこに保管されているかは問いません。
+
+保管場所は2つあります。ワールドのブロックと、インベントリの中のアイテムです。どちらも同じものを保管し、同じ問いに答えます。それなのにこれまで問い合わせられるのはブロックだけでした。画面・スロット・メニューがすべて `HeapBlockEntity` に直接依存して書かれていたのです。これはその依存に名前を付けたものです。同じスロットと同じ画面がどちらの上でも動きます。
+
+あえて共通の基底クラスにはしていません。両者は永続化の方法・クライアントへの届き方・取り出せるものがまったく違います。共有しているのは計算だけで、ここが述べるのもそれだけです。
+
+**`ItemStack sample()`**
+
+保管しているものの素性です。個数は1です。
+
+**`long count()`**
+
+個数です。どのスタックが運べる量よりも大きな幅を持ちます。
+
+**`ItemStack stack()`**
+
+最大1スタック分です。スロットに表示できる分です。
+
+**`default boolean gives()`**
+
+何かを取り出してよいかどうかです。
+
+ワールドの Heap は出しますが、ポケットの Heap は出しません。置くブロックも無く近くに立つ必要も無しに、インベントリのスロットから何でも20億個に手が届くなら他のあらゆる保管手段が無意味になります。だから設置することが引き出す代価です。`CarriedHeap` を参照してください。
+
+**`Pile NONE`**
+
+存在しない Heap です。画面を開いている間にブロックが壊された場合や、アイテムが持っていた手を離れた場合です。
+
+`null` ではなくこれで答えるので、画面とメニューは読むたびに `null` を確かめずに書けます。空の Heap と存在しない Heap は読み手から同じに見えますし、そうあるべきです。
+
+## `ReadoutMenu.java`
+
+**`public class ReadoutMenu extends AbstractContainerMenu`**
+
+液体・エネルギー・ガスの Heap の裏にある画面です。ワールドに置かれていても手に持たれていても使います。
+
+3つの資源で1つのメニューを使います。共通する部分がまさに画面に必要なものだからです。量・容量・名前、そして容器用の2つのスロット（空にする側と満たす側）です。アイテムの Heap は専用のものを持ち続けます。そこでは中身*そのものが*スロットであり、その価値はこれを共有するより大きいからです。
+
+Heap に関する情報はメニューを通して送りません。ブロックは描画のためにすでに同期されています。手に持ったアイテムもインベントリの一部としてすでに同期されています。そのため画面は Heap をそれがある場所から読みます。これでメニューのデータフィールドも避けられます。データフィールドは16ビットなので、Heap の量が何であれ32767で頭打ちになります。
+
+2つの場所の違いは `Source` にまとめてあります。
+
+**`private static final int IN_X`**
+
+生成した画面テクスチャ上のスロット位置に合わせてあります。
+
+**`public interface Source`**
+
+Heap がどこに保管されているか、そしてそれがその画面にとって何を意味するかです。
+
+**`Heaped heap()`**
+
+`null` にはなりません。消えた Heap は `Heaped.NONE` を返します。
+
+**`Vessel vessel(Vessel.Flow flow)`**
+
+これも `null` にはなりません。消えた Heap には誰も見ない予備を渡します。
+
+**`default int frozen()`**
+
+この画面を開いている間固定されるホットバーのスロットです。無ければ -1 です。`HeapMenu.Source` を参照してください。
+
+**`default void tick()`**
+
+容器スロットに入っているものを1回分動かします。
+
+ブロックの場合は何もしません。すでにティック処理されているので、二度やるとブロックが示す速さの2倍で物が動きます。手に持った Heap にはティック処理するブロックエンティティが無いので、メニューが唯一の時計です。
+
+**`default boolean lendsTheVessel()`**
+
+容器スロットが画面の持ち物で、閉じるときに返す必要があるかどうかです。
+
+**`addSlot(new VesselSlot(source.vessel(Vessel.Flow.IN), IN_X, VESSEL_Y, source::vesselChanged))` の中**
+
+Heap が消えていても無条件に追加します。以下のスロット番号はここから数えます。最初のスロットが欠けるとシフトクリックの移動先の範囲が黙ってずれてしまいます。
+
+**`public static ReadoutMenu at(int id, Inventory inventory, BlockPos pos)`**
+
+ワールドに置かれた Heap の画面です。
+
+**`public static ReadoutMenu inHand(int id, Inventory inventory, InteractionHand hand)`**
+
+手に持った Heap の画面です。スニークしながら空中を右クリックすると開きます。
+
+**`public void broadcastChanges()`**
+
+画面が開いている間、見ている人ごとに1ティックに1回呼ばれます。手に持った Heap はこれを時計として使います。先に容器スロット、その後に通常の同期です。
+
+**`public void removed(Player player)`**
+
+手に持った Heap の容器スロットは画面の持ち物なので、画面を閉じると中身が戻ってきます。ブロックの場合は戻りません。ブロックが保持し、次に誰かが開いたときもそこにあります。
+
+**`public ItemStack quickMoveStack(Player player, int index)`**
+
+シフトクリックで空の容器は Out へ、それ以外は In へ移ります。どちらからも戻せます。
+
+**`private record AtBlock(Level level, BlockPos pos, ContainerLevelAccess access, Vessel spareIn, Vessel spareOut)`**
+
+ワールドに置かれた Heap です。プレイヤーがブロックの近くにいる間だけ有効です。
+
+**`private record InHand(Player player, InteractionHand hand, Held held, Vessel in, Vessel out)`**
+
+手に持った Heap です。その手がまだ Heap を持っている間だけ有効です。
+
+容器スロットはメニュー自身のもので、画面と同じだけ存続します。アイテムに保存するとポケットの Heap の中に容器を置き去りにできてしまいます。誰も頼んでいない第二の保管手段です。
+
+**`private static Held heldHeap(Player player, InteractionHand hand)`**
+
+プレイヤーが3つのうちどれを持っているかです。無ければ `null` です。
+
+ガスのものは最後に、しかも専用のパッケージを通して尋ねます。Mekanism の無いゲームで化学物質に触れるクラスを決して読み込まないためです。
+
+## `VesselSlot.java`
+
+**`public class VesselSlot extends Slot`**
+
+Heap の `Vessel` を扱うスロットです。1個だけ入る普通のスロットでコンテナ以外の場所に保持されています。
+
+スタックではなく1個です。16個のスタックのうちバケツ1つだけを満たして残り15個を空のままにするのは、良い答えの無い問いです。最初からスタックを受け付けない方が明快です。
+
+## `client/AcervusClient.java`
+
+**`public final class AcervusClient`**
+
+クライアント側です。ブロックを描くものと、その画面を描くものです。
+
+**`public static void registerTooltips(RegisterClientTooltipComponentFactoriesEvent event)`**
+
+`HeapContents` を描画できるものに変えます。
+
+## `client/HeapContentsTooltip.java`
+
+**`public class HeapContentsTooltip implements ClientTooltipComponent`**
+
+`HeapContents` を描きます。Heap ごとに1行で、アイコン・名前・量の順です。
+
+アイコンには中身が普段見える場所での姿を使います。アイテムそのもの、または液体や化学物質のブロックアトラス上のスプライトです。エネルギーには種類が無いので行にアイコンは無く数値だけが並ぶことでそれを示します。
+
+読み取りは持ち運ばずにここで行います。Heap を読むのに必要なレジストリはクライアントからは届きますが、アイテムからは届かないからです。`HeapContents` を参照してください。
+
+**`private static final int AMOUNT_COLOUR`**
+
+量です。名前と離して置くので、縦に並ぶと列として読めます。
+
+**`public record Row(ItemStack item, FluidStack fluid, ResourceLocation sprite, boolean onAtlas,`**
+
+1つの Heap です。描くもの・その名前・その量を持ちます。
+
+公開しているのはガスのパッケージが作れるようにするためだけです。このクラスが自分で読んではいけない唯一の種類の中身だからです。
+
+**`private static final ResourceLocation BOLT`**
+
+エネルギー専用のアイコンです。ここで唯一ブロックアトラスに載っていないものです。ブロックではなくツールチップのものなので、直接描画します。
+
+**`public static boolean anything(ItemStack stack)`**
+
+描く価値のあるものがあるかどうかです。空のものは出しません。
+
+**`private static Row row(ItemStack heap, HolderLookup.Provider registries)`**
+
+1つの Heap を1行として読んだものです。中身が無ければ `null` です。
+
+Gas Heap は最後に `Mods.mekanism()` の後ろで尋ねます。Mekanism の無いゲームが化学物質に触れるクラスに決して届かないようにするためです。
+
+**`public void renderText(Font font, int x, int y, Matrix4f matrix,`**
+
+文字は独立したツールチップ行としてではなく、アイコンと一緒に描きます。名前が常に対応する絵の隣に来るようにするためです。ツールチップの文字と絵は別々に配置されるので12行の一覧ではずれていきます。
+
+**`IClientFluidTypeExtensions look` の中**
+
+液体のスプライトはクライアントからしか届きません。ここがそのクライアントです。
+
+## `client/HeapRenderer.java`
+
+**`public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity>`**
+
+Heap を見る価値のあるものにする部分です。何をいくつ持っているかを示します。アイテムはガラスの中でカメラの方を向いて浮かびます。個数は開いている各面に平らに書きます。カメラの方を向くラベルは斜めから見るとブロックに沈み込むからです。
+
+**`private static final float ITEM_SCALE`**
+
+部屋の向こうからでも読める大きさで、ブロックの中に収まる小ささです。
+
+**`private static final float TEXT_SCALE`**
+
+文字は16ピクセルで作られています。これでワールドの縮尺まで縮めます。
+
+**`private static final float TEXT_DROP`**
+
+アイテムの下です。上の縮尺でアイテムに重ならない位置です。
+
+**`items.renderStatic(sample, ItemDisplayContext.GUI, packedLight, OverlayTexture.NO_OVERLAY,` の中**
+
+GROUND ではなく GUI です。中身は箱の中の面に置かれたアイテムではなく、アイテムの絵として見えるべきだからです。
+
+**`String text` の中**
+
+短くします。これは部屋の向こうから読むもので、欲しいのは大きさです。13桁は壁でしかありません。正確な数は画面にあります。
+
+**`pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE)` の中**
+
+Y は負です。フォントは下向きに描かれます。そして姿勢はすでにカメラの方へ回してあるので、Y 軸が逆を向いています。
+
+**`public int getViewDistance()`**
+
+中身こそ見る理由なので、看板より遠くから見えるべきです。
+
+## `client/HeapScreen.java`
+
+**`public class HeapScreen extends ReadoutPanel<HeapMenu>`**
+
+Item Heap の画面です。ほかの3つと同じく `ReadoutPanel` が配置を決めます。
+
+Out スロットの上では正確な個数をアイテム自身のツールチップに*書き足し*ます。置き換えはしません。中にあるのはあくまでアイテムなので、アイテムがふだん自分について示す情報はすべてそのまま当てはまるからです。
+
+## `client/HorreumScreen.java`
+
+**`public class HorreumScreen extends AbstractContainerScreen<HorreumMenu>`**
+
+ラックを内側から見た画面です。12個のスロットとプレイヤー自身のインベントリがあります。
+
+わざと簡素にしています。各 Heap は中身を自分のツールチップで示します。この画面で何かを足しても同じ数字の二重写しにしかなりません。
+
+ここの寸法はすべて `tools/make_textures.py` に対になる値があります。
+
+**`public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)`**
+
+`HeapScreen.render` を参照してください。これは画面が自分で呼ぶ必要があります。
+
+## `client/ReadoutScreen.java`
+
+**`public class ReadoutScreen extends ReadoutPanel<ReadoutMenu>`**
+
+Fluid Heap・Energy Heap・Gas Heap の画面です。配置は `ReadoutPanel` のものです。
+
+化学物質はアイコンと色味を自分で持っています。液体のそれはクライアントからしか取れません。そのため Fluid Heap はそこを空けたままにして、代わりにここで調べます。これができるのは Fluid Heap が Gas Heap と違ってどのゲームにも必ず存在するからです。
+
+## `data/AcervusDataGen.java`
+
+**`public final class AcervusDataGen`**
+
+`src/generated/resources` の下にあるものはすべてここから生まれます。なのでそのディレクトリには手で書いたものが一つもありません。
+
+ルートテーブルはありません。`io.github.capsicum0907.acervus.HeapBlock.getDrops` がコードでその問いに答えます。Heap が何を落とすかは中身によって変わるからです。
+
+**`private static class Tags extends BlockTagsProvider`**
+
+Heap を速く壊せるのはツルハシです。ただし速くなるだけです。このブロックはわざと適正な道具を必須にしていません。ドロップしないということは中身をすべて失うことを意味するからです。
+
+**`protected void addTags(HolderLookup.Provider registries)`**
+
+Gas Heap は常に**省略可能な**項目として入れます。データ生成の時点で Mekanism があってもなくても同じです。
+
+存在しないブロックを名指しする必須の項目は、単に抜け落ちるだけでは済みません。タグファイル全体が拒否され、4つのブロックがまとめて `mineable/pickaxe` から外れます。その結果 Mekanism のないゲームでは、ツルハシを使っても素手と同じ速さでしか壊せない Heap ができていました。これを捕まえたのが `neverVoidsItselfForWantOfAPickaxe` で、フォルダから Mod を抜いた途端に失敗しました。
+
+省略可能な形で無条件に書くことで、もう一つの古い落とし穴もなくなります。生成されるファイルが、たまたま `run/mods` に何が入っていたかに左右されるという問題です。
+
+**`String rack` の中**
+
+不透明です。ラックが持つのは中身ではなく Heap です。なので透けて見えるものが何もなく、半透明の描画にコストを払う理由もありません。
+
+**`if (Mods.mekanism())` の中**
+
+Mekanism があるときだけです。そのときにしかブロックが存在しないからです。再生成するときは Mekanism を `run/mods` に入れたままにしてください。そうしないとこれらの素材が古くなります。
+
+**`private void drawnItem(DeferredBlock<?> block)`**
+
+半透明にします。テクスチャの中央が透けていて、既定の描画方式ではその画素が完全に不透明として描かれてしまうからです。
+
+**`add(AcervusRegistry.HEAP.get(), "Item Heap")` の中**
+
+「Heap」ではなく「Item Heap」です。これは4つのうちの一つです。最初に書かれたからといって、一つだけ名字を持たない理由にはなりません。
+
+**`add(AcervusRegistry.HORREUM.get(), "Horreum")` の中**
+
+ラテン語で穀物倉のことです。Heap をしまっておく建物という意味です。
+
+**`add("gui.acervus.empty", "Empty")` の中**
+
+4つすべてで共有します。空であることはどれか一つに固有の事柄ではないからです。
+
+**`private static class Recipes extends RecipeProvider`**
+
+中が見えるチェストを鉄でまとめたものです。わざと希少な素材の先には置いていません。Heap がどれだけ入るかは設定で決まります。なのでレシピが決めるのはいつ手に入るかであって、どれだけ強いかではありません。
+
+**`ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.FLUID_HEAP.get())` の中**
+
+同じ枠でチェストの代わりに大釜を囲みます。この2つは二種類のものを入れる一つの機械として読めるべきです。
+
+**`ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.HORREUM.get())` の中**
+
+チェストを鉄の枠で囲み、ガラスは使いません。ラックはこの組の中で唯一中が見えないブロックです。作るのにかかる費用は Heap と同じです。
+
+**`if (Mods.mekanism())` の中**
+
+大釜ではなく瓶です。同じ材料から別々のブロックは作れません。そしてバニラで気体を入れるものといえば瓶です。問いは2つあり、それぞれ別のときに問われます。両方に答えないとレシピはどちらかの方向で誤ります。 - 条件分岐による防御：これを実行している「今」Mekanism があるか。ブロックを名指しするだけでそれを持つクラスが読み込まれます。そのクラスは Mekanism なしには存在できません。なのでこのファイルは Mekanism を `run/mods` に入れてデータ生成を実行したときだけ書き出されます。さらに `--all` のため、Mekanism「なし」でデータ生成を実行するとコミット済みのファイルはそのまま残らず削除されます。 - 読み込み条件：レシピを読み込むゲームにそのアイテムが存在するか。このファイルは Mekanism の有無にかかわらず常に jar に入って配られます。Mekanism がなければ、レシピは誰も登録していないアイテムを名指しすることになります。これは黙って飛ばされるわけではありません。起動のたびにログにエラーが出ます。この条件は Mekanism ではなく自分のアイテムについて問います。理由はツルハシのタグで addOptional を使うのと同じです。存在しなければならないのは自分のものです。他人の Mod を名指ししても、なぜ存在しないのかを推測しているにすぎません。
+
+## `data/TestStructures.java`
+
+**`public class TestStructures implements DataProvider`**
+
+ゲームテストを実行する舞台です。平らな床とその上の何もない空間です。
+
+ゲームテストには置き場となるストラクチャーが必要です。そして借りてこられる空のストラクチャーはありません。バイナリをリポジトリに入れる代わりにここで NBT を書き出すことで、生成物は生成するという決まりを守れます。データバージョンはゲーム自身から取ります。なので気付かないうちに古くなることはありません。
+
+**`public static final String FLOOR`**
+
+`@GameTest(template = ...)` から参照されます。
+
+**`ListTag blocks` の中**
+
+空気も含めてすべてのマスを列挙します。省いたマスはもともとあったものがそのまま残ります。そうなると一つのテストが次のテストに何かを残せてしまいます。
+
+**`@SuppressWarnings("deprecation")` の行末**
+
+CachedOutput が求めるのは `Hashing.sha1` です
+
+## `gas/ChemicalHeapBlock.java`
+
+**`public class ChemicalHeapBlock extends BaseEntityBlock`**
+
+化学物質の Heap です。独自の操作はありません。気体は加圧チューブを通って移動します。手に持って右クリックできる容器もありません。
+
+**`public <T extends net.minecraft.world.level.block.entity.BlockEntity>`**
+
+サーバー側だけです。
+
+**`protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state,`**
+
+素手のときは表示画面を開きます。
+
+## `gas/ChemicalHeapBlockEntity.java`
+
+**`public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.capsicum0907.acervus.Heaped, io.github.capsicum0907.acervus.HasVessel`**
+
+化学物質の Heap が持つものです。一種類の化学物質とその量です。
+
+**4つのうちで唯一、ありのままを言えるものです。** Mekanism は化学物質を `long` 型で数えます。`getChemicalTankCapacity` も `long` 型を返し、スタックの量も同じです。なのでここでは上限で頭打ちにする必要がありません。Item Heap・Fluid Heap・Energy Heap はどれも内部では `long` 型で持ち、外には `int` 型で言える最大値を伝えます。この Heap は持っている量をそのまま伝えます。
+
+このパッケージの中身はすべて Mekanism があるときにしか存在しません。独立したパッケージにしているのはそのためです。この外では化学物質に一切触れません。なので Mekanism のないゲームが、化学物質の欠けたクラスを読み込むことはありません。
+
+**`private ChemicalStack sample`**
+
+種類を示すだけのものです。化学物質そのもので、量は常に1です。
+
+**`public ChemicalStack contents()`**
+
+全量を返し、どこにも上限の切り詰めはありません。量は入口でも出口でも `long` 型です。
+
+**`public long insert(ChemicalStack stack, boolean simulate)`**
+
+差し出された量のうちどれだけ受け取ったかを返します
+
+**`public ChemicalStack extract(long wanted, boolean simulate)`**
+
+取り出したものを返します。十分にあれば求められた量をすべて返します
+
+## `gas/ChemicalHeapBlockItem.java`
+
+**`public class ChemicalHeapBlockItem extends ContentsBlockItem`**
+
+アイテムとしての Gas Heap です。偽りにならないよう、運んでいる中身を示します。
+
+**`public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand)`**
+
+スニークしながら空中を右クリックすると、手に持っているものの中身を見られます。
+
+**`public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(`**
+
+中身を1行の文字ではなく絵として見せます。`HeapContents` を参照してください。どんな場合でも差し出し、Heap が空なら描くものがないとクライアントが判断します。
+
+## `gas/ChemicalHeapHandler.java`
+
+**`public class ChemicalHeapHandler implements IChemicalHandler`**
+
+化学物質の Heap が Mekanism のパイプや機械に見せる窓口です。
+
+Mekanism は `long` 型で数えるので、4つのうちでいちばん素直です。頭打ちも切り詰めもありません。2つの正しいことのどちらを言うか選ぶ必要もありません。タンクは中身を報告し、求められた量を渡します。どちらの数字も本物です。ほかの3つの Heap はどれも上限を前提にした形になっていますが、これにはその上限がありません。
+
+ほかと同じ理由で、ここでは何も覚えておきません。
+
+**`public void setChemicalInTank(int tank, ChemicalStack stack)`**
+
+代入です。Heap にとって自然な意味はありません。「代わりにちょうどこれを持つ」と読みます。そう読んだときだけ、後でブロックが矛盾のない状態に保たれます。
+
+## `gas/GasHeap.java`
+
+**`public final class GasHeap`**
+
+Gas Heap です。Acervus が Mekanism について知っていることのすべてがここにあります。
+
+ここにあるものはすべて Mekanism が入っているときだけ登録されます。これは任意の依存関係だから用心しているのではありません。これこそが依存を任意にしている仕組みです。ブロックエンティティが `ChemicalStack` を持つブロックは、それを定義するクラスなしには登録できません。なので代わりにブロックそのものが存在しない形にする必要があります。
+
+ケイパビリティは Mekanism 自身のクラスから読み取るのではなく、名前から組み立てます。ケイパビリティは名前と型で一意に管理されます。なので `mekanism:chemical_handler` は Mekanism が登録するのとまさに同じオブジェクトに解決されます。これによってこの Mod は Mod の内部ではなく、公開された API だけに対してコンパイルできます。
+
+**`public static final BlockCapability<IChemicalHandler, Direction> CHEMICAL_HANDLER`**
+
+Mekanism が登録するのと同じケイパビリティのオブジェクトです。そのクラスを使わずに取得しています。
+
+**`public static final net.neoforged.neoforge.capabilities.ItemCapability<IChemicalHandler, Void>`**
+
+同じケイパビリティのアイテム版です。手に持ったタンクのためのものです。
+
+**`public static void register(IEventBus modEventBus)`**
+
+このクラスを読み込むことが、中身すべてを登録することになります。なので呼び出し側が先に確認しておく必要があります。その確認はここには置けません。それを*呼ぶ*こと自体がクラスの読み込みになるからです。
+
+これは細かい気遣いではありません。以前はこの確認がこのクラスの静的メソッドでした。静的メソッドは自分が属するクラスを初期化します。つまり「Mekanism はあるか」と問うために Mekanism のクラスを読み込んでいました。その結果 Mekanism がないと Mod が構築中に落ちていました。今は `io.github.capsicum0907.acervus.Mods` にあります。
+
+**`public static void registerRackCapability(RegisterCapabilitiesEvent event)`**
+
+ラックの化学物質用の窓口です。境界のこちら側から登録します。
+
+ラック自体はメインのパッケージにあり、どのゲームにも存在します。なのでラックは化学物質のハンドラを名指しできません。代わりにここを呼びます。それも `io.github.capsicum0907.acervus.Mods.mekanism()` に問い合わせた後だけです。これが `registerCapability` の一部ではなく独立したメソッドになっているのはそのためです。
+
+**`@SuppressWarnings("DataFlowIssue")` の行末**
+
+バニラのビルダーは使いもしないデータ修正器の型を求めます
+
+## `gas/GasRow.java`
+
+**`public final class GasRow`**
+
+Gas Heap をツールチップの1行として読んだものです。
+
+ほかの3つの横ではなくここに置いているのは、化学物質を名指しするのがこれだけだからです。このパッケージの外では名指ししてはいけません。呼び出し側は `Mods.mekanism()` の後でしかここに来ません。なので Mekanism のないゲームがこれを読み込むことはありません。
+
+化学物質は液体と違って自分のアイコンと色味を持っています。なので画像はここで決まり、描く側で調べるものはありません。
+
+**`public static HeapContentsTooltip.Row of(HolderLookup.Provider registries, ItemStack heap)`**
+
+ほかの種類と同じく、Heap が空なら `null` です。
+
+## `gas/HeldChemicalHeap.java`
+
+**`public final class HeldChemicalHeap extends Held`**
+
+持ち運ばれている Gas Heap です。従う決まりは `Held` を参照してください。
+
+4つのうちでどこにも上限がないものです。Mekanism は入口でも出口でも `long` 型で数えます。なのでここでは出すときに頭打ちになりません。
+
+**`public static HeldChemicalHeap of(HolderLookup.Provider registries, ItemStack stack)`**
+
+持ち運ばれている Heap です。受け取りはしますが渡しはしません。
+
+**`public static HeldChemicalHeap inHand(Player player, InteractionHand hand)`**
+
+その手にあるものです。問い合わせた時点で何であってもかまいません。
+
+**`public static HeldChemicalHeap stored(HolderLookup.Provider registries, ItemStack stack)`**
+
+制御ブロックに差し込まれた Heap です。それは設置されたブロックなので渡します。
+
+**`public ResourceLocation contentTexture()`**
+
+化学物質は液体と違って自分のアイコンと色を持っています。
+
+**`public long insert(ChemicalStack stack, boolean simulate)`**
+
+受け取った量を返します。ゼロのこともあります
+
+**`public ChemicalStack extract(long wanted, boolean simulate)`**
+
+取り出したものを返します。この Heap が
+        `gives()` でない限り何も返しません。持ち運ばれているものは決して渡しません。どこにも切り詰めはありません。Mekanism
+        は入口でも出口でも `long` 型で数えます。
+
+**`tag.remove(SAMPLE)` の中**
+
+最後の分がなくなるときに種類も忘れます。ブロックの場合と同じです。
+
+## `gas/HorreumChemicalHandler.java`
+
+**`public class HorreumChemicalHandler implements IChemicalHandler`**
+
+Gas Heap の入ったラックについて Mekanism のチューブが見る窓口です。
+
+**タンクはラックのスロットごとではなく、実際にラックに入っている Gas Heap ごとに一つです。** `io.github.capsicum0907.acervus.HorreumFluidHandler` と同じ逆転で、理由も同じです。固定の12タンクにすると、それを一覧にするものすべてに12本のバーが並びます。そのうち11本はずっと `Empty` と表示されたままでした。
+
+こちらは2つのうちで白黒がはっきりしない方です。液体のインターフェースと違って、`insertChemical` と `extractChemical` は番号を*実際に*受け取るからです。それでも安全なのは、Mekanism がハンドラ自身の面を問わない既定の処理を通してこれらを呼ぶからです。その処理は問われたティックの中でタンクを順に回ります。タンク番号をあるティックから次のティックへ持ち越すものはありません。もしいつか持ち越すものが現れたら、症状は同じラックの別の Heap に搬入されることです。消失ではなく、複製でもありません。
+
+端での気遣いが要らないものです。Mekanism は入口でも出口でも `long` 型で数えます。なのでここでは何も頭打ちにならず、タンクは持っている量をそのまま報告します。
+
+このクラスは Mekanism があるときにしか存在しません。このパッケージにあるのはそのためです。パッケージの外では化学物質を名指ししません。
+
+**`private java.util.List<HeldChemicalHeap> tanks()`**
+
+ラックの中の Gas Heap をスロット順に並べたものです。スロットは変わるので毎回読み直します。
+
+**`public void setChemicalInTank(int tank, ChemicalStack stack)`**
+
+代入です。「代わりにちょうどこれを持つ」と読みます。`ChemicalHeapHandler` を参照してください。
+
+## `rs/HeapStorage.java`
+
+**`public class HeapStorage implements ExternalStorageProvider`**
+
+Refined Storage のネットワークの外部ストレージが Heap やそのラックに向いたときに、ネットワークから見えるものです。
+
+**これは一つの数字のためにあります。** Refined Storage はどこでも `long` 型で数えます。`ResourceAmount` も `long` 型を持ち、`insert` と `extract` も `long` 型を受け取ります。そして Heap は `long` 型で持っています。両者は完全に一致しています。ところがこれまでは `IItemHandler` を通して話すしかありませんでした。その `ItemStack` は `int` 型で数えます。そのため50億入った Heap を見たネットワークは 2,147,483,647 と伝えられ、それを信じていました。制限していたのは Refined Storage の何かではなく、両者の間の変換部分でした。
+
+移動は今も `int` 型に収まる大きさの呼び出しで行います。スタックが運べるのはそこまでだからです。もっと欲しいネットワークは単にもう一度求めます。正直に伝える手段がなかったのは*読み取り*の方で、今はそれができます。
+
+**自分のブロックでなくても、決して `null` を返しません。** Refined Storage は `.map(factory -> factory.create(…)).toList()` でプロバイダを集めます。そして返ってきたものを選別しません。なので他人のブロックに `null` を返すファクトリは、その一覧に `null` を入れてしまいます。「ここには何もない」と答えるものこそ、このインターフェースが実際に求めている形です。
+
+**`private List<Pile> piles()`**
+
+この面の向こうにあるすべての Heap です。毎回読み直します。
+
+単体の Heap なら1件です。ラックなら中の Item Heap ごとに1件です。覚えておかずに毎回調べます。ネットワークが向いたままの間に、ブロックが壊されたり置き換えられたり Heap を抜かれたりすることがあるからです。
+
+**`amounts.add(new ResourceAmount(ItemResource.ofItemStack(pile.sample()), pile.count()))` の中**
+
+個数全体を `long` 型のまま渡します。このクラスの目的はまさにこれです。
+
+**`private static int atMostAnInt(long amount)`**
+
+1回の呼び出しで動かすのは、`ItemStack` が*数えられる*量までです。64ではなく20億です。`ItemResource.toItemStack(long)` はスタックの大きさに切り詰めずに型変換します。なので本当の上限は `int` 型だけです。先に切り詰めておくことで、Refined Storage がそれについて切り捨ての警告をログに出すことも防げます。
+
+1回で20億を超えて欲しいネットワークはもう一度求めます。「今はこれだけ」と言っても何も失われません。正直に伝える手段がなかったのは*読み取り*の方でした。
+
+**`private interface Pile`**
+
+どこに置かれていても Heap は Heap です。2つの置き場所の違いは誰に知らせるかだけです。
+
+**`private record Racked(HorreumBlockEntity rack, CarriedHeap heap) implements Pile`**
+
+ラックに入った Heap です。ラックにはアイテムの一つが変わったことを知らせる必要があります。
+
+## `rs/RefinedStorage.java`
+
+**`public final class RefinedStorage`**
+
+Acervus が Refined Storage について知っていることのすべてです。登録が一つだけです。
+
+ここにあるものはすべて Refined Storage が入っているときだけ読み込まれます。その確認はこのクラスではなく `Mods` にあります。この決まりがどんなクラッシュと引き換えに得られたかは `io.github.capsicum0907.acervus.gas.GasHeap.register` を参照してください。
+
+登録は Mod のコンストラクタではなく共通セットアップで行います。`RefinedStorageApi.INSTANCE` は Refined Storage が自分の構築中に埋めるものです。そして Mod のコンストラクタが実行される順序は誰も当てにすべきではありません。
+
+**`event.enqueueWork(() -> RefinedStorageApi.INSTANCE.addExternalStorageProviderFactory(` の中**
+
+ファクトリは自分のものかどうかにかかわらず、ワールド中のすべての外部ストレージについて問われます。そしてどちらの場合も何かを返す必要があります。HeapStorage はブロックが他人のものなら「ここには何もない」と答えます。
+
+## `tools/make_textures.py`
+
+**スクリプト全体**
+
+Heap ブロックのテクスチャを描きます。
+
+このスクリプトが画像の元です。`src/main/resources` の下の PNG はその出力なので手で編集しません。
+
+このブロックは中が見える必要があります。なので面の中央は半透明にし、枠だけを不透明にします。陰影は手で描かずに導き出します。左上に何もない画素は光を受けます。右下に何もない画素は影に入ります。それ以外はすべて地の色です。枠は輪の形なので、この決まりだけで外側の縁が明るくなり内側の縁が暗くなります。どちらも個別に指定する必要はありません。
+
+外部ライブラリは使いません。PNG は `zlib` と `struct` から組み立てます。
+
+    python tools/make_textures.py
+
+**`draw`**
+
+同じブロックでガラスだけが違います。枠はわざと共通にしています。Fluid Heap と Item Heap は違うものを入れる同じ機械です。なので別々の発明ではなく、一揃いの2つに見えるべきです。
+
+**`_recess`**
+
+くぼんだ領域です。上と左の縁が暗く、下と右の縁が明るくなります。
+
+**`_sheet`**
+
+256x256 のシートです。何も描かれていないところは透明です。3つの画面はそれぞれ PNG 書き出しの処理を複製して持たずに、これを共有します。
+
+**`draw_bolt`**
+
+16x16 で、稲妻以外は透明です。ブロックのテクスチャアトラスに縫い込まずにそのまま描画します。これはブロックではなくツールチップに属するものだからです。
+
+絵の中央寄せは、上の図の点を数えるのではなく測って行います。手で書いていたときは、行のほかのアイコンがすべて中央にあるのに、これだけ枠の左上の角に寄っていました。その直し方は点を動かすことではありません。位置を誰かが正しく合わせなければならないものにしないことです。
+
+**`draw_rack`**
+
+ラックのブロックです。Heap と同じ枠ですが、ガラスをはめずに塞いでいます。そこに収める Heap のためのくぼみが格子状に並びます。組の中で唯一中が見えないブロックです。中にあるのは中身ではなく Heap だからです。
+
+**`draw_rack_screen`**
+
+9個のスロットとプレイヤーのインベントリだけで、ほかには何もありません。各 Heap は中身を自分のツールチップで示します。なのでここに表示を置いても、その二重写しになるだけです。
+
+**`FRAME = 2` の行末**
+
+金属の縁が何画素の深さまで続くか
+
+**`GLASS_ALPHA = 90` の行末**
+
+255 のうちの値です。ガラスに見える程度にあり、向こうが見える程度に透明です
+
+**`raw.append(0)` の行末**
+
+その行のフィルタ種別は 0
+
+**`header = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)` の行末**
+
+8ビット RGBA
+
+**`INVENTORY_ROWS = ((8, 84), (8, 102), (8, 120))` の行末**
+
+各行の内側の左上
+
+**`SHEEN = {(4, 5), (5, 4), (5, 5), (6, 4), (9, 10), (10, 9), (10, 10)}`**
+
+いくつかの明るいマスで、ガラス板のつやを表します。計算せずに置いています。ハイライトはたまたま光がどこに当たるかの話で、形の話ではないからです。
+
+**`METAL_TONES = ("#8A8F9C", "#5C6270", "#3A3F4A")`**
+
+（明部・地の色・影）
+
+**`SHEET = 256`**
+
+--- 画面 ------------------------------------------------------------ ゲーム自身の流儀に沿ったパネルです。平らな塗りに、上と左は明るい面取り、下と右は暗い面取りを付けます。以下の寸法はすべて HeapScreen にも定数としてあり、両者は一致している必要があります。どちらの側でも同じ名前を付けています。
+
+**`FLUID_GLASS = "#7FB8C8"`**
+
+枠は一つでガラスが3種類です。Heap がどの資源用かを示すのは色だけです。それが狙いで、どれも同じ機械だからです。
+
+**`BOLT = """`**
+
+エネルギーにはアイテムも固有の画像もありません。そのためほかの行にはどれも絵があるのに、そのツールチップの行だけ穴が空いていました。言葉で説明せずに描いています。形そのものが要点だからです。稲妻が何を意味するかは誰にも説明する必要がありません。
+
+**`edge = (x - 1, y) not in lit or (x, y - 1) not in lit`**
+
+縁とは、上か左の隣が点灯していない点灯画素のことです。これで誰も置かなくても稲妻に縁取りが付きます。
+
+**`for ox in (3, 9)`**
+
+2x2 で4つのくぼみがあり、中のスロットを表します。上と左を暗くして、突起ではなく穴に見えるようにしています。
+
+**`RACK_SLOTS = (62, 18)`**
+
+ラック画面で9個の Heap スロットが並ぶ位置です。横3つ・縦3つです。
+## ビルドと CI
+
+**`build.gradle`：リポジトリ**
+
+ModMaven は Mekanism の化学物質 API のためだけにあります。うっかりほかのものがそこから解決され始めないよう、`mekanism` グループに範囲を絞っています。
+
+Refined Storage はどこにも API の成果物を公開していません。Central にも ModMaven にもありません。それに対してコンパイルする方法は Modrinth にある本体の jar だけです。ビルドの再現性を保つためにバージョンを固定しています。そのリポジトリもその一つのグループに範囲を絞っています。
+
+**`build.gradle`：依存関係**
+
+Mekanism の化学物質 API はコンパイル時だけの依存です。Mekanism 本体を必須にすることはありません。Gas Heap は Mekanism があるときだけ登録され、Mod のほかの部分は Mekanism に一切触れません。
+
+Refined Storage も同じくコンパイル時だけです。Acervus が Refined Storage に求めるのは登録箇所一つだけです。外部ストレージのプロバイダは Heap を `long` 型で読めます。これはアイテムハンドラでは運べないものです。
+
+`gradle.properties` で両方のバージョンを固定しています（`mekanism_version`・`refinedstorage_version`）。
+
+**`build.gradle`：実行構成**
+
+別プロセスとして起動した JVM はコンソールにつながっていません。そのため日本語の Windows では、コンソールが UTF-8 で読んでいるのに CP932 に戻ってしまいます。`run.bat` がコンソールの側を合わせます。書き出す側は `file.encoding`・`stdout.encoding`・`stderr.encoding` のプロパティで合わせます。
+
+**`.github/workflows/build.yml`**
+
+文書だけのプッシュは jar の動作を変えません。そしてゲームテストはワークフローの重い方の半分です。なので `**.md`・`LICENSE`・`.gitignore` だけに触れるプッシュは飛ばします。`workflow_dispatch` にはわざとパスの絞り込みを付けていません。手動実行を求めるのは、何を確かめたいかをすでに分かっている人です。それに何もプッシュされていないブランチを確かめ直す方法でもあります。コードが変わらなくても、ツールチェーンと依存関係は変わっていくからです。
+
+確かめる価値があるのはブランチへの最新のプッシュだけです。`cancel-in-progress` がないと、小さなコミットが続いたときにジョブが列をなします。そのどれもが、誰も残さない状態を検証することになります。
+
+コンパイルで分かるのはコードの形が正しいことだけです。Mod が謳っている通りに動くかを確かめるのはゲームテストの段階です。画面なしのサーバーを起動し、登録されたテストをすべて実行し、一つでも失敗すれば失敗とします。テストがあると決めてかからずに、まず `@GameTestHolder` を探します。GameTestServer はテストが一つもないとクラッシュするからです。飛ばしたときはそれを告知します。「テストが実行されなかった」を「テストがすべて通った」と読み違えないためです。またこのサーバーは Mod の構築に失敗しても終了コード 0 で終わります。なのでこの段階では、テストまでたどり着いた証拠として `GAME TESTS COMPLETE` の集計行を必須にしています。
