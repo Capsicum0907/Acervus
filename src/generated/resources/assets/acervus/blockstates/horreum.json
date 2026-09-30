@@ -1,7 +1,19 @@
 {
   "variants": {
-    "": {
+    "facing=east": {
+      "model": "acervus:block/horreum",
+      "y": 90
+    },
+    "facing=north": {
       "model": "acervus:block/horreum"
+    },
+    "facing=south": {
+      "model": "acervus:block/horreum",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "acervus:block/horreum",
+      "y": 270
     }
   }
 }

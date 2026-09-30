@@ -32,6 +32,7 @@ public final class AcervusClient {
         event.registerBlockEntityRenderer(AcervusRegistry.HEAP_ENTITY.get(), HeapRenderer::new);
         event.registerBlockEntityRenderer(AcervusRegistry.FLUID_HEAP_ENTITY.get(), FluidHeapRenderer::new);
         event.registerBlockEntityRenderer(AcervusRegistry.ENERGY_HEAP_ENTITY.get(), EnergyHeapRenderer::new);
+        event.registerBlockEntityRenderer(AcervusRegistry.HORREUM_ENTITY.get(), HorreumRenderer::new);
         if (Mods.mekanism()) {
             event.registerBlockEntityRenderer(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK_ENTITY.get(),
                     io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::new);

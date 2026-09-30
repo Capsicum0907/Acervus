@@ -284,6 +284,9 @@ A rack from when it held twelve keeps the heaps past the ninth waiting inside it
 Each one moves into the next slot that is emptied, and they travel with the rack
 when it is broken.
 
+A placed rack faces whoever placed it. Its front has a lamp for each of the nine
+slots, in the same three by three order as its screen, lit while a heap is in it.
+
 **Mixed on purpose.** One rack takes item, fluid, energy and gas heaps side by side
 and offers the matching window for each: an item handler, a fluid handler, an energy
 storage and — where Mekanism is installed — a chemical handler, all on the same

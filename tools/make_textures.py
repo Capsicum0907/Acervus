@@ -33,6 +33,8 @@ CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
 READOUT_OUT = ASSETS / "gui/readout.png"
 RACK_OUT = ASSETS / "block/horreum.png"
 RACK_GUI_OUT = ASSETS / "gui/horreum.png"
+RACK_FRONT_OUT = ASSETS / "block/horreum_front.png"
+RACK_LAMP_OUT = ASSETS / "block/horreum_lamp.png"
 BOLT_OUT = ASSETS / "gui/energy_icon.png"
 
 ALL = {(x, y) for x in range(SIZE) for y in range(SIZE)}
@@ -205,6 +207,9 @@ LAMPS = 12
 LAMP_WIDTH = 4
 LAMP_GAP = 1
 FRONT_SCALE = 4
+RACK_LAMPS_ACROSS = 3
+RACK_LAMP = 12
+RACK_LAMP_GAP = 4
 CHEMICAL_GLASS = "#8FCF8A"
 CHEMICAL_SHEEN = "#D6F2D2"
 
@@ -284,6 +289,38 @@ def draw_rack() -> bytes:
 RACK_NICHE = "#3A3F4A"
 RACK_NICHE_DARK = "#23262E"
 
+
+def rack_lamp_origin(column: int, row: int) -> tuple[int, int]:
+    used = RACK_LAMPS_ACROSS * RACK_LAMP + (RACK_LAMPS_ACROSS - 1) * RACK_LAMP_GAP
+    start = FRAME * FRONT_SCALE + ((SIZE - 2 * FRAME) * FRONT_SCALE - used) // 2
+    step = RACK_LAMP + RACK_LAMP_GAP
+    return start + column * step, start + row * step
+
+
+def draw_rack_front() -> bytes:
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    for (x, y) in METAL | GLASS:
+        colour = _tone((x, y), METAL, METAL_TONES) if (x, y) in METAL else CASING
+        for dx in range(FRONT_SCALE):
+            for dy in range(FRONT_SCALE):
+                pixels[(x * FRONT_SCALE + dx, y * FRONT_SCALE + dy)] = _rgb(colour) + (255,)
+    for row in range(RACK_LAMPS_ACROSS):
+        for column in range(RACK_LAMPS_ACROSS):
+            left, top = rack_lamp_origin(column, row)
+            for dx in range(RACK_LAMP):
+                for dy in range(RACK_LAMP):
+                    pixels[(left + dx, top + dy)] = _rgb(LAMP_OFF) + (255,)
+    return _png(pixels, SIZE * FRONT_SCALE)
+
+
+def draw_rack_lamp() -> bytes:
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    for x in range(SIZE):
+        for y in range(SIZE):
+            edge = x < FRONT_SCALE // 2 or y < FRONT_SCALE // 2 or x >= SIZE - FRONT_SCALE // 2 or y >= SIZE - FRONT_SCALE // 2
+            pixels[(x, y)] = _rgb(LAMP_ON_EDGE if edge else LAMP_ON) + (255,)
+    return _png(pixels)
+
 # Where the nine heap slots sit in the rack screen: three across, three down.
 RACK_SLOTS = (62, 18)
 RACK_COLUMNS = 3
@@ -352,6 +389,12 @@ def main() -> None:
 
     RACK_GUI_OUT.write_bytes(draw_rack_screen())
     print(f"wrote {RACK_GUI_OUT}")
+
+    RACK_FRONT_OUT.write_bytes(draw_rack_front())
+    print(f"wrote {RACK_FRONT_OUT}")
+
+    RACK_LAMP_OUT.write_bytes(draw_rack_lamp())
+    print(f"wrote {RACK_LAMP_OUT}")
 
     BOLT_OUT.write_bytes(draw_bolt())
     print(f"wrote {BOLT_OUT}")

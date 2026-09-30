@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/orientable",
   "textures": {
-    "all": "acervus:block/horreum"
+    "front": "acervus:block/horreum_front",
+    "side": "acervus:block/horreum",
+    "top": "acervus:block/horreum"
   }
 }

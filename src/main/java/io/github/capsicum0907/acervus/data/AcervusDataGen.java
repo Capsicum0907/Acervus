@@ -109,7 +109,9 @@ public final class AcervusDataGen {
             // Solid: a rack holds heaps rather than contents, so there is nothing
             // to see through and no reason to pay for translucency.
             String rack = AcervusRegistry.HORREUM.getId().getPath();
-            simpleBlock(AcervusRegistry.HORREUM.get(), models().cubeAll(rack, modLoc("block/" + rack)));
+            ModelFile rackModel = models().orientable(rack, modLoc("block/" + rack),
+                    modLoc("block/" + rack + "_front"), modLoc("block/" + rack));
+            horizontalBlock(AcervusRegistry.HORREUM.get(), rackModel);
             itemModels().withExistingParent(rack, modLoc("block/" + rack));
             // Only when Mekanism is present, because the block only exists then. Keep
             // Mekanism in run/mods when regenerating, or these assets go stale.
