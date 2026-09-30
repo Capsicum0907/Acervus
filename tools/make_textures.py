@@ -30,8 +30,8 @@ SHEEN = {(4, 5), (5, 4), (5, 5), (6, 4), (9, 10), (10, 9), (10, 10)}
 
 METAL_TONES = ("#8A8F9C", "#5C6270", "#3A3F4A")
 
-GLASS_BODY = "#A8D4E0"
-GLASS_SHEEN = "#DFF2F7"
+GLASS_BODY = "#D4D8DC"
+GLASS_SHEEN = "#F2F4F6"
 GLASS_ALPHA = 90
 
 
@@ -165,8 +165,8 @@ def _sheet(pixels: dict) -> bytes:
     )
 
 
-FLUID_GLASS = "#7FB8C8"
-FLUID_SHEEN = "#C8E8F0"
+FLUID_GLASS = "#6A9CE0"
+FLUID_SHEEN = "#C4D8F4"
 CASING = "#4A4F5C"
 LAMP_ON = "#F5C85A"
 LAMP_ON_EDGE = "#D8A24A"
