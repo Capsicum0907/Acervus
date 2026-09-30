@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.Block;
  * heap's: it carries what is inside it, so a full one and an empty one look alike.
  *
  * <p>The text says how many heaps; the picture beneath it says what is in each of
- * them, one row apiece. Twelve lines of prose would be a tooltip nobody reads past,
+ * them, one row apiece. Nine lines of prose would be a tooltip nobody reads past,
  * which is what the icons are for.
  */
 public class HorreumBlockItem extends ContentsBlockItem {

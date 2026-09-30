@@ -284,14 +284,14 @@ def draw_rack() -> bytes:
 RACK_NICHE = "#3A3F4A"
 RACK_NICHE_DARK = "#23262E"
 
-# Where the twelve heap slots sit in the rack screen: six across, two down.
-RACK_SLOTS = (26, 22)
-RACK_COLUMNS = 6
-RACK_ROWS = 2
+# Where the nine heap slots sit in the rack screen: three across, three down.
+RACK_SLOTS = (62, 18)
+RACK_COLUMNS = 3
+RACK_ROWS = 3
 
 
 def draw_rack_screen() -> bytes:
-    """Twelve slots and the player's inventory, and nothing else. Each heap says what
+    """Nine slots and the player's inventory, and nothing else. Each heap says what
     it holds on its own tooltip, so a readout here would be a second copy of it."""
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     _panel(pixels, 0, 0)

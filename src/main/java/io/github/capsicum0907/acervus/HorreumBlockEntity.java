@@ -8,6 +8,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -46,14 +48,17 @@ public class HorreumBlockEntity extends BlockEntity {
     /**
      * How many heaps a rack holds.
      *
-     * <p>Not a setting. The screen is a picture with twelve slots drawn on it, and a
+     * <p>Not a setting. The screen is a picture with nine slots drawn on it, and a
      * number that could change would have to be a number the picture could draw.
      */
-    public static final int SLOTS = 12;
+    public static final int SLOTS = 9;
 
     private static final String HEAPS = "Heaps";
+    private static final String ITEMS = "Items";
+    private static final String SLOT = "Slot";
 
     private final NonNullList<ItemStack> heaps = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
+    private final List<ItemStack> waiting = new ArrayList<>();
 
     private final HorreumItemHandler items = new HorreumItemHandler(this);
     private final HorreumFluidHandler fluids = new HorreumFluidHandler(this);
@@ -131,25 +136,70 @@ public class HorreumBlockEntity extends BlockEntity {
      */
     public static NonNullList<ItemStack> readHeaps(ItemStack rack, HolderLookup.Provider registries) {
         NonNullList<ItemStack> heaps = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(
-                rack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
-                        .copyTag().getCompound(HEAPS),
-                heaps, registries);
+        load(onItem(rack), heaps, new ArrayList<>(), registries);
         return heaps;
     }
 
     /** Through {@code setBlockEntityData}, which names the block entity; see {@link Held#write}. */
     public static void writeHeaps(ItemStack rack, NonNullList<ItemStack> heaps,
             HolderLookup.Provider registries) {
+        List<ItemStack> waiting = new ArrayList<>();
+        load(onItem(rack), NonNullList.withSize(SLOTS, ItemStack.EMPTY), waiting, registries);
+        settle(heaps, waiting);
         CompoundTag tag = new CompoundTag();
-        tag.put(HEAPS, saved(heaps, registries));
+        tag.put(HEAPS, saved(heaps, waiting, registries));
         BlockItem.setBlockEntityData(rack, AcervusRegistry.HORREUM_ENTITY.get(), tag);
     }
 
-    private static CompoundTag saved(NonNullList<ItemStack> heaps, HolderLookup.Provider registries) {
+    private static CompoundTag onItem(ItemStack rack) {
+        return rack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag().getCompound(HEAPS);
+    }
+
+    private static void load(CompoundTag inside, NonNullList<ItemStack> heaps, List<ItemStack> waiting,
+            HolderLookup.Provider registries) {
+        heaps.clear();
+        waiting.clear();
+        ListTag list = inside.getList(ITEMS, Tag.TAG_COMPOUND);
+        for (int entry = 0; entry < list.size(); entry++) {
+            CompoundTag one = list.getCompound(entry);
+            int slot = one.getByte(SLOT) & 0xFF;
+            ItemStack stack = ItemStack.parse(registries, one).orElse(ItemStack.EMPTY);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            if (slot < SLOTS) {
+                heaps.set(slot, stack);
+            } else {
+                waiting.add(stack);
+            }
+        }
+        settle(heaps, waiting);
+    }
+
+    private static void settle(NonNullList<ItemStack> heaps, List<ItemStack> waiting) {
+        for (int slot = 0; slot < SLOTS && !waiting.isEmpty(); slot++) {
+            if (heaps.get(slot).isEmpty()) {
+                heaps.set(slot, waiting.remove(0));
+            }
+        }
+    }
+
+    private static CompoundTag saved(NonNullList<ItemStack> heaps, List<ItemStack> waiting,
+            HolderLookup.Provider registries) {
         CompoundTag inside = new CompoundTag();
         ContainerHelper.saveAllItems(inside, heaps, true, registries);
+        ListTag list = inside.getList(ITEMS, Tag.TAG_COMPOUND);
+        for (int index = 0; index < waiting.size(); index++) {
+            CompoundTag one = (CompoundTag) waiting.get(index).save(registries, new CompoundTag());
+            one.putByte(SLOT, (byte) (SLOTS + index));
+            list.add(one);
+        }
+        inside.put(ITEMS, list);
         return inside;
+    }
+
+    public int waiting() {
+        return waiting.size();
     }
 
     /** Whether that item may go in a rack slot at all. */
@@ -166,6 +216,9 @@ public class HorreumBlockEntity extends BlockEntity {
     }
 
     public boolean isEmpty() {
+        if (!waiting.isEmpty()) {
+            return false;
+        }
         for (ItemStack stack : heaps) {
             if (!stack.isEmpty()) {
                 return false;
@@ -180,6 +233,7 @@ public class HorreumBlockEntity extends BlockEntity {
      * what it last saw.
      */
     public void changed() {
+        settle(heaps, waiting);
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), Block.UPDATE_ALL);
@@ -192,14 +246,13 @@ public class HorreumBlockEntity extends BlockEntity {
         // Written even when every slot is empty, for the reason given in
         // HeapBlockEntity#saveAdditional: an empty update tag is discarded before it
         // reaches the client, so emptying would never be heard about.
-        tag.put(HEAPS, saved(heaps, registries));
+        tag.put(HEAPS, saved(heaps, waiting, registries));
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        heaps.clear();
-        ContainerHelper.loadAllItems(tag.getCompound(HEAPS), heaps, registries);
+        load(tag.getCompound(HEAPS), heaps, waiting, registries);
     }
 
     @Override

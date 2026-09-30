@@ -6,7 +6,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 /**
  * The window a hopper, a pipe or a storage network sees onto a rack of item heaps.
  *
- * <p><b>One handler slot per rack slot, always twelve, whatever is in them.</b> Slot
+ * <p><b>One handler slot per rack slot, always nine, whatever is in them.</b> Slot
  * indices are the one thing a pipe remembers between ticks, so they must not move
  * when a heap is taken out or a fluid heap is put in beside it. A rack slot holding
  * anything but an item heap reads as an empty handler slot that refuses everything —

@@ -5,7 +5,7 @@ One kind of item, in numbers a chest cannot hold.
 *Acervus* is Latin for a heap.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
-> each in the world and in the hand, and a **Horreum** to keep twelve of them in.
+> each in the world and in the hand, and a **Horreum** to keep nine of them in.
 > 65 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
@@ -270,15 +270,19 @@ three work over either and `gives()` is the single method that separates them.
 
 ## The Horreum
 
-A rack that holds twelve heaps and gives one place to reach all of them. The idea is
+A rack that holds nine heaps and gives one place to reach all of them. The idea is
 Industrial Foregoing's [Black Hole Controller](https://ftb.fandom.com/wiki/Black_Hole_Controller):
 not a thing that scans for storage nearby, but a box you put the storage *into*.
 
 It fits here almost for free, because **a heap already carries its contents as an
-item**. So a rack stores nothing of its own — it is twelve slots holding heap items,
+item**. So a rack stores nothing of its own — it is nine slots holding heap items,
 and every window it offers is a view over what is in them. Nothing is copied in,
 nothing has to be kept in step, and pulling a heap out takes its contents with it
 because they were never anywhere else.
+
+A rack from when it held twelve keeps the heaps past the ninth waiting inside it.
+Each one moves into the next slot that is emptied, and they travel with the rack
+when it is broken.
 
 **Mixed on purpose.** One rack takes item, fluid, energy and gas heaps side by side
 and offers the matching window for each: an item handler, a fluid handler, an energy
@@ -288,7 +292,7 @@ say one thing.
 
 | | |
 |---|---|
-| items | **one window slot per rack slot**, always twelve, so the indices a pipe remembers do not move when a heap is taken out |
+| items | **one window slot per rack slot**, always nine, so the indices a pipe remembers do not move when a heap is taken out |
 | fluids, gases | **one tank per heap actually in it** — `fill` and `drain` take no index, so nothing holds one between ticks |
 | filling a fluid or gas | goes to a heap that **already holds it** before it commits an empty one |
 | energy | **one pool** — `IEnergyStorage` has no index at all, because energy has no kinds |
@@ -314,11 +318,11 @@ block. It is one field, set by whichever factory found the heap.
 ### Contents in the tooltip
 
 Every heap draws what it holds: the item itself, or a fluid's or a chemical's own
-sprite, beside its name and its amount. A rack draws one such row per heap, so twelve
+sprite, beside its name and its amount. A rack draws one such row per heap, so nine
 heaps can be read without opening anything.
 
-It is a picture rather than a list of lines because a rack has twelve of them, and
-twelve lines of prose is a tooltip nobody reads past. Energy has no item and no sprite
+It is a picture rather than a list of lines because a rack has nine of them, and
+nine lines of prose is a tooltip nobody reads past. Energy has no item and no sprite
 of its own, so it gets a bolt drawn for it — a row with a hole where every other row
 has a picture reads as broken rather than as empty.
 

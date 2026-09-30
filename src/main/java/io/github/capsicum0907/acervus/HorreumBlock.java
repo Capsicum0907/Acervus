@@ -69,8 +69,8 @@ public class HorreumBlock extends BaseEntityBlock {
     /**
      * The heaps ride on the dropped rack, and for a harder reason than usual.
      *
-     * <p>Spilling would drop twelve heap items on the floor, which sounds harmless
-     * until one remembers what a heap holds: twelve stacks of two billion, in a pile
+     * <p>Spilling would drop nine heap items on the floor, which sounds harmless
+     * until one remembers what a heap holds: nine stacks of two billion, in a pile
      * of entities that can be walked away from, burned, or picked up by the wrong
      * hopper. A heap is a thing you move, and so is a rack of them.
      */

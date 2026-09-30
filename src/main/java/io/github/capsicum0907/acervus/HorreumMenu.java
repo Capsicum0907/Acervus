@@ -23,9 +23,9 @@ import net.minecraft.world.level.Level;
  */
 public class HorreumMenu extends AbstractContainerMenu {
     /** Matches the slot positions in the generated screen texture. */
-    private static final int RACK_X = 26;
-    private static final int RACK_Y = 22;
-    private static final int RACK_COLUMNS = 6;
+    private static final int RACK_X = 62;
+    private static final int RACK_Y = 18;
+    private static final int RACK_COLUMNS = 3;
     private static final int INVENTORY_X = 8;
     private static final int INVENTORY_Y = 84;
     private static final int HOTBAR_Y = 142;

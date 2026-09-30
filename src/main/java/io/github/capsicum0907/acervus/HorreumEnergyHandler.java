@@ -12,7 +12,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
  * heaps is therefore <b>one pool</b> — the totals are added up, what comes in fills
  * them in order and what goes out drains them in order.
  *
- * <p>Adding up is where the int shows: a rack of twelve heaps can hold twelve times
+ * <p>Adding up is where the int shows: a rack of nine heaps can hold nine times
  * what one of them can say. As everywhere else, the answer is to saturate rather than
  * to wrap — two billion is a wrong answer, a negative number is a broken one.
  */

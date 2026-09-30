@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
  * "Draw what is in this" — a heap, or a rack of them.
  *
  * <p>A line of text says everything a picture does, and says it slower. A rack of
- * twelve heaps says it twelve times, at which point nobody reads any of it. So each
+ * nine heaps says it nine times, at which point nobody reads any of it. So each
  * kind of contents gets its own small icon beside its name and its amount, and a rack
  * becomes a list that can be taken in without opening it.
  *

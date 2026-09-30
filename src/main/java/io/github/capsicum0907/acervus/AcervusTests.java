@@ -1287,6 +1287,39 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aRackFromBeforeNineKeepsTheRestWaiting(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+        for (int slot = 0; slot < 12; slot++) {
+            CompoundTag one = (CompoundTag) new ItemStack(AcervusRegistry.HEAP_ITEM.get()).save(registries, new CompoundTag());
+            one.putByte("Slot", (byte) slot);
+            list.add(one);
+        }
+        CompoundTag inside = new CompoundTag();
+        inside.put("Items", list);
+        CompoundTag tag = new CompoundTag();
+        tag.put("Heaps", inside);
+
+        HorreumBlockEntity rack = rack(helper);
+        rack.loadWithComponents(tag, registries);
+        check(rack.heaps().stream().noneMatch(ItemStack::isEmpty), "all nine slots should be filled");
+        check(rack.waiting() == 3, "with the other three waiting, not " + rack.waiting());
+
+        rack.heaps().set(4, ItemStack.EMPTY);
+        rack.changed();
+        check(!rack.heap(4).isEmpty() && rack.waiting() == 2, "an emptied slot should take the next one waiting");
+
+        ItemStack dropped = new ItemStack(AcervusRegistry.HORREUM_ITEM.get());
+        rack.saveToItem(dropped, registries);
+        long carried = HorreumBlockEntity.readHeaps(dropped, registries).stream().filter(s -> !s.isEmpty()).count();
+        check(carried == HorreumBlockEntity.SLOTS, "the item should show nine, and shows " + carried);
+        HorreumBlockEntity.writeHeaps(dropped, HorreumBlockEntity.readHeaps(dropped, registries), registries);
+        rack.loadWithComponents(dropped.get(DataComponents.BLOCK_ENTITY_DATA).copyTag(), registries);
+        check(rack.waiting() == 2, "and rewriting the item must keep the two waiting, not " + rack.waiting());
+        helper.succeed();
+    }
+
     private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap) {
