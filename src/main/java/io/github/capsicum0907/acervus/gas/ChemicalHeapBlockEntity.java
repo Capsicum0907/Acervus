@@ -211,7 +211,7 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
 
     @Override
     public int tint() {
-        return 0xFF8FCF8A;
+        return io.github.capsicum0907.acervus.HeapColors.CHEMICAL;
     }
 
     private void changed() {

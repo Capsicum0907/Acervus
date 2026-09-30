@@ -208,7 +208,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
 
     @Override
     public int tint() {
-        return 0xFF7FB8C8;
+        return HeapColors.FLUID;
     }
 
     private void changed() {

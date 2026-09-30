@@ -75,7 +75,7 @@ public final class HeldChemicalHeap extends Held {
 
     @Override
     public int tint() {
-        return 0xFF9AC08B;
+        return io.github.capsicum0907.acervus.HeapColors.CHEMICAL;
     }
 
     @Override

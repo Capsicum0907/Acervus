@@ -105,7 +105,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
 
     @Override
     public int tint() {
-        return 0xFFD8A24A;
+        return HeapColors.ENERGY;
     }
 
     private final Vessel in = new Vessel(Vessel.Flow.IN);

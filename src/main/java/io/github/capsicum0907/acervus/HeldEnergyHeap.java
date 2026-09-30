@@ -72,7 +72,7 @@ public final class HeldEnergyHeap extends Held {
 
     @Override
     public int tint() {
-        return 0xFFD8A24A;
+        return HeapColors.ENERGY;
     }
 
     public int receive(int offered) {

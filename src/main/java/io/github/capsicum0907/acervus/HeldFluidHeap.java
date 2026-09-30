@@ -74,7 +74,7 @@ public final class HeldFluidHeap extends Held {
 
     @Override
     public int tint() {
-        return 0xFF7FB8C8;
+        return HeapColors.FLUID;
     }
 
     public int insert(FluidStack stack, boolean simulate) {

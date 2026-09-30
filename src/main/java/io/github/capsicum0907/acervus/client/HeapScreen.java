@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.capsicum0907.acervus.Counts;
+import io.github.capsicum0907.acervus.HeapColors;
 import io.github.capsicum0907.acervus.HeapMenu;
 import io.github.capsicum0907.acervus.HeapSlot;
 import io.github.capsicum0907.acervus.Heaped;
@@ -15,7 +16,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
 public class HeapScreen extends ReadoutPanel<HeapMenu> {
-    private static final int ITEM_TINT = 0xFFA8D4E0;
 
     public HeapScreen(HeapMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -82,7 +82,7 @@ public class HeapScreen extends ReadoutPanel<HeapMenu> {
 
         @Override
         public int tint() {
-            return ITEM_TINT;
+            return HeapColors.ITEM;
         }
 
         @Override
