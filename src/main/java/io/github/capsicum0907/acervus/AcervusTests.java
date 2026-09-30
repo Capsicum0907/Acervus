@@ -1191,6 +1191,25 @@ public final class AcervusTests {
     }
 
     @GameTest(template = TestStructures.FLOOR)
+    public static void puttingAContainerInOrTakingItOutIsSaved(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        fluidHeap(helper);
+        BlockPos at = helper.absolutePos(WHERE);
+        net.minecraft.world.level.chunk.LevelChunk chunk = helper.getLevel().getChunkAt(at);
+        ReadoutMenu menu = ReadoutMenu.at(1, player.getInventory(), at);
+        Slot out = menu.slots.get(1);
+
+        chunk.setUnsaved(false);
+        out.set(new ItemStack(Items.WATER_BUCKET));
+        check(chunk.isUnsaved(), "a bucket that cannot move should still be saved once it is put in");
+
+        chunk.setUnsaved(false);
+        out.remove(1);
+        check(chunk.isUnsaved(), "and taking it out again should be saved too, or it comes back on reload");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
     public static void theBarReadsTheSameAmountThreeWays(GameTestHelper helper) {
         long capacity = 1_000_000_000_000L;
         near(BarScale.LINEAR.fraction(600_000_000_000L, capacity), 0.6, "linear, 600G of 1T");

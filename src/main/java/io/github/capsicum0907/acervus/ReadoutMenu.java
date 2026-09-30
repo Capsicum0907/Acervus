@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * The screen behind a fluid, energy or gas heap, standing in the world or in a hand.
@@ -66,6 +67,9 @@ public class ReadoutMenu extends AbstractContainerMenu {
         default void tick() {
         }
 
+        default void vesselChanged() {
+        }
+
         /** Whether the vessels belong to the screen and must be handed back when it closes. */
         default boolean lendsTheVessel() {
             return false;
@@ -81,8 +85,8 @@ public class ReadoutMenu extends AbstractContainerMenu {
         // Added unconditionally, even when the heap has gone: the slot indices below are
         // counted from it, so a missing first slot would silently shift the range that
         // shift-clicking moves things into.
-        addSlot(new VesselSlot(source.vessel(Vessel.Flow.IN), IN_X, VESSEL_Y));
-        addSlot(new VesselSlot(source.vessel(Vessel.Flow.OUT), OUT_X, VESSEL_Y) {
+        addSlot(new VesselSlot(source.vessel(Vessel.Flow.IN), IN_X, VESSEL_Y, source::vesselChanged));
+        addSlot(new VesselSlot(source.vessel(Vessel.Flow.OUT), OUT_X, VESSEL_Y, source::vesselChanged) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return source.heap().gives() && super.mayPlace(stack);
@@ -194,6 +198,14 @@ public class ReadoutMenu extends AbstractContainerMenu {
                 return holder.vessel(flow);
             }
             return flow == Vessel.Flow.IN ? spareIn : spareOut;
+        }
+
+        @Override
+        public void vesselChanged() {
+            BlockEntity entity = level.getBlockEntity(pos);
+            if (entity != null) {
+                entity.setChanged();
+            }
         }
 
         @Override

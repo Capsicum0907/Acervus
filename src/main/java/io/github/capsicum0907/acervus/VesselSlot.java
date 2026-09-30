@@ -16,10 +16,12 @@ public class VesselSlot extends Slot {
     private static final SimpleContainer UNUSED = new SimpleContainer(0);
 
     private final Vessel vessel;
+    private final Runnable changed;
 
-    public VesselSlot(Vessel vessel, int x, int y) {
+    public VesselSlot(Vessel vessel, int x, int y, Runnable changed) {
         super(UNUSED, 0, x, y);
         this.vessel = vessel;
+        this.changed = changed;
     }
 
     public Vessel vessel() {
@@ -54,6 +56,12 @@ public class VesselSlot extends Slot {
         }
         setChanged();
         return taken;
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        changed.run();
     }
 
     @Override
