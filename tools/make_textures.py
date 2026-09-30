@@ -294,7 +294,6 @@ def draw_rack_screen() -> bytes:
 
 
 IN_SLOT = (8, 38)
-CONTENT_BOX = (30, 38)
 OUT_SLOT = (150, 38)
 BAR = (52, 41, 94, 6)
 
@@ -303,7 +302,7 @@ def draw_readout() -> bytes:
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     _panel(pixels, 0, 0)
     _recess(pixels, *BAR)
-    for box in (IN_SLOT, CONTENT_BOX, OUT_SLOT):
+    for box in (IN_SLOT, OUT_SLOT):
         _recess(pixels, box[0] - 1, box[1] - 1, SLOT, SLOT)
     for row in INVENTORY_ROWS + (HOTBAR,):
         for column in range(9):
