@@ -40,10 +40,8 @@ public class FluidHeapRenderer implements BlockEntityRenderer<FluidHeapBlockEnti
         BlockSurface.fillWindows(pose, buffers, heap.getLevel(), heap.getBlockPos(), sprite,
                 0xFF000000 | look.getTintColor(sample), packedLight);
 
-        pose.pushPose();
-        BlockSurface.faceCamera(pose, heap.getBlockPos());
-        draw(Counts.buckets(heap.amount()), pose, buffers, packedLight);
-        pose.popPose();
+        BlockSurface.onEachSide(pose, heap.getLevel(), heap.getBlockPos(), packedLight,
+                (side, light) -> draw(Counts.buckets(heap.amount()), side, buffers, light));
     }
 
     private void draw(String text, PoseStack pose, MultiBufferSource buffers, int packedLight) {

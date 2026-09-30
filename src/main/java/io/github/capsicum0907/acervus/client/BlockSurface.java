@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -13,7 +13,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 
 public final class BlockSurface {
     private static final double HALF = 0.5;
@@ -26,19 +25,30 @@ public final class BlockSurface {
     private BlockSurface() {
     }
 
-    public static void faceCamera(PoseStack pose, BlockPos pos) {
-        Minecraft minecraft = Minecraft.getInstance();
-        Vec3 camera = minecraft.gameRenderer.getMainCamera().getPosition();
-        Vec3 toward = camera.subtract(Vec3.atCenterOf(pos));
-        double reach = Math.max(Math.abs(toward.x), Math.max(Math.abs(toward.y), Math.abs(toward.z)));
-        Vec3 onSurface = reach > HALF
-                ? toward.scale(HALF / reach).add(toward.normalize().scale(LIFT))
-                : Vec3.ZERO;
-        pose.translate(HALF + onSurface.x, HALF + onSurface.y, HALF + onSurface.z);
-        pose.mulPose(minecraft.getEntityRenderDispatcher().cameraOrientation());
+    public interface Label {
+        void draw(PoseStack pose, int light);
     }
 
-    public static void flatOn(PoseStack pose, Direction face) {
+    public static void onEachSide(PoseStack pose, Level level, BlockPos pos, int fallbackLight, Label label) {
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            BlockPos next = pos.relative(side);
+            if (level != null && level.getBlockState(next).isSolidRender(level, next)) {
+                continue;
+            }
+            onSide(pose, level, pos, side, fallbackLight, label);
+        }
+    }
+
+    public static void onSide(PoseStack pose, Level level, BlockPos pos, Direction side, int fallbackLight,
+            Label label) {
+        int light = level == null ? fallbackLight : LevelRenderer.getLightColor(level, pos.relative(side));
+        pose.pushPose();
+        flatOn(pose, side);
+        label.draw(pose, light);
+        pose.popPose();
+    }
+
+    private static void flatOn(PoseStack pose, Direction face) {
         pose.translate(HALF, HALF, HALF);
         pose.mulPose(Axis.YP.rotationDegrees(-face.toYRot()));
         pose.translate(0.0, 0.0, HALF + LIFT);

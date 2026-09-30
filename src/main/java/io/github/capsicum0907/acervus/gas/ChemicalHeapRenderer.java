@@ -48,14 +48,13 @@ public class ChemicalHeapRenderer implements BlockEntityRenderer<ChemicalHeapBlo
                     heap.getBlockPos(), sprite, heap.contentTint(), packedLight);
         }
 
-        pose.pushPose();
-        io.github.capsicum0907.acervus.client.BlockSurface.faceCamera(pose, heap.getBlockPos());
-        pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
-
-        Matrix4f matrix = pose.last().pose();
-        line(name, -font.lineHeight * LINE_GAP, matrix, buffers, packedLight);
-        line(amount, font.lineHeight * 0.2F, matrix, buffers, packedLight);
-        pose.popPose();
+        io.github.capsicum0907.acervus.client.BlockSurface.onEachSide(pose, heap.getLevel(), heap.getBlockPos(),
+                packedLight, (side, light) -> {
+                    side.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
+                    Matrix4f matrix = side.last().pose();
+                    line(name, -font.lineHeight * LINE_GAP, matrix, buffers, light);
+                    line(amount, font.lineHeight * 0.2F, matrix, buffers, light);
+                });
     }
 
     private void line(String text, float y, Matrix4f matrix, MultiBufferSource buffers, int packedLight) {

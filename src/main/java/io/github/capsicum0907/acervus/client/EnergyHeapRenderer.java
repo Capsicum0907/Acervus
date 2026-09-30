@@ -36,14 +36,13 @@ public class EnergyHeapRenderer implements BlockEntityRenderer<EnergyHeapBlockEn
         if (!state.hasProperty(EnergyHeapBlock.FACING)) {
             return;
         }
-        pose.pushPose();
-        BlockSurface.flatOn(pose, state.getValue(EnergyHeapBlock.FACING));
-        pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
-
-        Matrix4f matrix = pose.last().pose();
-        font.drawInBatch(text, -font.width(text) / 2.0F, -font.lineHeight / 2.0F, 0xFFFFFFFF, false,
-                matrix, buffers, Font.DisplayMode.NORMAL, 0, packedLight);
-        pose.popPose();
+        BlockSurface.onSide(pose, heap.getLevel(), heap.getBlockPos(), state.getValue(EnergyHeapBlock.FACING),
+                packedLight, (front, light) -> {
+                    front.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
+                    Matrix4f matrix = front.last().pose();
+                    font.drawInBatch(text, -font.width(text) / 2.0F, -font.lineHeight / 2.0F, 0xFFFFFFFF, false,
+                            matrix, buffers, Font.DisplayMode.NORMAL, 0, light);
+                });
     }
 
     @Override

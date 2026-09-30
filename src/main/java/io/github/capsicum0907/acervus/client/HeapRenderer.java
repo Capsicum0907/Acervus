@@ -18,13 +18,9 @@ import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
 
 /**
- * What makes a heap worth looking at: it shows what it holds, and how many.
- *
- * <p>Both are drawn facing the camera rather than fixed to a face. A block with
- * four faces to decorate would mean drawing the contents four times, and a block
- * with a chosen front would mean the answer depends on which way it was placed.
- * Turning the drawing toward whoever is looking costs one rotation and is right
- * from everywhere.
+ * What makes a heap worth looking at: it shows what it holds, and how many. The item
+ * floats inside the glass facing the camera; the count is written flat on each open
+ * side, since a label turned to the camera sinks into the block when seen at an angle.
  */
 public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
     /** Big enough to read from across a room, small enough to sit inside the block. */
@@ -65,10 +61,8 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
         pose.popPose();
         pose.popPose();
 
-        pose.pushPose();
-        BlockSurface.faceCamera(pose, heap.getBlockPos());
-        drawCount(heap.count(), pose, buffers, packedLight);
-        pose.popPose();
+        BlockSurface.onEachSide(pose, heap.getLevel(), heap.getBlockPos(), packedLight,
+                (side, light) -> drawCount(heap.count(), side, buffers, light));
     }
 
     private void drawCount(long count, PoseStack pose, MultiBufferSource buffers, int packedLight) {
