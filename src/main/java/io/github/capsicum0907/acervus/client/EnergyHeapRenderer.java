@@ -37,10 +37,7 @@ public class EnergyHeapRenderer implements BlockEntityRenderer<EnergyHeapBlockEn
             return;
         }
         pose.pushPose();
-        if (!BlockSurface.faceCameraOn(pose, heap.getBlockPos(), state.getValue(EnergyHeapBlock.FACING))) {
-            pose.popPose();
-            return;
-        }
+        BlockSurface.flatOn(pose, state.getValue(EnergyHeapBlock.FACING));
         pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
 
         Matrix4f matrix = pose.last().pose();
