@@ -209,7 +209,7 @@ Within the decade, pointing at the bar names the decade as powers of ten: `10⁴
 In the world, a fluid or gas heap's glass is filled with what it holds. An energy
 heap is a closed casing that faces whoever placed it, with twelve lamps on its front:
 one more lights for every twelfth of the powers of ten up to the capacity — with the
-default of a trillion, one for every tenfold. Every heap writes its amount on the
+default of a trillion, one for every tenfold. Every heap writes its amount on each
 open side, flat like a sign; the energy heap only on its front.
 
 ### Carrying one
