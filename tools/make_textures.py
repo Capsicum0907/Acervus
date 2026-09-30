@@ -67,18 +67,18 @@ def _tone(pixel: tuple[int, int], region: set[tuple[int, int]], tones: tuple[str
     return body
 
 
-def _png(pixels: dict[tuple[int, int], tuple[int, int, int, int]]) -> bytes:
+def _png(pixels: dict[tuple[int, int], tuple[int, int, int, int]], size: int = SIZE) -> bytes:
     raw = bytearray()
-    for y in range(SIZE):
+    for y in range(size):
         raw.append(0)  # filter type 0 for the row
-        for x in range(SIZE):
+        for x in range(size):
             raw.extend(pixels.get((x, y), (0, 0, 0, 0)))
 
     def chunk(kind: bytes, data: bytes) -> bytes:
         body = kind + data
         return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
 
-    header = struct.pack(">IIBBBBB", SIZE, SIZE, 8, 6, 0, 0, 0)  # 8-bit RGBA
+    header = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)  # 8-bit RGBA
     return (
         b"\x89PNG\r\n\x1a\n"
         + chunk(b"IHDR", header)
@@ -101,23 +101,28 @@ def draw(glass: str = GLASS_BODY, sheen: str = GLASS_SHEEN) -> bytes:
 
 
 def draw_casing(lit: int, show_lamps: bool = True) -> bytes:
+    scale = FRONT_SCALE if show_lamps else 1
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
-    for pixel in METAL:
-        pixels[pixel] = _rgb(_tone(pixel, METAL, METAL_TONES)) + (255,)
-    for pixel in GLASS:
-        pixels[pixel] = _rgb(CASING) + (255,)
+    for (x, y) in METAL | GLASS:
+        colour = _tone((x, y), METAL, METAL_TONES) if (x, y) in METAL else CASING
+        for dx in range(scale):
+            for dy in range(scale):
+                pixels[(x * scale + dx, y * scale + dy)] = _rgb(colour) + (255,)
     if show_lamps:
-        inner = SIZE - 2 * FRAME
-        used = LAMPS * 2 - 1
-        first = FRAME + (inner - used + 1) // 2
-        lane = range(SIZE // 2 - LAMP_WIDTH // 2, SIZE // 2 - LAMP_WIDTH // 2 + LAMP_WIDTH)
+        inner = (SIZE - 2 * FRAME) * scale
+        height = (inner - (LAMPS - 1) * LAMP_GAP) // LAMPS
+        used = LAMPS * height + (LAMPS - 1) * LAMP_GAP
+        bottom = FRAME * scale + (inner - used) // 2 + used - 1
+        left = (SIZE // 2 - LAMP_WIDTH // 2) * scale
+        right = left + LAMP_WIDTH * scale
         for lamp in range(LAMPS):
-            y = SIZE - 1 - (first + lamp * 2)
-            for x in lane:
-                edge = x in (lane[0], lane[-1])
-                colour = (LAMP_ON_EDGE if edge else LAMP_ON) if lamp < lit else LAMP_OFF
-                pixels[(x, y)] = _rgb(colour) + (255,)
-    return _png(pixels)
+            for row in range(height):
+                y = bottom - lamp * (height + LAMP_GAP) - row
+                for x in range(left, right):
+                    edge = x < left + scale or x >= right - scale
+                    colour = (LAMP_ON_EDGE if edge else LAMP_ON) if lamp < lit else LAMP_OFF
+                    pixels[(x, y)] = _rgb(colour) + (255,)
+    return _png(pixels, SIZE * scale)
 
 # --- the screen ------------------------------------------------------------
 # A panel in the game's own idiom: flat fill, a light bevel on the top and left,
@@ -196,8 +201,10 @@ CASING = "#4A4F5C"
 LAMP_ON = "#F5C85A"
 LAMP_ON_EDGE = "#D8A24A"
 LAMP_OFF = "#2A2D35"
-LAMPS = 6
+LAMPS = 12
 LAMP_WIDTH = 4
+LAMP_GAP = 1
+FRONT_SCALE = 4
 CHEMICAL_GLASS = "#8FCF8A"
 CHEMICAL_SHEEN = "#D6F2D2"
 

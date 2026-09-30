@@ -40,7 +40,7 @@ import net.minecraft.world.phys.HitResult;
 public class EnergyHeapBlock extends BaseEntityBlock {
     public static final MapCodec<EnergyHeapBlock> CODEC = simpleCodec(EnergyHeapBlock::new);
 
-    public static final int MAX_LAMPS = 6;
+    public static final int MAX_LAMPS = 12;
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final IntegerProperty LAMPS = IntegerProperty.create("lamps", 0, MAX_LAMPS);
 

@@ -1267,12 +1267,12 @@ public final class AcervusTests {
     }
 
     @GameTest(template = TestStructures.FLOOR)
-    public static void anEnergyHeapLightsALampForEveryTwoDecades(GameTestHelper helper) {
+    public static void anEnergyHeapLightsALampForEveryDecade(GameTestHelper helper) {
         long capacity = 1_000_000_000_000L;
         check(EnergyHeapBlock.lamps(0L, capacity) == 0, "an empty heap should light nothing");
-        check(EnergyHeapBlock.lamps(99L, capacity) == 0, "99 FE should not yet light the first lamp");
-        check(EnergyHeapBlock.lamps(100L, capacity) == 1, "100 FE should light the first");
-        check(EnergyHeapBlock.lamps(1_000_000L, capacity) == 3, "a million should light three");
+        check(EnergyHeapBlock.lamps(9L, capacity) == 0, "9 FE should not yet light the first lamp");
+        check(EnergyHeapBlock.lamps(10L, capacity) == 1, "10 FE should light the first");
+        check(EnergyHeapBlock.lamps(1_000_000L, capacity) == 6, "a million should light six");
         check(EnergyHeapBlock.lamps(capacity, capacity) == EnergyHeapBlock.MAX_LAMPS, "and a full heap all of them");
 
         helper.setBlock(WHERE, AcervusRegistry.ENERGY_HEAP.get());
