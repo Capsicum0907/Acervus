@@ -17,29 +17,20 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * A gas heap being carried. See {@link Held} for the rule it follows.
- *
- * <p>The one of the four with no ceiling anywhere: Mekanism counts in longs at both
- * ends, so nothing here saturates on the way out.
- */
 public final class HeldChemicalHeap extends Held {
     private HeldChemicalHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where,
             boolean gives) {
         super(registries, where, gives);
     }
 
-    /** A heap being carried: it takes and does not give. */
     public static HeldChemicalHeap of(HolderLookup.Provider registries, ItemStack stack) {
         return new HeldChemicalHeap(registries, () -> stack, false);
     }
 
-    /** The one in that hand, whatever it is at the moment of asking. */
     public static HeldChemicalHeap inHand(Player player, InteractionHand hand) {
         return new HeldChemicalHeap(player.level().registryAccess(), () -> player.getItemInHand(hand), false);
     }
 
-    /** A heap slotted into a controller, which is a placed block, so it gives. */
     public static HeldChemicalHeap stored(HolderLookup.Provider registries, ItemStack stack) {
         return new HeldChemicalHeap(registries, () -> stack, true);
     }
@@ -87,7 +78,6 @@ public final class HeldChemicalHeap extends Held {
         return 0xFF9AC08B;
     }
 
-    /** A chemical carries its own icon and its own colour, unlike a fluid. */
     @Override
     public ResourceLocation contentTexture() {
         ChemicalStack sample = sample();
@@ -100,7 +90,6 @@ public final class HeldChemicalHeap extends Held {
         return sample.isEmpty() ? 0xFFFFFFFF : sample.getChemicalTint();
     }
 
-    /** @return how much was taken, which may be none */
     public long insert(ChemicalStack stack, boolean simulate) {
         ChemicalStack sample = sample();
         if (stack.isEmpty() || (!sample.isEmpty() && !ChemicalStack.isSameChemical(sample, stack))) {
@@ -121,11 +110,6 @@ public final class HeldChemicalHeap extends Held {
         return taken;
     }
 
-    /**
-     * @return what was taken out, which is nothing at all unless this heap
-     *         {@link #gives()} — a carried one never does. No clamp anywhere: Mekanism
-     *         counts in longs at both ends.
-     */
     public ChemicalStack extract(long wanted, boolean simulate) {
         if (!gives() || isEmpty() || wanted <= 0) {
             return ChemicalStack.EMPTY;
@@ -139,7 +123,6 @@ public final class HeldChemicalHeap extends Held {
         CompoundTag tag = tag();
         long left = amount() - taken;
         if (left <= 0) {
-            // Forgotten with the last of it, here as on the block.
             tag.remove(SAMPLE);
             left = 0;
         }

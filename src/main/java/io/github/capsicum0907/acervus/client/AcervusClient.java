@@ -23,7 +23,6 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
-/** The client half: what draws the block, and what draws its screen. */
 public final class AcervusClient {
     private AcervusClient() {
     }
@@ -85,7 +84,6 @@ public final class AcervusClient {
         return EnergyHeapBlock.lamps(heap.amount(), heap.capacity());
     }
 
-    /** What turns {@link HeapContents} into something drawn. */
     public static void registerTooltips(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(HeapContents.class, HeapContentsTooltip::new);
     }

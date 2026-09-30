@@ -50,24 +50,15 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
-/**
- * What a heap holds, and — the part that actually breaks in blocks like this — what
- * it lets out through the item handler that hoppers and pipes talk to.
- *
- * <p>Run with {@code gradlew runGameTestServer}.
- */
 @GameTestHolder(Acervus.MODID)
 @PrefixGameTestTemplate(false)
 public final class AcervusTests {
     private static final BlockPos WHERE = new BlockPos(2, 1, 2);
 
-    /** A second heap, to pipe the first one into. */
     private static final BlockPos OTHER = new BlockPos(2, 1, 4);
 
-    /** Far past a stack, and past a shulker box, so nothing accidental can pass. */
     private static final int MANY = 5_000;
 
-    /** The first hotbar slot in a heap menu: the heap's own slot, then three rows. */
     private static final int HOTBAR_FIRST = 2 + 27;
 
     private AcervusTests() {
@@ -84,18 +75,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * A heap says how much it really holds, and gives out as much as it is asked for.
-     *
-     * <p>Both halves are what makes the ecosystem work, and one of them is a
-     * deliberate departure from the {@code IItemHandler} javadoc. Reporting the true
-     * count is explicitly allowed and is the difference between an external storage
-     * reading a hundred thousand and reading sixty-four. Handing out more than a
-     * stack is <em>not</em> allowed by the written contract and is what every mod
-     * that moves large amounts relies on anyway — InfChest's own handler is
-     * {@code totalCount().min(amount)} with no stack clamp, which is why a pipe with
-     * an unlimited upgrade can empty one.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void tellsTheTruthAndGivesWhatIsAsked(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -111,7 +90,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** Asking for a stack still gets exactly a stack: the amount is what bounds it. */
     @GameTest(template = TestStructures.FLOOR)
     public static void givesNoMoreThanWasAskedFor(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -124,7 +102,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** The path a hopper and every mod's pipes actually take. */
     @GameTest(template = TestStructures.FLOOR)
     public static void fillsAndDrainsThroughTheHandler(GameTestHelper helper) {
         place(helper);
@@ -139,11 +116,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * A great many pipes work out how much fits as {@code limit - count} instead of
-     * asking. If the only slot showed a full stack, a heap holding a thousand would
-     * look full to them and quietly stop accepting.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void staysOpenToPipesWhenPastAStack(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -170,16 +142,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Nothing is created and nothing is lost, however many sides are working at once.
-     *
-     * <p>Storage blocks of this kind duplicate for three reasons, and this pins all
-     * three: a simulated answer that differs from the real one, an insert that
-     * quietly modifies the stack it was handed — so the caller keeps it *and* the
-     * heap gains it — and per-side handlers that each remember their own version of
-     * the contents. Every side is asked for its handler separately here, and the
-     * total is checked against what went in.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void createsNothingUnderInterleavedAccess(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -213,10 +175,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * An emptied heap forgets what it held. One that remembered would refuse the next
-     * thing put into it, with nothing on the block to say why.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void emptyForgetsItsKind(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -229,10 +187,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Breaking a heap must not spill what is inside: at capacity that would be tens of
-     * millions of item entities. What it holds rides on the dropped block instead.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void carriesItsContentsWhenBroken(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -251,12 +205,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * An emptied heap has to have something to say. An update packet carrying an empty
-     * tag is thrown away before the block entity sees it, so a heap that wrote nothing
-     * when empty would keep being drawn holding what it no longer holds — which is
-     * exactly what it did until this was pinned.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void tellsTheClientItIsEmpty(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -268,17 +216,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Breaking a heap must leave one thing on the floor, not two answers to the same
-     * question.
-     *
-     * <p>This is the duplication bug InfChest shipped and had to fix in 21.8.1: its
-     * block entity's superclass dropped the inventory when the block was removed,
-     * while the dropped chest was also carrying everything, so breaking one gave both
-     * copies. The heap avoids it by not being a container in the first place — but
-     * "avoids it by construction" is exactly the kind of claim that stops being true
-     * quietly, so it is pinned here rather than argued.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void spillsNothingWhenBroken(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -295,15 +232,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Breaking a heap with the wrong thing must cost time, never the contents.
-     *
-     * <p>A block of metal and glass invites {@code requiresCorrectToolForDrops}, and
-     * this one had it. With the block in no mining tag that meant no tool was ever
-     * correct, so a heap dropped nothing at all — two billion items gone to a
-     * mis-aimed swing. Even done properly it is the wrong trade here: the contents
-     * are not replaceable and a forgotten pickaxe is not a reason to destroy them.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void neverVoidsItselfForWantOfAPickaxe(GameTestHelper helper) {
         place(helper);
@@ -316,14 +244,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Three digits, one decimal, one unit — and the awkward case in the middle.
-     *
-     * <p>Rounding is where a rule like this goes wrong: 999,999,999,999 is not far
-     * enough to be a trillion, but rounded to one decimal it reads as 1000.0 of the
-     * unit below, which is four digits and the wrong unit. It has to grow into the
-     * next one instead.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void writesNumbersShortAndLong(GameTestHelper helper) {
         brief(0L, "0");
@@ -346,14 +266,6 @@ public final class AcervusTests {
         check(written.equals(expected), count + " should read as " + expected + ", not " + written);
     }
 
-    /**
-     * An empty heap is not committed by being right-clicked.
-     *
-     * <p>A pipe deciding what an empty heap is for is the point of a pipe. A player
-     * who right-clicked to look inside, and found the block silently committed to
-     * whatever was in their hand, has been caught by the same rule rather than served
-     * by it — so the two ask different questions.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void anEmptyHeapWaitsForAPipeNotAGlance(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -368,17 +280,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Nothing handed out is the heap's own copy of anything.
-     *
-     * <p>This is the shape that duplicates by the billion rather than by the stack.
-     * If a returned stack points at internal state, then every {@code grow} a pipe
-     * performs on it lands inside the block — and a pipe does that many times a tick,
-     * so the count runs away at a rate no single call could explain. InfChest's
-     * handler ends with {@code item.setCount(...); return item;} under a comment
-     * saying it is "safe to modify as item is already copied", which is a comment one
-     * writes after finding out.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void handsOutNothingItStillOwns(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -399,7 +300,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** Asking what would happen must not make it happen, at either end. */
     @GameTest(template = TestStructures.FLOOR)
     public static void simulatingChangesNothing(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -417,10 +317,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * A pipe that pulls out of a heap and puts straight back into it. The loop that
-     * turns a small mistake into billions a second, run against itself.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void survivesPullingIntoItself(GameTestHelper helper) {
         HeapBlockEntity heap = place(helper);
@@ -441,18 +337,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Two heaps piped into a loop, moved at the largest amount there is.
-     *
-     * <p>This is the setup that duplicated an InfChest by the billion: two of them
-     * connected so that everything goes across and straight back, every tick, with an
-     * upgrade that asks for all of it at once. A single call being slightly wrong is
-     * invisible; the same call in a loop at two billion a tick is not.
-     *
-     * <p>The grand total is what is checked, because in a loop that is the only thing
-     * that means anything — either heap can legitimately be full or empty at any
-     * point.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void twoHeapsInALoopConserveEverything(GameTestHelper helper) {
         HeapBlockEntity first = place(helper, WHERE);
@@ -474,7 +358,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** One pipe's worth of work: take everything offered, put back whatever would not fit. */
     private static void move(IItemHandler from, IItemHandler into) {
         ItemStack taken = from.extractItem(0, Integer.MAX_VALUE, false);
         if (taken.isEmpty()) {
@@ -487,20 +370,6 @@ public final class AcervusTests {
         }
     }
 
-    /**
-     * Past two billion the window saturates, and saturating is the whole requirement.
-     *
-     * <p>An item stack counts in an int, so an item handler cannot say a number larger
-     * than {@code Integer.MAX_VALUE} however much is really there. That much is the
-     * old API's ceiling and not something a heap can fix — it is why NeoForge's newer
-     * resource handlers count in longs. What a heap must not do is <em>wrap</em>:
-     * reporting a negative count would be worse than reporting a smaller one, and it
-     * is the arithmetic that is easy to get wrong when the total is a long and
-     * everything it is compared against is not.
-     *
-     * <p>Underneath, the heap is unaffected: the count is right, and draining works
-     * because each extraction can take another two billion.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void saturatesRatherThanWrapsPastTwoBillion(GameTestHelper helper) {
         long was = AcervusConfig.CAPACITY.get();
@@ -533,16 +402,6 @@ public final class AcervusTests {
         }
     }
 
-    /**
-     * A fluid heap holds far past what a fluid stack can count, and says so as far as
-     * it can.
-     *
-     * <p>Everything at the edge here is an int — the stack, the tank capacity, fill
-     * and drain alike — so unlike the item side there is no allowance to report more.
-     * What matters is that the ceiling bounds what is <em>said</em> and not what is
-     * <em>held</em>: a call is not a lifetime, and repeating one fills a heap as far
-     * as its capacity goes.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aFluidHeapFillsPastWhatItCanSay(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
@@ -589,17 +448,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * An energy heap holds far past what {@code IEnergyStorage} can report, and every
-     * number it reports saturates rather than wrapping.
-     *
-     * <p>This is the strictest of the three: an item handler is allowed to report more
-     * than a stack and a fluid handler at least measures the same unit it moves, but
-     * every single number in the energy interface is an int, including the two that
-     * only describe. So a heap holding a trillion reads as two billion of two billion
-     * — full — to anything that only knows how to ask, while still accepting and
-     * giving out correctly.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void anEnergyHeapSaturatesRatherThanWraps(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.ENERGY_HEAP.get());
@@ -631,7 +479,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** Simulating must not move anything, at either end. */
     @GameTest(template = TestStructures.FLOOR)
     public static void anEnergyHeapSimulatesWithoutMoving(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.ENERGY_HEAP.get());
@@ -652,15 +499,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * An energy heap gives what it holds to what is next to it, without being asked.
-     *
-     * <p>Pushing is the Forge Energy convention and not a preference: a store offers,
-     * a machine waits. Reasoning from "a heap is a container, so let things come and
-     * take" produced a block that filled happily and never gave anything back to
-     * anything — which passed every test about extraction, because every one of them
-     * did the asking itself.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void anEnergyHeapOffersItselfToItsNeighbours(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.ENERGY_HEAP.get());
@@ -681,13 +519,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * A heap in a pocket takes what is walked over, before the inventory sees it.
-     *
-     * <p>The check that matters is the last one: the diamonds are in the heap and
-     * <em>not</em> in a slot. Absorbing that also left a copy in the inventory would
-     * be a duplication bug that looks like a feature working.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aCarriedHeapTakesWhatIsWalkedOver(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -705,7 +536,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** Anything else goes past it, to be picked up the ordinary way. */
     @GameTest(template = TestStructures.FLOOR)
     public static void aCarriedHeapTakesOnlyItsOwnKind(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -720,13 +550,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * An empty carried heap claims nothing.
-     *
-     * <p>The block lets a pipe decide what an empty heap is for, because that is what a
-     * pipe is. Walking over something is not a decision, and a heap that committed
-     * itself to the first flower picked up would be ruined by a step.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void anEmptyCarriedHeapCommitsToNothing(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -741,13 +564,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Two heaps and ten diamonds are still ten diamonds.
-     *
-     * <p>Every heap is asked in turn, so the count left has to travel between them.
-     * Handing each the whole stack would have both report success and turn ten into
-     * twenty — the one way this feature could create items out of nothing.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void severalCarriedHeapsShareOneStack(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -763,10 +579,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Two heaps in one slot are one set of components, so adding to "the" heap would
-     * add to both. Refusing is the same answer a shulker box gives by not stacking.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aStackOfCarriedHeapsTakesNothing(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -780,7 +592,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** An item that was only just thrown is not free to take yet, for a heap either. */
     @GameTest(template = TestStructures.FLOOR)
     public static void aCarriedHeapWaitsOutThePickupDelay(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -795,14 +606,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * What the heap could not hold is handed back for the inventory, and the heap
-     * plus the slot come to exactly what was on the ground.
-     *
-     * <p>The whole-stack case leaves nothing behind and is the easy one. This is the
-     * path where the item entity survives the event and vanilla carries on with the
-     * remainder, and it is the one place a number could be counted twice.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void whatDoesNotFitIsHandedBack(GameTestHelper helper) {
         long capacity = AcervusConfig.CAPACITY.get();
@@ -825,14 +628,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * The statistic names what was picked up, not air.
-     *
-     * <p>An emptied stack answers {@code Items.AIR}, and absorbing the whole of a drop
-     * empties it — so reading the item after the shrink would have quietly credited
-     * every full pickup to air for as long as a matching heap was carried. Vanilla
-     * takes the item at the top of {@code playerTouch} for this reason; so does this.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void theStatisticNamesWhatWasPickedUp(GameTestHelper helper) {
         Item[] awarded = new Item[1];
@@ -864,11 +659,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * The other half of the rule, and the reason the first half is safe: a carried heap
-     * offers no handler, so nothing — no pipe, no backpack mod, no other heap — can
-     * draw two billion items out of an inventory slot.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aCarriedHeapGivesNothingBack(GameTestHelper helper) {
         ItemStack heap = carried(helper, new ItemStack(Items.DIAMOND, 100));
@@ -878,14 +668,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * What arrived in a slot some other way is swept up too.
-     *
-     * <p>Walking over something is only one of the ways items reach a player.
-     * {@code /give}, a crafting result and a shift-click out of a chest all put things
-     * straight into a slot, and a heap that collected one and not the others would be
-     * a rule with no shape.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void theSweepTakesWhatArrivedInASlot(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -900,13 +682,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * What is in the hand is left alone.
-     *
-     * <p>It is the one place to keep something a heap would otherwise claim, and it
-     * has to exist: without it, carrying a heap of cobblestone would mean never being
-     * able to hold a cobblestone.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void theSweepLeavesWhatIsInHand(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -921,13 +696,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * The screen over a held heap shows it and takes deposits, and gives nothing back.
-     *
-     * <p>Every way out is closed, not just the obvious one: the slot refuses to be
-     * picked up from, refuses to be shift-clicked out of, and hands back nothing when
-     * asked directly. One of those left open would be the whole rule undone.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void theScreenOverAHeldHeapOnlyTakes(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -945,7 +713,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** And the heap itself cannot be moved out from under its own screen. */
     @GameTest(template = TestStructures.FLOOR)
     public static void theHeldHeapIsFrozenWhileItsScreenIsOpen(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -963,10 +730,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * An empty held heap can be committed on purpose, which walking over things never
-     * does. The screen is where a decision is made; a step is not a decision.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void theScreenCommitsAnEmptyHeldHeap(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -981,14 +744,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * What a carried heap collected is there when it is put back down.
-     *
-     * <p>This is the round trip the rest of the carrying tests do not make: they read
-     * the item's own numbers back, which would agree with themselves even if the shape
-     * written were one no block could load. {@code CustomData#loadInto} is the same
-     * call {@code BlockItem} makes when the block is placed.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void whatWasCollectedSurvivesBeingPutDown(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -1005,14 +760,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * A fluid heap in a hand reads what it is carrying, and a bucket put in its slot
-     * empties into it.
-     *
-     * <p>Only inward, and not only when full: the block asks whether the container is
-     * full because the block can also pour back out and has to be told which way a
-     * half-empty bucket was meant to go. Here there is one direction and no question.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aHeldFluidHeapReadsAndTakes(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -1032,13 +779,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * An energy heap in a hand does the same with a battery — charged or not.
-     *
-     * <p>A dev-environment battery is hard to come by, so this drives the heap's own
-     * side directly and checks the one thing the vessel cannot: that what goes in stays
-     * in and nothing will come back out.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aHeldEnergyHeapReadsAndTakes(GameTestHelper helper) {
         ItemStack item = new ItemStack(AcervusRegistry.ENERGY_HEAP_ITEM.get());
@@ -1059,11 +799,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * What a held heap collected is there when it is put back down — the round trip the
-     * readings alone cannot make, since they would agree with themselves even if the
-     * shape written were one no block could load.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aHeldFluidHeapSurvivesBeingPutDown(GameTestHelper helper) {
         ItemStack item = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
@@ -1082,13 +817,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * The screen over a held readout takes a container and hands it back when it closes.
-     *
-     * <p>The vessel belongs to the screen rather than to the item — saving it onto the
-     * heap would mean a bucket could be left inside one in a pocket, which is a second
-     * kind of storage nobody asked for. So closing must not swallow it.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aHeldReadoutHandsBackWhatIsInItsSlot(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -1332,19 +1060,6 @@ public final class AcervusTests {
         FluidHeapBlockEntity.serverTick(helper.getLevel(), heap.getBlockPos(), heap.getBlockState(), heap);
     }
 
-    /**
-     * Every heap an item can be written by hand must survive being saved.
-     *
-     * <p>This is the one that was missing, and it cost a world. {@code BLOCK_ENTITY_DATA}
-     * is persisted with {@code CustomData.CODEC_WITH_ID}, which refuses a tag that does
-     * not name its block entity — and it refuses it inside the player inventory save, so
-     * the failure is a crash rather than a lost item. Nothing caught it earlier because
-     * the network codec does not check, and because every test read the numbers back
-     * through the same code that wrote them: they agreed with each other about a shape
-     * the game would not accept.
-     *
-     * <p>So this asks the game, with the call that crashed.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void everyHeldHeapCanBeSaved(GameTestHelper helper) {
         HolderLookup.Provider registries = helper.getLevel().registryAccess();
@@ -1364,7 +1079,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** The call the server makes on every player, once a minute, forever. */
     private static void saves(ItemStack stack, HolderLookup.Provider registries, String what) {
         try {
             stack.save(registries);
@@ -1373,14 +1087,6 @@ public final class AcervusTests {
         }
     }
 
-    /**
-     * The same heap gives or does not give depending on where the item is.
-     *
-     * <p>A pocket does not give; a controller does, because a controller is a placed
-     * block and placing one is the price. The reading code is identical either way —
-     * what differs is one field, set where the heap was found — so this checks that the
-     * field is what decides, on all three, rather than the class.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void whatGivesIsWhereTheHeapIsKept(GameTestHelper helper) {
         HolderLookup.Provider registries = helper.getLevel().registryAccess();
@@ -1409,11 +1115,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Drained to nothing, a stored heap forgets its kind and loses the component
-     * outright — so it stacks with the other empty ones again, and the next thing put
-     * into it is not refused for a reason nothing on the item explains.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void anEmptiedStoredHeapForgetsWhatItHeld(GameTestHelper helper) {
         HolderLookup.Provider registries = helper.getLevel().registryAccess();
@@ -1430,14 +1131,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * A rack offers each kind of heap it holds through the window that kind speaks.
-     *
-     * <p>Mixed on purpose: one item heap and one fluid heap in the same rack, reached
-     * through the item handler and the fluid handler respectively. The rack itself
-     * stores nothing, so what this really checks is that reading a slot as a heap and
-     * writing back through it survives the round trip.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aRackOffersEveryKindItHolds(GameTestHelper helper) {
         HorreumBlockEntity rack = rack(helper);
@@ -1464,9 +1157,6 @@ public final class AcervusTests {
 
         IFluidHandler tanks = helper.getLevel().getCapability(
                 Capabilities.FluidHandler.BLOCK, helper.absolutePos(WHERE), null);
-        // One tank per fluid heap in the rack, not one per rack slot: the heap put in
-        // slot 3 is the rack's only fluid heap, so it is tank 0. Anything that lists a
-        // block's tanks would otherwise draw eleven bars that say Empty forever.
         check(tanks != null && tanks.getTanks() == 1,
                 "a rack with one fluid heap should offer one tank, not " + tanks.getTanks());
         check(tanks.getFluidInTank(0).getAmount() == 5_000,
@@ -1479,11 +1169,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Filling looks for a heap that already holds that fluid before it commits an empty
-     * one. The other way round, a rack fills up with half-used tanks of the same thing
-     * while a matching heap stands beside them.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aRackFillsWhatItAlreadyHoldsFirst(GameTestHelper helper) {
         HorreumBlockEntity rack = rack(helper);
@@ -1504,7 +1189,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** Energy has no kinds, so a rack of energy heaps is one pool with one total. */
     @GameTest(template = TestStructures.FLOOR)
     public static void aRackOfEnergyHeapsIsOnePool(GameTestHelper helper) {
         HorreumBlockEntity rack = rack(helper);
@@ -1523,7 +1207,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /** Simulating must move nothing, at any of the three windows. */
     @GameTest(template = TestStructures.FLOOR)
     public static void aRackSimulatesWithoutMoving(GameTestHelper helper) {
         HorreumBlockEntity rack = rack(helper);
@@ -1550,14 +1233,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * A rack carries its heaps when it is broken, and they must survive the saving.
-     *
-     * <p>The rack's own contents go through {@code ContainerHelper}, which is a
-     * different path from the player inventory that crashed once already. Reading them
-     * back through the code that wrote them is exactly the check that missed it, so
-     * this asks the game to save the item instead.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aRackCarriesItsHeapsWhenBroken(GameTestHelper helper) {
         HorreumBlockEntity rack = rack(helper);
@@ -1580,17 +1255,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Taking one heap out of a carried rack leaves the other eleven where they were.
-     *
-     * <p>It did not. The carried rack wrote its heaps as the whole component instead of
-     * nesting them under {@code Heaps} the way the block entity does, so one write made
-     * the other three readers - the block, the tooltip text and the tooltip picture -
-     * find nothing at all. The heaps were never destroyed; nothing could read them.
-     *
-     * <p>So this writes with one and reads with the others, which is the only shape of
-     * test that would have caught it.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void takingOneHeapOutOfACarriedRackKeepsTheRest(GameTestHelper helper) {
         HolderLookup.Provider registries = helper.getLevel().registryAccess();
@@ -1616,8 +1280,6 @@ public final class AcervusTests {
                         && CarriedHeap.of(registries, left.get(2)).count() == 102,
                 "and the other two should still be there, holding 101 and 102");
 
-        // Read back the way a placed rack reads it, which is the reader that stopped
-        // finding anything.
         HorreumBlockEntity placed = rack(helper);
         rack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY)
                 .loadInto(placed, registries);
@@ -1627,20 +1289,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Every item this mod registers can be crafted.
-     *
-     * <p>Written the way round that survives the mod growing: it asks the item registry
-     * what belongs to Acervus rather than naming five things by hand, so an item added
-     * later and forgotten fails here instead of being noticed in a playthrough.
-     *
-     * <p>It reads recipes as the game loaded them, not as datagen wrote them, which is
-     * the difference that matters for the gas heap. Its recipe file ships whether
-     * Mekanism does or not; without Mekanism the item does not exist, so both sides of
-     * this comparison lose it together and the test still passes. What it cannot see is
-     * a recipe file that was <em>refused</em> - that leaves no trace in the game, only
-     * an error in the log.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void everyItemHasARecipe(GameTestHelper helper) {
         HolderLookup.Provider registries = helper.getLevel().registryAccess();
@@ -1659,13 +1307,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * Empty ones stack. That is the half of the rule that is a convenience: sixty four
-     * empty heaps are sixty four empty heaps and there is nothing in them to copy.
-     *
-     * <p>Asked of the registry rather than of five names, because the way this comes
-     * back is an item added later that did not go through {@link ContentsBlockItem}.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void emptyOnesStack(GameTestHelper helper) {
         for (Item item : BuiltInRegistries.ITEM) {
@@ -1678,15 +1319,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * One holding anything stacks to one. That is the half of the rule that is a bug
-     * when it is missing: a stack of two is one set of contents with a count of two, so
-     * filling it fills "both" and splitting it copies what was inside.
-     *
-     * <p>Checked on a heap and on a rack, which arrive at their contents by different
-     * routes, and read through {@code ItemStack} rather than through the item so that
-     * what is asked is what the game asks.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void fullOnesDoNot(GameTestHelper helper) {
         HolderLookup.Provider registries = helper.getLevel().registryAccess();
@@ -1701,20 +1333,11 @@ public final class AcervusTests {
         HorreumBlockEntity.writeHeaps(rack, heaps, registries);
         check(rack.getMaxStackSize() == 1, "a rack holding a heap should not stack");
 
-        // And back again: emptied, it is an empty one like any other.
         CarriedHeap.stored(registries, heap).extract(64, false);
         check(heap.getMaxStackSize() > 1, "an emptied heap should stack again");
         helper.succeed();
     }
 
-    /**
-     * A stack of heaps has no screen, because a screen onto a stack is a screen onto
-     * every heap in it.
-     *
-     * <p>The other way in — {@link Carried#absorb} — has refused a stack since it was
-     * written. This is the one that did not, and it is the one a player reaches by
-     * crafting several and sneak-clicking without splitting them first.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aStackOfHeapsHasNoScreen(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -1733,15 +1356,6 @@ public final class AcervusTests {
         helper.succeed();
     }
 
-    /**
-     * A stack that is holding something will not be placed, however it came to be.
-     *
-     * <p>This state is unreachable in play — a stack cannot be filled and a full one
-     * cannot be stacked — so the test forces it, the way a command or another mod's
-     * inventory code could. Placing is where the duplication would happen and it needs
-     * no screen and no writing at all: the contents ride on the item and are copied onto
-     * every block placed, while the stack only gets shorter.
-     */
     @GameTest(template = TestStructures.FLOOR)
     public static void aStackHoldingSomethingIsNotPlaced(GameTestHelper helper) {
         HolderLookup.Provider registries = helper.getLevel().registryAccess();
@@ -1777,12 +1391,10 @@ public final class AcervusTests {
         throw new GameTestAssertException("placing a rack should have made a rack block entity");
     }
 
-    /** What the heap in that inventory slot is holding. */
     private static long carriedCount(Player player, int slot) {
         return CarriedHeap.of(player, player.getInventory().getItem(slot)).count();
     }
 
-    /** A heap item holding what a real heap would hold, written the way a broken one is. */
     private static ItemStack carried(GameTestHelper helper, ItemStack contents) {
         HeapBlockEntity heap = place(helper);
         heap.insert(contents, false);

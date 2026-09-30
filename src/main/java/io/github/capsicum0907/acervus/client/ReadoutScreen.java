@@ -15,14 +15,6 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.fluids.FluidStack;
 
-/**
- * The screen for the fluid, energy and gas heaps; the layout is {@link ReadoutPanel}'s.
- *
- * <p>A chemical carries its icon and its tint on itself. A fluid's are only reachable
- * from the client, so the fluid heap leaves them unanswered and they are looked up
- * here instead — which it can do because the fluid heap, unlike the gas one, exists in
- * every game.
- */
 public class ReadoutScreen extends ReadoutPanel<ReadoutMenu> {
     private static final ResourceLocation BOLT =
             ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "textures/gui/energy_icon.png");

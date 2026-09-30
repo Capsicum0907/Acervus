@@ -22,35 +22,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * A rack of heaps, and one place to reach all of them.
- *
- * <p>A heap already carries its contents as an item, so a rack of heaps needs no
- * storage of its own: it is a row of slots holding heap items, and every window it
- * offers the outside world is a view over what is in those slots. Nothing is copied
- * in, nothing has to be kept in step, and pulling a heap out takes its contents with
- * it because they were never anywhere else.
- *
- * <p><b>The heaps inside give.</b> A heap in a pocket does not, and the reason was
- * never the item — it was that the price of drawing from a heap is putting a block
- * down. This is that block. See {@link Held#gives()}.
- *
- * <p>Mixed on purpose: one rack holds item, fluid, energy and gas heaps side by side,
- * and offers the matching window for each kind. Sorting them into four different
- * racks would be four blocks and four sets of pipes to say one thing.
- *
- * <p><b>This must never implement {@link net.minecraft.world.Container}.</b> The same
- * reason as {@link HeapBlockEntity}: a hopper prefers the container path, and what it
- * would find there is heap <em>items</em> — it would carry the heaps away rather than
- * their contents, which is a very expensive misunderstanding.
- */
 public class HorreumBlockEntity extends BlockEntity {
-    /**
-     * How many heaps a rack holds.
-     *
-     * <p>Not a setting. The screen is a picture with nine slots drawn on it, and a
-     * number that could change would have to be a number the picture could draw.
-     */
     public static final int SLOTS = 9;
 
     private static final String HEAPS = "Heaps";
@@ -68,7 +40,6 @@ public class HorreumBlockEntity extends BlockEntity {
         super(AcervusRegistry.HORREUM_ENTITY.get(), pos, state);
     }
 
-    /** The heap items themselves, to be read and written in place. */
     public NonNullList<ItemStack> heaps() {
         return heaps;
     }
@@ -77,7 +48,6 @@ public class HorreumBlockEntity extends BlockEntity {
         return slot < 0 || slot >= SLOTS ? ItemStack.EMPTY : heaps.get(slot);
     }
 
-    /** One handler each, for the whole block; see {@link HeapBlockEntity#handler}. */
     public HorreumItemHandler items() {
         return items;
     }
@@ -90,13 +60,6 @@ public class HorreumBlockEntity extends BlockEntity {
         return energy;
     }
 
-    /**
-     * The heap in that slot read as the kind asked for, or null when the slot holds
-     * something else — an empty slot, or a heap of a different kind.
-     *
-     * <p>Every window is built out of this, which is why it takes the reader rather
-     * than knowing about any of them: the rack does not care what a fluid is.
-     */
     public <T> T read(int slot, net.minecraft.world.item.Item kind,
             BiFunction<HolderLookup.Provider, ItemStack, T> reader) {
         ItemStack stack = heap(slot);
@@ -106,7 +69,6 @@ public class HorreumBlockEntity extends BlockEntity {
         return reader.apply(level.registryAccess(), stack);
     }
 
-    /** Every slot holding a heap of that kind, in slot order. */
     public <T> List<T> readAll(net.minecraft.world.item.Item kind,
             BiFunction<HolderLookup.Provider, ItemStack, T> reader) {
         List<T> found = new ArrayList<>();
@@ -119,28 +81,12 @@ public class HorreumBlockEntity extends BlockEntity {
         return found;
     }
 
-    /**
-     * The heaps written onto a rack item, and read back off one.
-     *
-     * <p><b>Both, here, and nowhere else.</b> Four places were spelling the shape out
-     * for themselves — the block entity, the tooltip text, the tooltip picture and the
-     * carried rack's screen — and the carried one spelled it differently: it wrote the
-     * item list as the whole component instead of nesting it under {@code Heaps}. One
-     * write and the other three could no longer find anything, so taking one heap out
-     * of a rack in your bag appeared to destroy the other eleven. They were still
-     * there; nothing could read them.
-     *
-     * <p>The same mistake the count made once, when it was {@code Count} on one heap
-     * and {@code Amount} on three. A shape known in more than one place is a shape that
-     * will disagree with itself.
-     */
     public static NonNullList<ItemStack> readHeaps(ItemStack rack, HolderLookup.Provider registries) {
         NonNullList<ItemStack> heaps = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
         load(onItem(rack), heaps, new ArrayList<>(), registries);
         return heaps;
     }
 
-    /** Through {@code setBlockEntityData}, which names the block entity; see {@link Held#write}. */
     public static void writeHeaps(ItemStack rack, NonNullList<ItemStack> heaps,
             HolderLookup.Provider registries) {
         List<ItemStack> waiting = new ArrayList<>();
@@ -202,7 +148,6 @@ public class HorreumBlockEntity extends BlockEntity {
         return waiting.size();
     }
 
-    /** Whether that item may go in a rack slot at all. */
     public static boolean isHeap(ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
@@ -227,11 +172,6 @@ public class HorreumBlockEntity extends BlockEntity {
         return true;
     }
 
-    /**
-     * Something inside changed. The heaps are drawn in the screen and their amounts
-     * are read from the items themselves, so a client that is not told keeps showing
-     * what it last saw.
-     */
     public void changed() {
         settle(heaps, waiting);
         setChanged();
@@ -243,9 +183,6 @@ public class HorreumBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        // Written even when every slot is empty, for the reason given in
-        // HeapBlockEntity#saveAdditional: an empty update tag is discarded before it
-        // reaches the client, so emptying would never be heard about.
         tag.put(HEAPS, saved(heaps, waiting, registries));
     }
 

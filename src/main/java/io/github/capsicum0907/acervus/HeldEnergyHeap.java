@@ -9,9 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
-/** An energy heap being carried. See {@link Held} for the rule it follows. */
 public final class HeldEnergyHeap extends Held {
-    /** What the amount used to be called here; read when the current name is absent. */
     private static final String LEGACY_STORED = "Stored";
 
     private HeldEnergyHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where,
@@ -19,17 +17,14 @@ public final class HeldEnergyHeap extends Held {
         super(registries, where, gives);
     }
 
-    /** A heap being carried: it takes and does not give. */
     public static HeldEnergyHeap of(HolderLookup.Provider registries, ItemStack stack) {
         return new HeldEnergyHeap(registries, () -> stack, false);
     }
 
-    /** The one in that hand, whatever it is at the moment of asking. */
     public static HeldEnergyHeap inHand(Player player, InteractionHand hand) {
         return new HeldEnergyHeap(player.level().registryAccess(), () -> player.getItemInHand(hand), false);
     }
 
-    /** A heap slotted into a controller, which is a placed block, so it gives. */
     public static HeldEnergyHeap stored(HolderLookup.Provider registries, ItemStack stack) {
         return new HeldEnergyHeap(registries, () -> stack, true);
     }
@@ -50,7 +45,6 @@ public final class HeldEnergyHeap extends Held {
         return amount() <= 0;
     }
 
-    /** Energy has no kinds, so there is nothing to name and nothing to draw. */
     @Override
     public boolean hasKinds() {
         return false;
@@ -81,7 +75,6 @@ public final class HeldEnergyHeap extends Held {
         return 0xFFD8A24A;
     }
 
-    /** @return how much was taken in, which is never more than was offered */
     public int receive(int offered) {
         if (offered <= 0) {
             return 0;
@@ -97,10 +90,6 @@ public final class HeldEnergyHeap extends Held {
         return taken;
     }
 
-    /**
-     * @return how much was handed out, which is nothing at all unless this heap
-     *         {@link #gives()} — a carried one never does
-     */
     public int give(int wanted) {
         if (!gives() || wanted <= 0 || isEmpty()) {
             return 0;
@@ -113,7 +102,6 @@ public final class HeldEnergyHeap extends Held {
         CompoundTag tag = tag();
         tag.putLong(AMOUNT, left);
         tag.remove(LEGACY_STORED);
-        // No sample to forget: for energy, emptiness is the amount and nothing else.
         write(tag, left <= 0);
         return given;
     }

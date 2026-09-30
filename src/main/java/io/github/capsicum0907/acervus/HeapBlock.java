@@ -25,13 +25,6 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 
-/**
- * The block. Everything it does is one of two things: putting something in, or
- * taking something out.
- *
- * <p>There is no screen. What is inside is drawn on the block itself, which is both
- * the point of it and the reason a screen would have nothing to show.
- */
 public class HeapBlock extends BaseEntityBlock {
     public static final MapCodec<HeapBlock> CODEC = simpleCodec(HeapBlock::new);
 
@@ -54,15 +47,6 @@ public class HeapBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    /**
-     * Holding what the heap already holds: put it in. Sneaking puts in every one the
-     * player has. Holding anything else — or nothing — falls through to the screen.
-     *
-     * <p>The question is {@link HeapBlockEntity#holds}, not {@code accepts}. An empty
-     * heap accepts anything, and a player who right-clicked to look inside would
-     * silently commit it to whatever was in their hand. Deciding what an empty heap
-     * is for is a thing to do deliberately, in the screen or through a pipe.
-     */
     @Override
     protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hit) {
@@ -86,13 +70,6 @@ public class HeapBlock extends BaseEntityBlock {
         return ItemInteractionResult.SUCCESS;
     }
 
-    /**
-     * Empty-handed: open the screen.
-     *
-     * <p>Taking things out lives there rather than out here. A block whose only way
-     * of being used is a gesture nobody was told about is a block nobody can use —
-     * which is what this one was until the screen existed.
-     */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
@@ -117,10 +94,6 @@ public class HeapBlock extends BaseEntityBlock {
         return taken;
     }
 
-    /**
-     * Every matching stack the player is carrying, in one gesture. Emptying an
-     * inventory one stack at a time is the thing a block like this exists to stop.
-     */
     private static int insertEveryMatch(Player player, HeapBlockEntity heap) {
         int total = 0;
         for (ItemStack stack : player.getInventory().items) {
@@ -135,16 +108,6 @@ public class HeapBlock extends BaseEntityBlock {
         level.playSound(null, pos, sound, SoundSource.BLOCKS, 0.4F, pitch);
     }
 
-    /**
-     * <b>What is inside rides on the item.</b> A heap holds more than a chest by
-     * several orders of magnitude, and there is no version of spilling that onto the
-     * floor that ends well: two billion items is thirty-one million entities. So the
-     * contents are written onto the dropped block, the way a shulker box carries its
-     * own, and a heap is a thing you move rather than a thing you empty first.
-     *
-     * <p>This replaces the loot table rather than adding to it, so there is one
-     * answer to what a heap drops instead of two that have to agree.
-     */
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         ItemStack dropped = new ItemStack(this);
@@ -155,7 +118,6 @@ public class HeapBlock extends BaseEntityBlock {
         return List.of(dropped);
     }
 
-    /** Picking the block with middle-click should give back what is in it, too. */
     @Override
     public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,
             net.minecraft.world.level.LevelReader level, BlockPos pos, Player player) {

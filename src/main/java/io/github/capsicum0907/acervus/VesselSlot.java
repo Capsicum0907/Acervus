@@ -4,14 +4,6 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * The slot over a heap's {@link Vessel}: a plain one-item slot, held somewhere other
- * than a container.
- *
- * <p>One item, not a stack. Filling one bucket of a stack of sixteen and leaving the
- * other fifteen empty is a question with no good answer, and refusing to take the
- * stack in the first place is a clearer one.
- */
 public class VesselSlot extends Slot {
     private static final SimpleContainer UNUSED = new SimpleContainer(0);
 

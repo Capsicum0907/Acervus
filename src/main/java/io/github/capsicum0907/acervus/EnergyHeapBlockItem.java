@@ -16,23 +16,16 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Block;
 
-/** The energy heap as an item, saying what it is carrying so that it is not lying. */
 public class EnergyHeapBlockItem extends ContentsBlockItem {
     public EnergyHeapBlockItem(Block block, Properties properties) {
         super(block, properties);
     }
 
-    /** Sneak and right-click the air to look inside the one you are holding. */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         return Carried.open(player, hand,
                 (id, inventory, viewer) -> ReadoutMenu.inHand(id, inventory, hand));
     }
-    /**
-     * The contents as a picture rather than as a line of text; see {@link HeapContents}.
-     * Offered for anything at all, and the client decides there is nothing to draw when
-     * the heap is empty.
-     */
     @Override
     public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(
             ItemStack stack) {

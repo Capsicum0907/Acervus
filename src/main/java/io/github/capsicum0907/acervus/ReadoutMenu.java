@@ -12,23 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/**
- * The screen behind a fluid, energy or gas heap, standing in the world or in a hand.
- *
- * <p>One menu for all three resources, because what they have in common is exactly
- * what a screen needs: an amount, a capacity, a name and two slots for containers,
- * one to empty and one to fill. The item heap keeps its own — there the contents <em>are</em> a slot, and that
- * is worth more than sharing this.
- *
- * <p>Nothing about the heap is sent through the menu. A block is already synchronised
- * for drawing and a held item is already synchronised as part of the inventory, so
- * the screen reads the heap where it lives — which also avoids menu data fields,
- * whose sixteen bits would cap a heap at 32767 of anything.
- *
- * <p>What differs between the two places is gathered in {@link Source}.
- */
 public class ReadoutMenu extends AbstractContainerMenu {
-    /** Matches the slot positions in the generated screen texture. */
     private static final int IN_X = 8;
     private static final int OUT_X = 150;
     private static final int VESSEL_Y = 38;
@@ -42,28 +26,17 @@ public class ReadoutMenu extends AbstractContainerMenu {
     private static final int PLAYER_FIRST = 2;
     private static final int PLAYER_LAST = PLAYER_FIRST + 36;
 
-    /** Where the heap is kept, and what that means for the screen over it. */
     public interface Source {
-        /** Never null: a heap that has gone answers {@link Heaped#NONE}. */
         Heaped heap();
 
-        /** Never null either; a heap that has gone gets a spare nothing ever looks at. */
         Vessel vessel(Vessel.Flow flow);
 
         boolean stillValid(Player player);
 
-        /** The hotbar slot frozen while this screen is open, or -1. See {@link HeapMenu.Source}. */
         default int frozen() {
             return -1;
         }
 
-        /**
-         * A moment of moving whatever is in the vessel.
-         *
-         * <p>Nothing for a block: it is ticking already, and doing it twice would move
-         * things at twice the rate the block advertises. A held heap has no block entity
-         * to tick, so the menu is the only clock it has.
-         */
         default void tick() {
         }
 
@@ -74,7 +47,6 @@ public class ReadoutMenu extends AbstractContainerMenu {
             return false;
         }
 
-        /** Whether the vessels belong to the screen and must be handed back when it closes. */
         default boolean lendsTheVessel() {
             return false;
         }
@@ -86,9 +58,6 @@ public class ReadoutMenu extends AbstractContainerMenu {
         super(type, id);
         this.source = source;
 
-        // Added unconditionally, even when the heap has gone: the slot indices below are
-        // counted from it, so a missing first slot would silently shift the range that
-        // shift-clicking moves things into.
         addSlot(new VesselSlot(source.vessel(Vessel.Flow.IN), IN_X, VESSEL_Y, source::vesselChanged));
         addSlot(new VesselSlot(source.vessel(Vessel.Flow.OUT), OUT_X, VESSEL_Y, source::vesselChanged) {
             @Override
@@ -111,13 +80,11 @@ public class ReadoutMenu extends AbstractContainerMenu {
         }
     }
 
-    /** The screen over a heap standing in the world. */
     public static ReadoutMenu at(int id, Inventory inventory, BlockPos pos) {
         return new ReadoutMenu(AcervusRegistry.READOUT_MENU.get(), id, inventory,
                 new AtBlock(inventory.player.level(), pos));
     }
 
-    /** The screen over a heap being held, opened by sneaking and right-clicking the air. */
     public static ReadoutMenu inHand(int id, Inventory inventory, InteractionHand hand) {
         return new ReadoutMenu(AcervusRegistry.CARRIED_READOUT_MENU.get(), id, inventory,
                 new InHand(inventory.player, hand));
@@ -132,21 +99,12 @@ public class ReadoutMenu extends AbstractContainerMenu {
         return source.stillValid(player);
     }
 
-    /**
-     * Called once a tick per viewer while the screen is open, which is what a held heap
-     * uses as its clock. The vessel first, then the ordinary synchronising.
-     */
     @Override
     public void broadcastChanges() {
         source.tick();
         super.broadcastChanges();
     }
 
-    /**
-     * A held heap's vessel belongs to the screen, so what is in it comes back when the
-     * screen closes. A block's does not — the block keeps it, and it is still there the
-     * next time anyone opens it.
-     */
     @Override
     public void removed(Player player) {
         super.removed(player);
@@ -162,7 +120,6 @@ public class ReadoutMenu extends AbstractContainerMenu {
         }
     }
 
-    /** Shift-clicking moves an empty container into Out and any other into In, or back out of either. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = slots.get(index);
@@ -186,7 +143,6 @@ public class ReadoutMenu extends AbstractContainerMenu {
         return moving;
     }
 
-    /** A heap standing in the world: valid while the player is near the block. */
     private record AtBlock(Level level, BlockPos pos, ContainerLevelAccess access, Vessel spareIn, Vessel spareOut)
             implements Source {
         AtBlock(Level level, BlockPos pos) {
@@ -227,13 +183,6 @@ public class ReadoutMenu extends AbstractContainerMenu {
         }
     }
 
-    /**
-     * A heap being held: valid while that hand still holds one.
-     *
-     * <p>The vessels are the menu's own and last as long as the screen does. Saving one
-     * onto the item would mean a container could be left inside a heap in a pocket,
-     * which is a second kind of storage nobody asked for.
-     */
     private record InHand(Player player, InteractionHand hand, Held held, Vessel in, Vessel out)
             implements Source {
         InHand(Player player, InteractionHand hand) {
@@ -282,12 +231,6 @@ public class ReadoutMenu extends AbstractContainerMenu {
         return heldHeap(player, hand) != null;
     }
 
-    /**
-     * Which of the three the player is holding, or null.
-     *
-     * <p>The gas one is asked for last and through its own package, so that a game
-     * without Mekanism never loads a class that mentions a chemical.
-     */
     private static Held heldHeap(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (stack.getItem() == AcervusRegistry.FLUID_HEAP_ITEM.get()) {

@@ -4,17 +4,6 @@ import mekanism.api.Action;
 import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.chemical.IChemicalHandler;
 
-/**
- * The window a chemical heap shows to Mekanism's pipes and machines.
- *
- * <p>The plainest of the four, because Mekanism counts in longs. There is no
- * saturating, no clamping and no choosing which of two true things to say: the tank
- * reports what is in it and hands over what is asked for, and both numbers are the
- * real ones. The other three heaps are all shaped around a ceiling that this one
- * does not have.
- *
- * <p>Nothing is remembered here, for the same reason as the others.
- */
 public class ChemicalHeapHandler implements IChemicalHandler {
     private static final int TANK = 0;
 
@@ -34,10 +23,6 @@ public class ChemicalHeapHandler implements IChemicalHandler {
         return tank == TANK ? heap.contents() : ChemicalStack.EMPTY;
     }
 
-    /**
-     * Assignment, which a heap has no natural meaning for. Read as "hold exactly this
-     * instead" — the only reading that leaves the block consistent afterwards.
-     */
     @Override
     public void setChemicalInTank(int tank, ChemicalStack stack) {
         if (tank != TANK) {

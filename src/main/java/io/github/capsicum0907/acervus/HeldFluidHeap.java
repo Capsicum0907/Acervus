@@ -11,29 +11,24 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 
-/** A fluid heap being carried. See {@link Held} for the rule it follows. */
 public final class HeldFluidHeap extends Held {
     private HeldFluidHeap(HolderLookup.Provider registries, java.util.function.Supplier<ItemStack> where,
             boolean gives) {
         super(registries, where, gives);
     }
 
-    /** A heap being carried: it takes and does not give. */
     public static HeldFluidHeap of(HolderLookup.Provider registries, ItemStack stack) {
         return new HeldFluidHeap(registries, () -> stack, false);
     }
 
-    /** The one in that hand, whatever it is at the moment of asking. */
     public static HeldFluidHeap inHand(Player player, InteractionHand hand) {
         return new HeldFluidHeap(player.level().registryAccess(), () -> player.getItemInHand(hand), false);
     }
 
-    /** A heap slotted into a controller, which is a placed block, so it gives. */
     public static HeldFluidHeap stored(HolderLookup.Provider registries, ItemStack stack) {
         return new HeldFluidHeap(registries, () -> stack, true);
     }
 
-    /** Identity only: the fluid and its components, always with an amount of one. */
     public FluidStack sample() {
         CompoundTag tag = tag();
         return tag.contains(SAMPLE)
@@ -62,7 +57,6 @@ public final class HeldFluidHeap extends Held {
         return sample.isEmpty() ? Component.empty() : sample.getHoverName();
     }
 
-    /** Buckets, because millibuckets cost three digits of every number for nothing. */
     @Override
     public String brief(long value) {
         return Counts.buckets(value);
@@ -83,7 +77,6 @@ public final class HeldFluidHeap extends Held {
         return 0xFF7FB8C8;
     }
 
-    /** @return how much of the offered fluid was taken, which may be none */
     public int insert(FluidStack stack, boolean simulate) {
         FluidStack sample = sample();
         if (stack.isEmpty() || (!sample.isEmpty() && !FluidStack.isSameFluidSameComponents(sample, stack))) {
@@ -104,10 +97,6 @@ public final class HeldFluidHeap extends Held {
         return taken;
     }
 
-    /**
-     * @return what was taken out, which is nothing at all unless this heap
-     *         {@link #gives()} — a carried one never does
-     */
     public FluidStack extract(int wanted, boolean simulate) {
         if (!gives() || isEmpty() || wanted <= 0) {
             return FluidStack.EMPTY;
@@ -121,8 +110,6 @@ public final class HeldFluidHeap extends Held {
         CompoundTag tag = tag();
         long left = amount() - taken;
         if (left <= 0) {
-            // Forgotten with the last drop, here as on the block: one that remembered
-            // would refuse the next thing poured in with nothing to say why.
             tag.remove(SAMPLE);
             left = 0;
         }

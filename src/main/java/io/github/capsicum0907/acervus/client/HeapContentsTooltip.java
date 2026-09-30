@@ -29,40 +29,18 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 import org.joml.Matrix4f;
 
-/**
- * Draws {@link HeapContents}: one row per heap, an icon then a name then an amount.
- *
- * <p>The icon is whatever stands for the contents where they are usually seen — the
- * item itself, or a fluid's or a chemical's own sprite off the block atlas. Energy has
- * no kinds, so its row has no icon and says so by being a number on its own.
- *
- * <p>The reading is done here rather than carried, because the registries a heap needs
- * to be read are reachable from the client and not from the item. See
- * {@link HeapContents}.
- */
 public class HeapContentsTooltip implements ClientTooltipComponent {
     private static final int ICON = 16;
     private static final int GAP = 4;
     private static final int ROW = 18;
 
-    /** The amount, set apart from the name so a column of them reads as a column. */
     private static final int AMOUNT_COLOUR = 0xFFAAAAAA;
     private static final int NAME_COLOUR = 0xFFFFFFFF;
 
-    /**
-     * One heap: something to draw, what it is called, and how much of it.
-     *
-     * <p>Public only so the gas package can build one — it is the one kind of contents
-     * this class must not read for itself.
-     */
     public record Row(ItemStack item, FluidStack fluid, ResourceLocation sprite, boolean onAtlas,
             int tint, Component name, String amount) {
     }
 
-    /**
-     * Energy's own icon, and the one thing here that is not stitched onto the block
-     * atlas — it belongs to a tooltip rather than to a block, so it is blitted straight.
-     */
     private static final ResourceLocation BOLT =
             ResourceLocation.fromNamespaceAndPath(io.github.capsicum0907.acervus.Acervus.MODID,
                     "textures/gui/energy_icon.png");
@@ -73,7 +51,6 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
         this.rows = read(contents.of());
     }
 
-    /** Whether there is anything worth drawing, so an empty one is never offered. */
     public static boolean anything(ItemStack stack) {
         return !new HeapContentsTooltip(new HeapContents(stack)).rows.isEmpty();
     }
@@ -103,12 +80,6 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
         return rows;
     }
 
-    /**
-     * One heap read as a row, or null when there is nothing in it.
-     *
-     * <p>The gas heap is asked for last and behind {@link Mods#mekanism()}, so that a
-     * game without Mekanism never reaches a class that mentions a chemical.
-     */
     private static Row row(ItemStack heap, HolderLookup.Provider registries) {
         Item kind = heap.getItem();
 
@@ -157,11 +128,6 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
         }
     }
 
-    /**
-     * The text is drawn with the icons rather than as tooltip lines of its own, so that
-     * a name always sits beside the picture it belongs to. Tooltip text and tooltip
-     * images are laid out separately, and a list of twelve would drift apart.
-     */
     @Override
     public void renderText(Font font, int x, int y, Matrix4f matrix,
             MultiBufferSource.BufferSource buffer) {
@@ -193,7 +159,6 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
 
         FluidStack fluid = row.fluid();
         if (!fluid.isEmpty()) {
-            // A fluid's sprite is only reachable from the client, which is here.
             IClientFluidTypeExtensions look = IClientFluidTypeExtensions.of(fluid.getFluid());
             texture = look.getStillTexture(fluid);
             tint = 0xFF000000 | look.getTintColor(fluid);

@@ -1,19 +1,4 @@
 #!/usr/bin/env python3
-"""Draw the heap block texture.
-
-This script is the source of the sprite; the PNG under src/main/resources is its
-output and is not edited by hand.
-
-The block has to be seen into, so the middle of the face is translucent and only
-the frame is solid. Shading is derived rather than drawn: a pixel with nothing
-above-left of it catches the light, a pixel with nothing below-right of it falls
-into shadow, and everything else is body colour. The frame is a ring, so that rule
-lights its outer edge and shades its inner one without either being described.
-
-No third-party libraries: the PNG is assembled from zlib and struct.
-
-    python tools/make_textures.py
-"""
 
 from __future__ import annotations
 
@@ -22,7 +7,7 @@ import struct
 import zlib
 
 SIZE = 16
-FRAME = 2  # how many pixels deep the metal border runs
+FRAME = 2
 
 ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures"
 OUT = ASSETS / "block/item_heap.png"
@@ -42,16 +27,13 @@ METAL = {(x, y) for (x, y) in ALL
          if x < FRAME or y < FRAME or x >= SIZE - FRAME or y >= SIZE - FRAME}
 GLASS = ALL - METAL
 
-# A few brighter cells, as the sheen on a pane. Placed rather than computed: a
-# highlight is about where the light happens to be, not about the shape.
 SHEEN = {(4, 5), (5, 4), (5, 5), (6, 4), (9, 10), (10, 9), (10, 10)}
 
-# (light, body, shadow)
 METAL_TONES = ("#8A8F9C", "#5C6270", "#3A3F4A")
 
 GLASS_BODY = "#A8D4E0"
 GLASS_SHEEN = "#DFF2F7"
-GLASS_ALPHA = 90  # out of 255; enough to read as glass, clear enough to see through
+GLASS_ALPHA = 90
 
 
 def _rgb(colour: str) -> tuple[int, int, int]:
@@ -72,7 +54,7 @@ def _tone(pixel: tuple[int, int], region: set[tuple[int, int]], tones: tuple[str
 def _png(pixels: dict[tuple[int, int], tuple[int, int, int, int]], size: int = SIZE) -> bytes:
     raw = bytearray()
     for y in range(size):
-        raw.append(0)  # filter type 0 for the row
+        raw.append(0)
         for x in range(size):
             raw.extend(pixels.get((x, y), (0, 0, 0, 0)))
 
@@ -80,7 +62,7 @@ def _png(pixels: dict[tuple[int, int], tuple[int, int, int, int]], size: int = S
         body = kind + data
         return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
 
-    header = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)  # 8-bit RGBA
+    header = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)
     return (
         b"\x89PNG\r\n\x1a\n"
         + chunk(b"IHDR", header)
@@ -90,16 +72,12 @@ def _png(pixels: dict[tuple[int, int], tuple[int, int, int, int]], size: int = S
 
 
 def draw(glass: str = GLASS_BODY, sheen: str = GLASS_SHEEN) -> bytes:
-    """The same block in a different glass. The frame is shared on purpose: a fluid
-    heap and an item heap are the same machine holding different things, and should
-    look like two of a set rather than two inventions."""
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     for pixel in METAL:
         pixels[pixel] = _rgb(_tone(pixel, METAL, METAL_TONES)) + (255,)
     for pixel in GLASS:
         pixels[pixel] = _rgb(sheen if pixel in SHEEN else glass) + (GLASS_ALPHA,)
     return _png(pixels)
-
 
 
 def draw_casing(lit: int, show_lamps: bool = True) -> bytes:
@@ -126,10 +104,6 @@ def draw_casing(lit: int, show_lamps: bool = True) -> bytes:
                     pixels[(x, y)] = _rgb(colour) + (255,)
     return _png(pixels, SIZE * scale)
 
-# --- the screen ------------------------------------------------------------
-# A panel in the game's own idiom: flat fill, a light bevel on the top and left,
-# a dark one on the bottom and right. Every measurement below is also a constant in
-# HeapScreen, and the two have to agree; they are named the same on both sides.
 
 SHEET = 256
 PANEL_W, PANEL_H = 176, 166
@@ -144,7 +118,7 @@ WELL_DARK = "#373737"
 WELL_LIGHT = "#FFFFFF"
 
 SLOT = 18
-INVENTORY_ROWS = ((8, 84), (8, 102), (8, 120))    # inner top-left of each row
+INVENTORY_ROWS = ((8, 84), (8, 102), (8, 120))
 HOTBAR = (8, 142)
 
 
@@ -161,7 +135,6 @@ def _panel(pixels: dict, ox: int, oy: int) -> None:
 
 
 def _recess(pixels: dict, x: int, y: int, w: int, h: int) -> None:
-    """A sunken area: dark along the top and left, light along the bottom and right."""
     for dx in range(w):
         for dy in range(h):
             if dx == 0 or dy == 0:
@@ -174,8 +147,6 @@ def _recess(pixels: dict, x: int, y: int, w: int, h: int) -> None:
 
 
 def _sheet(pixels: dict) -> bytes:
-    """A 256x256 sheet, transparent wherever nothing was drawn. The three screens
-    share this rather than each carrying its own copy of the PNG writing."""
     raw = bytearray()
     for y in range(SHEET):
         raw.append(0)
@@ -195,8 +166,6 @@ def _sheet(pixels: dict) -> bytes:
     )
 
 
-# One frame, three glasses. The colour is the only thing that says which resource a
-# heap is for, which is the intent: they are the same machine.
 FLUID_GLASS = "#7FB8C8"
 FLUID_SHEEN = "#C8E8F0"
 CASING = "#4A4F5C"
@@ -214,9 +183,6 @@ CHEMICAL_GLASS = "#8FCF8A"
 CHEMICAL_SHEEN = "#D6F2D2"
 
 
-# Energy has no item and no sprite of its own, so its tooltip row had a hole where
-# every other row has a picture. Drawn rather than described, because the shape is the
-# point: nobody needs to be told what a lightning bolt means.
 BOLT = """
 ................
 .......###......
@@ -241,13 +207,6 @@ BOLT_EDGE = "#D8A24A"
 
 
 def draw_bolt() -> bytes:
-    """Sixteen by sixteen, transparent but for the bolt. Blitted straight rather than
-    stitched onto the block atlas: it belongs to a tooltip, not to a block.
-
-    The drawing is centred by measuring it, not by counting dots in the art above.
-    Written out by hand it sat against the top-left corner of its frame while every
-    other icon in the row was centred, and the fix for that is not to move the dots -
-    it is to stop the position being something anyone has to get right."""
     rows = [line for line in BOLT.strip("\n").split("\n")]
     drawn = {(x, y) for y, line in enumerate(rows) for x, cell in enumerate(line) if cell == "#"}
 
@@ -260,22 +219,15 @@ def draw_bolt() -> bytes:
     lit = {(x + dx, y + dy) for (x, y) in drawn}
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     for (x, y) in lit:
-        # An edge is any lit pixel with an unlit neighbour above or to the left, which
-        # gives the bolt a rim without anyone placing one.
         edge = (x - 1, y) not in lit or (x, y - 1) not in lit
         pixels[(x, y)] = _rgb(BOLT_EDGE if edge else BOLT_BODY) + (255,)
     return _png(pixels)
 
 
 def draw_rack() -> bytes:
-    """The rack block: the same frame as a heap, filled in rather than glazed, with a
-    grid of niches for the heaps it holds. It is the one block of the set you cannot
-    see into, because what is inside it is heaps and not contents."""
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     for pixel in ALL:
         pixels[pixel] = _rgb(_tone(pixel, METAL, METAL_TONES)) + (255,)
-    # Four niches, two by two, standing for the slots inside. Dark on the top and left
-    # so they read as holes rather than as studs.
     for ox in (3, 9):
         for oy in (3, 9):
             for dx in range(4):
@@ -321,15 +273,12 @@ def draw_rack_lamp() -> bytes:
             pixels[(x, y)] = _rgb(LAMP_ON_EDGE if edge else LAMP_ON) + (255,)
     return _png(pixels)
 
-# Where the nine heap slots sit in the rack screen: three across, three down.
 RACK_SLOTS = (62, 18)
 RACK_COLUMNS = 3
 RACK_ROWS = 3
 
 
 def draw_rack_screen() -> bytes:
-    """Nine slots and the player's inventory, and nothing else. Each heap says what
-    it holds on its own tooltip, so a readout here would be a second copy of it."""
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     _panel(pixels, 0, 0)
     for row in range(RACK_ROWS):

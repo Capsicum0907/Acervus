@@ -14,24 +14,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * What a chemical heap holds: one chemical, and how much of it.
- *
- * <p><b>The only one of the four that can tell the whole truth.</b> Mekanism counts
- * chemicals in longs — {@code getChemicalTankCapacity} returns one, and so does the
- * amount on a stack — so nothing here has to saturate. An item heap, a fluid heap
- * and an energy heap all hold a long internally and then say the largest int they
- * can; this one says what it holds.
- *
- * <p>Everything in this package exists only when Mekanism does, which is why it is
- * in a package of its own: nothing outside it mentions a chemical, so a game without
- * Mekanism never loads a class that would be missing one.
- */
 public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.capsicum0907.acervus.Heaped, io.github.capsicum0907.acervus.HasVessel {
     private static final String SAMPLE = "Sample";
     private static final String AMOUNT = "Amount";
 
-    /** Identity only: the chemical, always with an amount of one. */
     private ChemicalStack sample = ChemicalStack.EMPTY;
     private long amount;
 
@@ -65,7 +51,6 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         return handler;
     }
 
-    /** All of it, with no clamp anywhere: the amount is a long at both ends. */
     public ChemicalStack contents() {
         return isEmpty() ? ChemicalStack.EMPTY : sample.copyWithAmount(amount);
     }
@@ -81,7 +66,6 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         return !isEmpty() && !stack.isEmpty() && ChemicalStack.isSameChemical(sample, stack);
     }
 
-    /** @return how much of the offer was taken */
     public long insert(ChemicalStack stack, boolean simulate) {
         if (!accepts(stack)) {
             return 0L;
@@ -100,7 +84,6 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         return taken;
     }
 
-    /** @return what was taken out: as much as was asked for, if there is that much */
     public ChemicalStack extract(long wanted, boolean simulate) {
         if (isEmpty() || wanted <= 0) {
             return ChemicalStack.EMPTY;

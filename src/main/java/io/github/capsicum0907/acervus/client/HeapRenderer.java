@@ -17,19 +17,11 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
 
-/**
- * What makes a heap worth looking at: it shows what it holds, and how many. The item
- * floats inside the glass facing the camera; the count is written flat on each open
- * side, since a label turned to the camera sinks into the block when seen at an angle.
- */
 public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
-    /** Big enough to read from across a room, small enough to sit inside the block. */
     private static final float ITEM_SCALE = 0.5F;
 
-    /** Text is authored at sixteen pixels; this brings it down to world scale. */
     private static final float TEXT_SCALE = 0.01F;
 
-    /** Below the item, clear of it at the scale above. */
     private static final float TEXT_DROP = 0.34F;
 
     private final ItemRenderer items;
@@ -54,8 +46,6 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
 
         pose.pushPose();
         pose.scale(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE);
-        // GUI, not GROUND: the contents should read as a picture of the item rather
-        // than as an item lying on a surface inside a box.
         items.renderStatic(sample, ItemDisplayContext.GUI, packedLight, OverlayTexture.NO_OVERLAY,
                 pose, buffers, heap.getLevel(), 0);
         pose.popPose();
@@ -66,13 +56,9 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
     }
 
     private void drawCount(long count, PoseStack pose, MultiBufferSource buffers, int packedLight) {
-        // Short: this is read across a room, where a size is wanted and thirteen
-        // digits is a wall. The whole number lives in the screen.
         String text = Counts.brief(count);
 
         pose.pushPose();
-        // Negative Y: the font draws downward, and the pose is already turned to face
-        // the camera, which leaves its Y axis pointing the other way.
         pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
         pose.translate(0.0F, TEXT_DROP / TEXT_SCALE, 0.0F);
 
@@ -82,7 +68,6 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
         pose.popPose();
     }
 
-    /** Contents are the reason to look at one, so they should be visible from further than a sign. */
     @Override
     public int getViewDistance() {
         return 48;

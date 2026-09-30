@@ -19,25 +19,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
 
-/**
- * What a fluid heap holds: one kind of fluid, and how much of it in millibuckets.
- *
- * <p>The same shape as {@link HeapBlockEntity} and for the same reasons — a long
- * amount that the block keeps, and a sample carrying only the identity of what is
- * stored. The two are not yet one class on purpose: a third resource is what will
- * say which parts are really shared and which only look alike, and guessing that
- * from two would be guessing.
- *
- * <p>The ceiling at the edge is lower here than it looks. A {@code FluidStack}
- * counts in an int and so does every method of {@code IFluidHandler}, so what a
- * fluid heap can <em>say</em> stops at about two million buckets however much it
- * holds. As with items, the answer is to saturate rather than to wrap.
- */
 public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVessel {
     private static final String SAMPLE = "Sample";
     private static final String AMOUNT = "Amount";
 
-    /** Identity only: the fluid and its components, always with an amount of one. */
     private FluidStack sample = FluidStack.EMPTY;
     private long amount;
 
@@ -67,12 +52,10 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         return Math.max(0L, capacity() - amount);
     }
 
-    /** One handler for the whole block, handed to every side. */
     public FluidHeapHandler handler() {
         return handler;
     }
 
-    /** Everything inside, saturated at what a fluid stack can count. */
     public FluidStack contents() {
         if (isEmpty()) {
             return FluidStack.EMPTY;
@@ -87,12 +70,10 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         return isEmpty() || FluidStack.isSameFluidSameComponents(sample, stack);
     }
 
-    /** Whether this is already what the heap holds — the question a person is asked. */
     public boolean holds(FluidStack stack) {
         return !isEmpty() && !stack.isEmpty() && FluidStack.isSameFluidSameComponents(sample, stack);
     }
 
-    /** @return how much of the offered fluid was taken, which may be none */
     public int insert(FluidStack stack, boolean simulate) {
         if (!accepts(stack)) {
             return 0;
@@ -111,7 +92,6 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         return taken;
     }
 
-    /** @return what was taken out: as much as was asked for, if there is that much */
     public FluidStack extract(int wanted, boolean simulate) {
         if (isEmpty() || wanted <= 0) {
             return FluidStack.EMPTY;
@@ -124,8 +104,6 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
 
         amount -= taken;
         if (amount <= 0) {
-            // Forgotten with the last drop, so the next thing poured in is not refused
-            // for a reason nothing on the block explains.
             sample = FluidStack.EMPTY;
             amount = 0;
         }
@@ -213,7 +191,6 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         return sample.isEmpty() ? Component.empty() : sample.getHoverName();
     }
 
-    /** Buckets, because millibuckets cost three digits of every number for nothing. */
     @Override
     public String brief(long value) {
         return Counts.buckets(value);
@@ -241,7 +218,6 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         }
     }
 
-    /** The amount is written even when it is zero; see {@link HeapBlockEntity#saveAdditional}. */
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);

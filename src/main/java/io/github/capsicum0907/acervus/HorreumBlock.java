@@ -27,13 +27,6 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 
-/**
- * The rack. Right-click it to put heaps in and take them out.
- *
- * <p>Nothing else: it has no gestures of its own, because everything it does is done
- * through the heaps inside it and they already know how. What the block adds is a
- * single place for a pipe to reach all of them.
- */
 public class HorreumBlock extends BaseEntityBlock {
     public static final MapCodec<HorreumBlock> CODEC = simpleCodec(HorreumBlock::new);
 
@@ -97,14 +90,6 @@ public class HorreumBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    /**
-     * The heaps ride on the dropped rack, and for a harder reason than usual.
-     *
-     * <p>Spilling would drop nine heap items on the floor, which sounds harmless
-     * until one remembers what a heap holds: nine stacks of two billion, in a pile
-     * of entities that can be walked away from, burned, or picked up by the wrong
-     * hopper. A heap is a thing you move, and so is a rack of them.
-     */
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         ItemStack dropped = new ItemStack(this);
@@ -115,7 +100,6 @@ public class HorreumBlock extends BaseEntityBlock {
         return List.of(dropped);
     }
 
-    /** Middle-clicking one gives back what is in it, the same as a heap. */
     @Override
     public ItemStack getCloneItemStack(BlockState state, net.minecraft.world.phys.HitResult target,
             net.minecraft.world.level.LevelReader level, BlockPos pos, Player player) {

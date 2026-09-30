@@ -429,6 +429,11 @@ gradlew runData           # regenerate models, recipes and language
 - Whether a heap should be able to be locked to a kind while empty, so an automated
   line cannot fill it with the wrong thing first.
 
+## Design notes
+
+Why the code is the way it is, file by file, is in [docs/design.md](docs/design.md). The
+source carries no comments.
+
 ## Related
 
 One of a set of small, independent mods, each doing one thing and depending on

@@ -18,27 +18,16 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.fluids.FluidStack;
 
-/**
- * The fluid heap as an item, and the reason it needs its own class: a heap carries
- * its contents when picked up, so one holding two million buckets looks exactly like
- * an empty one unless it says otherwise.
- */
 public class FluidHeapBlockItem extends ContentsBlockItem {
     public FluidHeapBlockItem(Block block, Properties properties) {
         super(block, properties);
     }
 
-    /** Sneak and right-click the air to look inside the one you are holding. */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         return Carried.open(player, hand,
                 (id, inventory, viewer) -> ReadoutMenu.inHand(id, inventory, hand));
     }
-    /**
-     * The contents as a picture rather than as a line of text; see {@link HeapContents}.
-     * Offered for anything at all, and the client decides there is nothing to draw when
-     * the heap is empty.
-     */
     @Override
     public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(
             ItemStack stack) {

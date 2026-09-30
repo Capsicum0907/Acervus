@@ -17,18 +17,7 @@ import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
-/**
- * What an energy heap holds: a number, and nothing else.
- *
- * <p>The simplest of the three, and the difference is worth naming: energy has no
- * identity. An item heap and a fluid heap both keep a sample beside the amount,
- * because "five thousand" means nothing without "of what" — and both therefore have
- * to answer what happens when something else is offered. Energy is energy, so this
- * one has no sample, cannot be locked to a kind, and never refuses anything except
- * for being full.
- */
 public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVessel {
-    /** The same name every heap uses; see {@link HeapBlockEntity} for why. */
     private static final String AMOUNT = "Amount";
     private static final String LEGACY_STORED = "Stored";
 
@@ -56,12 +45,10 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         return Math.max(0L, capacity() - stored);
     }
 
-    /** One handler for the whole block, handed to every side. */
     public EnergyHeapHandler handler() {
         return handler;
     }
 
-    /** @return how much was taken in, which is never more than was offered */
     public int receive(int offered, boolean simulate) {
         if (offered <= 0) {
             return 0;
@@ -74,7 +61,6 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         return Math.max(taken, 0);
     }
 
-    /** @return how much was handed out, which is never more than was asked for */
     public int give(int wanted, boolean simulate) {
         if (wanted <= 0 || isEmpty()) {
             return 0;
@@ -92,7 +78,6 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         return false;
     }
 
-    /** Energy has no kinds, so there is nothing to name. */
     @Override
     public Component contentName() {
         return Component.empty();
@@ -163,25 +148,10 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         return vessel.isEmpty() ? null : vessel.held().getCapability(Capabilities.EnergyStorage.ITEM);
     }
 
-    /**
-     * Offering what it holds to whatever is touching it, once a tick.
-     *
-     * <p>An energy heap pushes; the item and fluid heaps do not. That is not an
-     * inconsistency, it is the ecosystem: a hopper comes and takes items, a pump comes
-     * and takes fluid, and a machine that wants power sits there waiting to be given
-     * some. A store that only answered when asked would sit full beside a furnace that
-     * never asked — which is exactly what this one did until it was watched.
-     *
-     * <p>The neighbours are looked up through a cache rather than every tick, because
-     * a capability lookup is a map search and this happens twenty times a second per
-     * heap.
-     */
     public static void serverTick(Level level, BlockPos pos, BlockState state, EnergyHeapBlockEntity heap) {
         if (!(level instanceof ServerLevel server)) {
             return;
         }
-        // The vessel first, and unconditionally: a battery in the slot is a person
-        // asking, and turning pushing off is about cables rather than about them.
         heap.tickVessels();
         heap.showLamps();
         if (!AcervusConfig.ENERGY_PUSHES.get() || heap.isEmpty()) {

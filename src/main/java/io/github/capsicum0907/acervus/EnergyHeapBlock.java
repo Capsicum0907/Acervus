@@ -30,13 +30,6 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.HitResult;
 
-/**
- * The energy heap.
- *
- * <p>No interaction of its own. There is no bucket of electricity to right-click it
- * with — energy arrives and leaves through cables, and a block that also had a
- * gesture would be inventing one for a thing that already has a way in.
- */
 public class EnergyHeapBlock extends BaseEntityBlock {
     public static final MapCodec<EnergyHeapBlock> CODEC = simpleCodec(EnergyHeapBlock::new);
 
@@ -98,7 +91,6 @@ public class EnergyHeapBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    /** Server side only: pushing is a thing the world does, and the client has no say. */
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
             BlockEntityType<T> type) {
@@ -107,7 +99,6 @@ public class EnergyHeapBlock extends BaseEntityBlock {
                         EnergyHeapBlockEntity::serverTick);
     }
 
-    /** Empty-handed: open the readout. */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
@@ -126,7 +117,6 @@ public class EnergyHeapBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    /** What is inside rides on the dropped block, for the reasons in {@link HeapBlock#getDrops}. */
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         ItemStack dropped = new ItemStack(this);

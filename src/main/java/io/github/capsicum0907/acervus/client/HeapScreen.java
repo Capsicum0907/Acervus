@@ -14,13 +14,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
-/**
- * The item heap's screen, laid out by {@link ReadoutPanel} like the other three.
- *
- * <p>Over the Out slot the exact count is <em>added</em> to the item's own tooltip
- * rather than replacing it — what is in there is still an item, and everything an
- * item usually says about itself still applies.
- */
 public class HeapScreen extends ReadoutPanel<HeapMenu> {
     private static final int ITEM_TINT = 0xFFA8D4E0;
 

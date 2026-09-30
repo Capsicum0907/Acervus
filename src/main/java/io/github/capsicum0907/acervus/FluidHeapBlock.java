@@ -25,15 +25,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.fluids.FluidUtil;
 
-/**
- * The fluid heap.
- *
- * <p>Filling and emptying is left entirely to {@link FluidUtil}, which is what the
- * game's own tanks use: it works out whether the held thing is a full bucket or an
- * empty one, which way the fluid should go, how much fits, and what to hand back.
- * Writing that here would be reimplementing bucket logic in order to get it subtly
- * wrong for somebody's modded container.
- */
 public class FluidHeapBlock extends BaseEntityBlock {
     public static final MapCodec<FluidHeapBlock> CODEC = simpleCodec(FluidHeapBlock::new);
 
@@ -56,7 +47,6 @@ public class FluidHeapBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    /** Server side only. */
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
             BlockEntityType<T> type) {
@@ -65,7 +55,6 @@ public class FluidHeapBlock extends BaseEntityBlock {
                         FluidHeapBlockEntity::serverTick);
     }
 
-    /** Empty-handed: open the readout. */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
@@ -91,8 +80,6 @@ public class FluidHeapBlock extends BaseEntityBlock {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (level.isClientSide) {
-            // The client cannot know whether it worked, and guessing wrong leaves a
-            // bucket in the hand that the server has already emptied.
             return held.isEmpty() ? ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
                     : ItemInteractionResult.SUCCESS;
         }
@@ -101,7 +88,6 @@ public class FluidHeapBlock extends BaseEntityBlock {
                 : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
-    /** What is inside rides on the dropped block, for the reasons in {@link HeapBlock#getDrops}. */
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         ItemStack dropped = new ItemStack(this);

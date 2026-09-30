@@ -17,10 +17,6 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.HitResult;
 
-/**
- * The chemical heap. No interaction of its own: gas moves through pressurised tubes,
- * and there is no held container to right-click one with.
- */
 public class ChemicalHeapBlock extends BaseEntityBlock {
     public static final MapCodec<ChemicalHeapBlock> CODEC = simpleCodec(ChemicalHeapBlock::new);
 
@@ -43,7 +39,6 @@ public class ChemicalHeapBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    /** Server side only. */
     @Override
     public <T extends net.minecraft.world.level.block.entity.BlockEntity>
             net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(
@@ -53,7 +48,6 @@ public class ChemicalHeapBlock extends BaseEntityBlock {
                 : createTickerHelper(type, GasHeap.BLOCK_ENTITY.get(), ChemicalHeapBlockEntity::serverTick);
     }
 
-    /** Empty-handed: open the readout. */
     @Override
     protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state,
             net.minecraft.world.level.Level level, BlockPos pos, Player player,

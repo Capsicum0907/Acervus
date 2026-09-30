@@ -21,27 +21,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * What a Refined Storage network sees when its external storage faces a heap or a
- * rack of them.
- *
- * <p><b>This exists for one number.</b> Refined Storage counts in longs everywhere —
- * {@code ResourceAmount} carries one, {@code insert} and {@code extract} take one —
- * and a heap holds a long. The two agree perfectly, and until now they had to speak
- * through {@code IItemHandler}, whose {@code ItemStack} counts in an int. So a network
- * looking at a heap of five billion was told 2,147,483,647 and believed it. Nothing
- * about Refined Storage was the limit; the adapter between them was.
- *
- * <p>Moving is still done in int-sized calls, because that is all a stack can carry,
- * and a network that wants more simply asks again. It is the <em>reading</em> that had
- * no way to be honest, and now does.
- *
- * <p><b>Always non-null, even when the block is not ours.</b> Refined Storage collects
- * providers with {@code .map(factory -> factory.create(…)).toList()} and does not
- * filter what comes back, so a factory that returned null for somebody else's block
- * would put a null in that list. One that answers "nothing here" is the shape the
- * interface actually asks for.
- */
 public class HeapStorage implements ExternalStorageProvider {
     private final ServerLevel level;
     private final BlockPos pos;
@@ -51,13 +30,6 @@ public class HeapStorage implements ExternalStorageProvider {
         this.pos = pos;
     }
 
-    /**
-     * Every heap behind this face, read fresh.
-     *
-     * <p>A single heap is one entry; a rack is one per item heap in it. Looked up each
-     * time rather than remembered, because the block can be broken, replaced, or have
-     * its heaps taken out while the network is still pointing at it.
-     */
     private List<Pile> piles() {
         return switch (level.getBlockEntity(pos)) {
             case HeapBlockEntity heap -> List.of(new Block(heap));
@@ -82,7 +54,6 @@ public class HeapStorage implements ExternalStorageProvider {
         List<ResourceAmount> amounts = new ArrayList<>();
         for (Pile pile : piles()) {
             if (pile.count() > 0) {
-                // The whole count, as a long, which is the entire point of this class.
                 amounts.add(new ResourceAmount(ItemResource.ofItemStack(pile.sample()), pile.count()));
             }
         }
@@ -126,21 +97,10 @@ public class HeapStorage implements ExternalStorageProvider {
         return given;
     }
 
-    /**
-     * One call moves at most what an {@code ItemStack} can <em>count</em> — two billion,
-     * not sixty-four. {@code ItemResource.toItemStack(long)} casts rather than clamping
-     * to a stack, so the only real ceiling is the int, and clamping first is also what
-     * keeps Refined Storage from logging a truncation warning about it.
-     *
-     * <p>A network wanting more than two billion in one call asks again. Nothing is
-     * lost by saying "this much for now"; it was the <em>reading</em> that had no way to
-     * be honest.
-     */
     private static int atMostAnInt(long amount) {
         return (int) Math.min(amount, Integer.MAX_VALUE);
     }
 
-    /** A heap, wherever it is kept. The two places differ only in who to tell. */
     private interface Pile {
         ItemStack sample();
 
@@ -173,7 +133,6 @@ public class HeapStorage implements ExternalStorageProvider {
         }
     }
 
-    /** A heap in a rack, which has to be told that one of its items changed. */
     private record Racked(HorreumBlockEntity rack, CarriedHeap heap) implements Pile {
         @Override
         public ItemStack sample() {

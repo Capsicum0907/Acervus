@@ -33,13 +33,6 @@ import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 
-/**
- * Everything under {@code src/generated/resources} comes from here, so nothing in
- * that directory is written by hand.
- *
- * <p>No loot table: {@link io.github.capsicum0907.acervus.HeapBlock#getDrops} answers
- * that question in code, because what a heap drops depends on what is inside it.
- */
 @EventBusSubscriber(modid = Acervus.MODID, value = { Dist.CLIENT, Dist.DEDICATED_SERVER })
 public final class AcervusDataGen {
     private AcervusDataGen() {
@@ -59,31 +52,12 @@ public final class AcervusDataGen {
                 new Tags(output, event.getLookupProvider(), event.getExistingFileHelper()));
     }
 
-    /**
-     * A pickaxe is what breaks a heap quickly. Only quickly — the block deliberately
-     * does not require a correct tool, because failing to drop would mean losing
-     * everything inside it.
-     */
     private static class Tags extends BlockTagsProvider {
         Tags(PackOutput output, CompletableFuture<HolderLookup.Provider> registries,
                 ExistingFileHelper existingFileHelper) {
             super(output, registries, Acervus.MODID, existingFileHelper);
         }
 
-        /**
-         * The gas heap goes in as an <b>optional</b> entry, always, whether Mekanism is
-         * here at datagen time or not.
-         *
-         * <p>A required entry naming a block that does not exist does not merely go
-         * missing: the whole tag file is refused, and all four blocks fall out of
-         * {@code mineable/pickaxe} together. So a game without Mekanism had a heap that
-         * a pickaxe was no quicker at than a fist — which is what
-         * {@code neverVoidsItselfForWantOfAPickaxe} caught the moment the mods were
-         * taken out of the folder.
-         *
-         * <p>Writing it optionally and unconditionally also ends the older trap that the
-         * generated files depended on what happened to be in {@code run/mods}.
-         */
         @Override
         protected void addTags(HolderLookup.Provider registries) {
             tag(BlockTags.MINEABLE_WITH_PICKAXE)
@@ -106,25 +80,17 @@ public final class AcervusDataGen {
             glassBox(AcervusRegistry.FLUID_HEAP);
             drawnItem(AcervusRegistry.FLUID_HEAP);
             energyBox();
-            // Solid: a rack holds heaps rather than contents, so there is nothing
-            // to see through and no reason to pay for translucency.
             String rack = AcervusRegistry.HORREUM.getId().getPath();
             ModelFile rackModel = models().orientable(rack, modLoc("block/" + rack),
                     modLoc("block/" + rack + "_front"), modLoc("block/" + rack));
             horizontalBlock(AcervusRegistry.HORREUM.get(), rackModel);
             itemModels().withExistingParent(rack, modLoc("block/" + rack));
-            // Only when Mekanism is present, because the block only exists then. Keep
-            // Mekanism in run/mods when regenerating, or these assets go stale.
             if (Mods.mekanism()) {
                 glassBox(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
                 drawnItem(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
             }
         }
 
-        /**
-         * translucent, because the middle of the texture is see-through and the
-         * default render type would draw those pixels as fully opaque.
-         */
         private void drawnItem(DeferredBlock<?> block) {
             itemModels().getBuilder(block.getId().getPath())
                     .parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"))
@@ -178,14 +144,10 @@ public final class AcervusDataGen {
 
         @Override
         protected void addTranslations() {
-            // "Item Heap", not "Heap": it is one of four, and being the first written is
-            // not a reason for it to be the one without a surname.
             add(AcervusRegistry.HEAP.get(), "Item Heap");
             add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
             add(AcervusRegistry.ENERGY_HEAP.get(), "Energy Heap");
-            // Latin for a granary: the building heaps are kept in.
             add(AcervusRegistry.HORREUM.get(), "Horreum");
-            // Shared by all four: emptiness is not a fact about any one of them.
             add("gui.acervus.empty", "Empty");
             add("block.acervus.item_heap.holding", "%s x %s");
             add("block.acervus.fluid_heap.holding", "%s, %s");
@@ -213,11 +175,6 @@ public final class AcervusDataGen {
         }
     }
 
-    /**
-     * A chest you can see into, held together with iron. Deliberately not gated
-     * behind anything rare: how much a heap holds is a setting, so the recipe is
-     * about when it becomes available, not about how strong it is.
-     */
     private static class Recipes extends RecipeProvider {
         Recipes(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
             super(output, registries);
@@ -235,8 +192,6 @@ public final class AcervusDataGen {
                     .unlockedBy("has_chest", has(Blocks.CHEST))
                     .save(output);
 
-            // The same frame around a cauldron instead of a chest: the pair should read
-            // as one machine holding two kinds of thing.
             ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.FLUID_HEAP.get())
                     .pattern("GIG")
                     .pattern("ICI")
@@ -247,8 +202,6 @@ public final class AcervusDataGen {
                     .unlockedBy("has_cauldron", has(Blocks.CAULDRON))
                     .save(output);
 
-            // A frame of iron around a chest, with no glass: a rack is the one block of
-            // the set you cannot see into, and it costs what a heap costs to make.
             ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.HORREUM.get())
                     .pattern("III")
                     .pattern("ICI")
@@ -268,25 +221,6 @@ public final class AcervusDataGen {
                     .unlockedBy("has_redstone_block", has(Blocks.REDSTONE_BLOCK))
                     .save(output);
 
-            // A bottle rather than a cauldron: the same ingredients cannot make two
-            // different blocks, and a bottle is the vanilla thing that holds a vapour.
-            //
-            // Two different questions, asked at two different times, and both have to be
-            // answered or the recipe is wrong in one direction or the other:
-            //
-            //   - The guard: is Mekanism here NOW, while this runs? Naming the block at
-            //     all loads the class that holds it, and that class cannot exist without
-            //     Mekanism. So the file is only written when datagen is run with Mekanism
-            //     in run/mods -- and, because of --all, a datagen run WITHOUT it would
-            //     delete the committed file rather than leave it alone.
-            //   - The condition: does the item exist in the game the recipe is being
-            //     loaded into? The file ships in the jar always, Mekanism or not, and
-            //     without it the recipe names an item nobody registered. That is not
-            //     silently skipped: it is an ERROR in the log every launch.
-            //
-            // The condition asks after our own item rather than after Mekanism, for the
-            // same reason the pickaxe tag uses addOptional -- the thing that must exist
-            // is ours, and naming somebody else's mod would only be a guess at why.
             if (Mods.mekanism()) {
                 RecipeOutput whenGasHeapExists = output.withConditions(
                         new ItemExistsCondition(Acervus.MODID, "chemical_heap"));

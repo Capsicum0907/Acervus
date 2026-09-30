@@ -13,16 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-/**
- * The rack's screen: twelve slots that take heaps, and nothing else.
- *
- * <p>There is no readout. Every heap item already says what is inside it on its own
- * tooltip — that line exists because a full heap and an empty one look identical —
- * so a rack that repeated it beside each slot would be saying the same thing twice
- * and could disagree with itself.
- */
 public class HorreumMenu extends AbstractContainerMenu {
-    /** Matches the slot positions in the generated screen texture. */
     private static final int RACK_X = 62;
     private static final int RACK_Y = 18;
     private static final int RACK_COLUMNS = 3;
@@ -35,22 +26,13 @@ public class HorreumMenu extends AbstractContainerMenu {
     private static final int RACK_LAST = HorreumBlockEntity.SLOTS;
     private static final int PLAYER_LAST = RACK_LAST + 36;
 
-    /**
-     * Where the rack is: standing in the world, or held in a hand.
-     *
-     * <p>The same shape as {@link HeapMenu.Source} and for the same reason - the
-     * slots and the screen do not care which, so only the finding differs.
-     */
     public interface Source {
-        /** The twelve slots, to read and write in place. Never null. */
         NonNullList<ItemStack> heaps();
 
         boolean stillValid(Player player);
 
-        /** Something inside changed and has to be written down. */
         void changed();
 
-        /** The hotbar slot frozen while this screen is open, or -1. */
         default int frozen() {
             return -1;
         }
@@ -81,20 +63,11 @@ public class HorreumMenu extends AbstractContainerMenu {
         }
     }
 
-    /** The screen over a rack standing in the world. */
     public static HorreumMenu at(int id, Inventory inventory, BlockPos pos) {
         return new HorreumMenu(AcervusRegistry.HORREUM_MENU.get(), id, inventory,
                 new AtBlock(inventory.player.level(), pos));
     }
 
-    /**
-     * The screen over a rack being carried, opened by sneaking and right-clicking the
-     * air.
-     *
-     * <p>The heaps inside can be moved about; what is inside <em>them</em> stays out of
-     * reach, because nothing carried offers a window onto its contents. Taking a heap
-     * out of a bag is moving an item, not drawing from a store.
-     */
     public static HorreumMenu inHand(int id, Inventory inventory, InteractionHand hand) {
         return new HorreumMenu(AcervusRegistry.CARRIED_HORREUM_MENU.get(), id, inventory,
                 new InHand(inventory.player, hand));
@@ -125,7 +98,6 @@ public class HorreumMenu extends AbstractContainerMenu {
         return moving;
     }
 
-    /** A rack standing in the world: valid while the player is near it. */
     private record AtBlock(Level level, BlockPos pos, ContainerLevelAccess access,
             NonNullList<ItemStack> spare) implements Source {
         AtBlock(Level level, BlockPos pos) {
@@ -137,10 +109,6 @@ public class HorreumMenu extends AbstractContainerMenu {
             return level.getBlockEntity(pos) instanceof HorreumBlockEntity rack ? rack : null;
         }
 
-        /**
-         * A list nobody else holds, for the moment between the block going and the
-         * screen noticing. Writing into it changes nothing, which is exactly right.
-         */
         @Override
         public NonNullList<ItemStack> heaps() {
             HorreumBlockEntity rack = rack();
@@ -161,12 +129,6 @@ public class HorreumMenu extends AbstractContainerMenu {
         }
     }
 
-    /**
-     * A rack being carried: valid while that hand still holds one.
-     *
-     * <p>The heaps are read out of the item once and written back on every change. The
-     * item is the thing that survives being dropped, so it is the copy that counts.
-     */
     private record InHand(Player player, InteractionHand hand,
             NonNullList<ItemStack> heaps) implements Source {
         InHand(Player player, InteractionHand hand) {
@@ -183,11 +145,6 @@ public class HorreumMenu extends AbstractContainerMenu {
             return player.getItemInHand(hand).getItem() == AcervusRegistry.HORREUM_ITEM.get();
         }
 
-        /**
-         * Through {@code setBlockEntityData}, which names the block entity in the tag -
-         * see {@link Held#write}. Writing it any other way takes the world down at the
-         * next autosave.
-         */
         @Override
         public void changed() {
             if (player.level().isClientSide) {
@@ -203,13 +160,6 @@ public class HorreumMenu extends AbstractContainerMenu {
         }
     }
 
-    /**
-     * One slot of the rack, reading and writing the source's list directly.
-     *
-     * <p><b>One heap per slot.</b> Two heaps in a slot are one set of components
-     * between them, so filling "the" heap would fill both — the duplication a shulker
-     * box avoids by not stacking, and the same rule a carried heap follows.
-     */
     private class HeapRackSlot extends Slot {
         private static final SimpleContainer UNUSED = new SimpleContainer(0);
 
