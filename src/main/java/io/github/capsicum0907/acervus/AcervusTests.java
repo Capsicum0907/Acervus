@@ -1264,6 +1264,27 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anEnergyHeapLightsALampForEveryTwoDecades(GameTestHelper helper) {
+        long capacity = 1_000_000_000_000L;
+        check(EnergyHeapBlock.lamps(0L, capacity) == 0, "an empty heap should light nothing");
+        check(EnergyHeapBlock.lamps(99L, capacity) == 0, "99 FE should not yet light the first lamp");
+        check(EnergyHeapBlock.lamps(100L, capacity) == 1, "100 FE should light the first");
+        check(EnergyHeapBlock.lamps(1_000_000L, capacity) == 3, "a million should light three");
+        check(EnergyHeapBlock.lamps(capacity, capacity) == EnergyHeapBlock.MAX_LAMPS, "and a full heap all of them");
+
+        helper.setBlock(WHERE, AcervusRegistry.ENERGY_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof EnergyHeapBlockEntity heap)) {
+            throw new GameTestAssertException("placing an energy heap should have made one");
+        }
+        heap.receive(1_000_000, false);
+        EnergyHeapBlockEntity.serverTick(helper.getLevel(), heap.getBlockPos(), heap.getBlockState(), heap);
+        int shown = helper.getBlockState(WHERE).getValue(EnergyHeapBlock.LAMPS);
+        int expected = EnergyHeapBlock.lamps(1_000_000L, heap.capacity());
+        check(shown == expected, "the block itself should show " + expected + " lamps for a million, not " + shown);
+        helper.succeed();
+    }
+
     private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap) {

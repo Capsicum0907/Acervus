@@ -27,7 +27,8 @@ FRAME = 2  # how many pixels deep the metal border runs
 ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures"
 OUT = ASSETS / "block/item_heap.png"
 FLUID_OUT = ASSETS / "block/fluid_heap.png"
-ENERGY_OUT = ASSETS / "block/energy_heap.png"
+ENERGY_SIDE_OUT = ASSETS / "block/energy_heap_side.png"
+ENERGY_FRONT_OUT = ASSETS / "block/energy_heap_front_{}.png"
 CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
 READOUT_OUT = ASSETS / "gui/readout.png"
 RACK_OUT = ASSETS / "block/horreum.png"
@@ -97,6 +98,26 @@ def draw(glass: str = GLASS_BODY, sheen: str = GLASS_SHEEN) -> bytes:
         pixels[pixel] = _rgb(sheen if pixel in SHEEN else glass) + (GLASS_ALPHA,)
     return _png(pixels)
 
+
+
+def draw_casing(lit: int, show_lamps: bool = True) -> bytes:
+    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    for pixel in METAL:
+        pixels[pixel] = _rgb(_tone(pixel, METAL, METAL_TONES)) + (255,)
+    for pixel in GLASS:
+        pixels[pixel] = _rgb(CASING) + (255,)
+    if show_lamps:
+        inner = SIZE - 2 * FRAME
+        used = LAMPS * 2 - 1
+        first = FRAME + (inner - used + 1) // 2
+        lane = range(SIZE // 2 - LAMP_WIDTH // 2, SIZE // 2 - LAMP_WIDTH // 2 + LAMP_WIDTH)
+        for lamp in range(LAMPS):
+            y = SIZE - 1 - (first + lamp * 2)
+            for x in lane:
+                edge = x in (lane[0], lane[-1])
+                colour = (LAMP_ON_EDGE if edge else LAMP_ON) if lamp < lit else LAMP_OFF
+                pixels[(x, y)] = _rgb(colour) + (255,)
+    return _png(pixels)
 
 # --- the screen ------------------------------------------------------------
 # A panel in the game's own idiom: flat fill, a light bevel on the top and left,
@@ -171,8 +192,12 @@ def _sheet(pixels: dict) -> bytes:
 # heap is for, which is the intent: they are the same machine.
 FLUID_GLASS = "#7FB8C8"
 FLUID_SHEEN = "#C8E8F0"
-ENERGY_GLASS = "#D8A24A"
-ENERGY_SHEEN = "#F5DC9A"
+CASING = "#4A4F5C"
+LAMP_ON = "#F5C85A"
+LAMP_ON_EDGE = "#D8A24A"
+LAMP_OFF = "#2A2D35"
+LAMPS = 6
+LAMP_WIDTH = 4
 CHEMICAL_GLASS = "#8FCF8A"
 CHEMICAL_SHEEN = "#D6F2D2"
 
@@ -301,8 +326,12 @@ def main() -> None:
     FLUID_OUT.write_bytes(draw(FLUID_GLASS, FLUID_SHEEN))
     print(f"wrote {FLUID_OUT}")
 
-    ENERGY_OUT.write_bytes(draw(ENERGY_GLASS, ENERGY_SHEEN))
-    print(f"wrote {ENERGY_OUT}")
+    ENERGY_SIDE_OUT.write_bytes(draw_casing(0, show_lamps=False))
+    print(f"wrote {ENERGY_SIDE_OUT}")
+    for lit in range(LAMPS + 1):
+        out = pathlib.Path(str(ENERGY_FRONT_OUT).format(lit))
+        out.write_bytes(draw_casing(lit))
+        print(f"wrote {out}")
 
     CHEMICAL_OUT.write_bytes(draw(CHEMICAL_GLASS, CHEMICAL_SHEEN))
     print(f"wrote {CHEMICAL_OUT}")

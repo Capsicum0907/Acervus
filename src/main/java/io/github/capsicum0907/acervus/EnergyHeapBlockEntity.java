@@ -173,6 +173,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         // The vessel first, and unconditionally: a battery in the slot is a person
         // asking, and turning pushing off is about cables rather than about them.
         heap.tickVessels();
+        heap.showLamps();
         if (!AcervusConfig.ENERGY_PUSHES.get() || heap.isEmpty()) {
             return;
         }
@@ -191,6 +192,17 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
             if (heap.isEmpty()) {
                 return;
             }
+        }
+    }
+
+    private void showLamps() {
+        BlockState state = getBlockState();
+        if (level == null || !state.hasProperty(EnergyHeapBlock.LAMPS)) {
+            return;
+        }
+        int lit = EnergyHeapBlock.lamps(stored, capacity());
+        if (state.getValue(EnergyHeapBlock.LAMPS) != lit) {
+            level.setBlock(getBlockPos(), state.setValue(EnergyHeapBlock.LAMPS, lit), Block.UPDATE_CLIENTS);
         }
     }
 

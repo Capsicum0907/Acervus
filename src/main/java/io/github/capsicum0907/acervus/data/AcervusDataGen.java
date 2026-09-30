@@ -4,6 +4,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.AcervusRegistry;
+import io.github.capsicum0907.acervus.EnergyHeapBlock;
 import io.github.capsicum0907.acervus.Mods;
 
 import net.minecraft.core.HolderLookup;
@@ -22,6 +23,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
 import net.neoforged.neoforge.common.conditions.ItemExistsCondition;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
@@ -100,7 +102,7 @@ public final class AcervusDataGen {
         protected void registerStatesAndModels() {
             glassBox(AcervusRegistry.HEAP);
             glassBox(AcervusRegistry.FLUID_HEAP);
-            glassBox(AcervusRegistry.ENERGY_HEAP);
+            energyBox();
             // Solid: a rack holds heaps rather than contents, so there is nothing
             // to see through and no reason to pay for translucency.
             String rack = AcervusRegistry.HORREUM.getId().getPath();
@@ -117,6 +119,21 @@ public final class AcervusDataGen {
          * translucent, because the middle of the texture is see-through and the
          * default render type would draw those pixels as fully opaque.
          */
+        private void energyBox() {
+            String name = AcervusRegistry.ENERGY_HEAP.getId().getPath();
+            ResourceLocation side = modLoc("block/" + name + "_side");
+            ModelFile[] lit = new ModelFile[EnergyHeapBlock.MAX_LAMPS + 1];
+            for (int lamps = 0; lamps < lit.length; lamps++) {
+                lit[lamps] = models().orientable(name + "_" + lamps, side,
+                        modLoc("block/" + name + "_front_" + lamps), side);
+            }
+            getVariantBuilder(AcervusRegistry.ENERGY_HEAP.get()).forAllStates(state -> ConfiguredModel.builder()
+                    .modelFile(lit[state.getValue(EnergyHeapBlock.LAMPS)])
+                    .rotationY(((int) state.getValue(EnergyHeapBlock.FACING).toYRot() + 180) % 360)
+                    .build());
+            itemModels().withExistingParent(name, modLoc("block/" + name + "_0"));
+        }
+
         private void glassBox(DeferredBlock<?> block) {
             String name = block.getId().getPath();
             ModelFile model = models()

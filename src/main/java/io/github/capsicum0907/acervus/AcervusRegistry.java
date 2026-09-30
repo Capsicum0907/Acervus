@@ -85,8 +85,7 @@ public final class AcervusRegistry {
             () -> new EnergyHeapBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.METAL)
                     .strength(3.0F, 6.0F)
-                    .sound(SoundType.METAL)
-                    .noOcclusion()));
+                    .sound(SoundType.METAL)));
 
     public static final DeferredItem<BlockItem> ENERGY_HEAP_ITEM = ITEMS.register("energy_heap",
             () -> new EnergyHeapBlockItem(ENERGY_HEAP.get(), carriesItsOwnContents()));
