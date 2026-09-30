@@ -4,17 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.capsicum0907.acervus.Acervus;
+import io.github.capsicum0907.acervus.AcervusClientConfig;
+import io.github.capsicum0907.acervus.BarScale;
 import io.github.capsicum0907.acervus.FluidHeapBlockEntity;
 import io.github.capsicum0907.acervus.Heaped;
 import io.github.capsicum0907.acervus.ReadoutMenu;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
@@ -55,6 +59,7 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
     private static final int BAR_W = 94;
     private static final int BAR_H = 6;
     private static final int BAR_INSET = 1;
+    private static final int TICK = 0xFF373737;
     private static final int CAPTION_Y = 50;
 
     /**
@@ -94,17 +99,22 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
             graphics.blit(BOLT, leftPos + CONTENT_X, topPos + CONTENT_Y, 0, 0,
                     CONTENT_SIZE, CONTENT_SIZE, CONTENT_SIZE, CONTENT_SIZE);
         }
-        if (heap.isEmpty()) {
-            return;
-        }
-        int filled = barWidth(heap.amount(), heap.capacity());
-        if (filled > 0) {
-            int left = leftPos + BAR_X + BAR_INSET;
-            int top = topPos + BAR_Y + BAR_INSET;
-            graphics.fill(left, top, left + filled, top + BAR_H - 2 * BAR_INSET, heap.tint());
+        if (!heap.isEmpty()) {
+            drawContents(graphics, heap);
         }
 
-        drawContents(graphics, heap);
+        BarScale scale = AcervusClientConfig.BAR_SCALE.get();
+        int left = leftPos + BAR_X + BAR_INSET;
+        int top = topPos + BAR_Y + BAR_INSET;
+        int bottom = top + BAR_H - 2 * BAR_INSET;
+        int filled = barWidth(scale.fraction(heap.amount(), heap.capacity()));
+        if (filled > 0) {
+            graphics.fill(left, top, left + filled, bottom, heap.tint());
+        }
+        for (double tick : scale.ticks(heap.capacity())) {
+            int x = left + barWidth(tick);
+            graphics.fill(x, bottom - 1, x + 1, bottom, TICK);
+        }
     }
 
     /**
@@ -207,49 +217,45 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
             return;
         }
         if (within(x, y, BAR_X, BAR_Y, BAR_W, BAR_H)) {
+            BarScale scale = AcervusClientConfig.BAR_SCALE.get();
             List<Component> lines = new ArrayList<>();
             lines.add(Component.literal(heap.exact(heap.amount())));
             long amount = heap.amount();
             long capacity = heap.capacity();
-            if (amount > 0L && amount < capacity) {
-                lines.add(Component.literal(heap.exact(windowFloor(amount))
-                        + " - " + heap.exact(windowCeiling(amount, capacity)))
+            if (scale == BarScale.DECADE && amount > 0L && amount < capacity) {
+                lines.add(Component.literal(heap.exact(BarScale.decadeFloor(amount))
+                        + " - " + heap.exact(BarScale.decadeCeiling(amount, capacity)))
                         .withStyle(ChatFormatting.GRAY));
             }
             lines.add(Component.literal(heap.exact(capacity)).withStyle(ChatFormatting.DARK_GRAY));
+            lines.add(Component.translatable("gui.acervus.scale",
+                    Component.translatable("gui.acervus.scale." + scale.name().toLowerCase(java.util.Locale.ROOT)))
+                    .withStyle(ChatFormatting.GRAY));
             graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
             return;
         }
         super.renderTooltip(graphics, mouseX, mouseY);
     }
 
-    static long windowFloor(long amount) {
-        long lower = 1L;
-        while (lower <= amount / 10L) {
-            lower *= 10L;
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int x = (int) mouseX - leftPos;
+        int y = (int) mouseY - topPos;
+        if (button == 0 && menu.getCarried().isEmpty() && within(x, y, BAR_X, BAR_Y, BAR_W, BAR_H)) {
+            AcervusClientConfig.BAR_SCALE.set(AcervusClientConfig.BAR_SCALE.get().next());
+            AcervusClientConfig.BAR_SCALE.save();
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            return true;
         }
-        return lower;
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    static long windowCeiling(long amount, long capacity) {
-        return Math.min(capacity, windowFloor(amount) * 10L);
-    }
-
-    static int barWidth(long amount, long capacity) {
+    static int barWidth(double fraction) {
         int inner = BAR_W - 2 * BAR_INSET;
-        if (amount <= 0L) {
+        if (fraction <= 0.0) {
             return 0;
         }
-        if (amount >= capacity) {
-            return inner;
-        }
-        long lower = windowFloor(amount);
-        long upper = windowCeiling(amount, capacity);
-        if (upper <= lower) {
-            return inner;
-        }
-        int width = (int) Math.round(inner * (double) (amount - lower) / (double) (upper - lower));
-        return Math.max(1, Math.min(inner, width));
+        return Math.max(1, Math.min(inner, (int) Math.round(inner * fraction)));
     }
 
     private boolean within(int x, int y, int left, int top, int width, int height) {

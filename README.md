@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep twelve of them in.
-> 61 game tests pass headlessly, with and without Mekanism installed.
+> 62 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -191,6 +191,15 @@ tank, a battery.
 The slot decides the direction, not how full the container is, so a half-full tank
 can go either way. A container that cannot move any more stays in its slot until it
 is taken out. Shift-clicking a container from the inventory puts it in **In**.
+
+**Click the bar** to change what its length means. Pointing at it says which one is
+shown. The choice is kept per player, in the client config (`screen.barScale`).
+
+| scale | the bar is full at |
+|---|---|
+| **Linear** (default) | the capacity — `600G / 1T` is six tenths |
+| **Logarithmic** | the capacity, with one tick per power of ten — `1K / 1T` is a quarter |
+| **Within the decade** | the next power of ten — `55K` is half of the way from `10K` to `100K` |
 
 ### Carrying one
 

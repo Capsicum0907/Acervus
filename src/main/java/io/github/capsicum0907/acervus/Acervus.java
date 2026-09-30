@@ -29,6 +29,7 @@ public class Acervus {
 
     public Acervus(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.SERVER, AcervusConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, AcervusClientConfig.SPEC);
 
         AcervusRegistry.BLOCKS.register(modEventBus);
         AcervusRegistry.ITEMS.register(modEventBus);

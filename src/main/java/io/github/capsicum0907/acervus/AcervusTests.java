@@ -1190,6 +1190,27 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theBarReadsTheSameAmountThreeWays(GameTestHelper helper) {
+        long capacity = 1_000_000_000_000L;
+        near(BarScale.LINEAR.fraction(600_000_000_000L, capacity), 0.6, "linear, 600G of 1T");
+        near(BarScale.LOG.fraction(1_000L, capacity), 0.25, "logarithmic, 1K of 1T");
+        near(BarScale.DECADE.fraction(55_000L, capacity), 0.5, "within the decade, 55K between 10K and 100K");
+        near(BarScale.DECADE.fraction(1_500L, 2_000L), 0.5, "within the decade, 1.5K in a window capped at a capacity of 2K");
+        for (BarScale scale : BarScale.values()) {
+            near(scale.fraction(0L, capacity), 0.0, scale + " when empty");
+            near(scale.fraction(capacity, capacity), 1.0, scale + " when full");
+        }
+        check(BarScale.LOG.ticks(capacity).length == 11, "a trillion should have a tick between each of its 12 decades");
+        check(BarScale.LINEAR.ticks(capacity).length == 0, "and only the logarithmic bar has ticks");
+        check(BarScale.DECADE.next() == BarScale.LINEAR, "and clicking past the last goes back to the first");
+        helper.succeed();
+    }
+
+    private static void near(double actual, double expected, String what) {
+        check(Math.abs(actual - expected) < 1e-9, what + " should read " + expected + ", not " + actual);
+    }
+
     private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap) {

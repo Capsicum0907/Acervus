@@ -157,6 +157,10 @@ public final class AcervusDataGen {
             add("gui.acervus.flow.in", "In");
             add("gui.acervus.flow.out", "Out");
             add("gui.acervus.of", "%s / %s");
+            add("gui.acervus.scale", "%s - click to change");
+            add("gui.acervus.scale.linear", "Linear");
+            add("gui.acervus.scale.log", "Logarithmic");
+            add("gui.acervus.scale.decade", "Within the decade");
             add("gui.acervus.exact", "%s stored");
             add("gui.acervus.intake_only", "Deposit only");
             add("gui.acervus.energy", "Energy");
