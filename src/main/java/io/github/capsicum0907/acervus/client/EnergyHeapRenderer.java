@@ -4,12 +4,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import io.github.capsicum0907.acervus.AcervusConfig;
 import io.github.capsicum0907.acervus.Counts;
+import io.github.capsicum0907.acervus.EnergyHeapBlock;
 import io.github.capsicum0907.acervus.EnergyHeapBlockEntity;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 
 public class EnergyHeapRenderer implements BlockEntityRenderer<EnergyHeapBlockEntity> {
@@ -30,8 +32,15 @@ public class EnergyHeapRenderer implements BlockEntityRenderer<EnergyHeapBlockEn
 
         String text = Counts.brief(heap.stored()) + " FE";
 
+        BlockState state = heap.getBlockState();
+        if (!state.hasProperty(EnergyHeapBlock.FACING)) {
+            return;
+        }
         pose.pushPose();
-        BlockSurface.faceCamera(pose, heap.getBlockPos());
+        if (!BlockSurface.faceCameraOn(pose, heap.getBlockPos(), state.getValue(EnergyHeapBlock.FACING))) {
+            pose.popPose();
+            return;
+        }
         pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
 
         Matrix4f matrix = pose.last().pose();

@@ -210,7 +210,7 @@ In the world, a fluid or gas heap's glass is filled with what it holds. An energ
 heap is a closed casing that faces whoever placed it, with twelve lamps on its front:
 one more lights for every twelfth of the powers of ten up to the capacity — with the
 default of a trillion, one for every tenfold. Every heap writes its amount on the
-side facing you.
+side facing you; the energy heap only on its front.
 
 ### Carrying one
 

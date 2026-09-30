@@ -37,6 +37,19 @@ public final class BlockSurface {
         pose.mulPose(minecraft.getEntityRenderDispatcher().cameraOrientation());
     }
 
+    public static boolean faceCameraOn(PoseStack pose, BlockPos pos, Direction face) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Vec3 toward = minecraft.gameRenderer.getMainCamera().getPosition().subtract(Vec3.atCenterOf(pos));
+        Vec3 normal = Vec3.atLowerCornerOf(face.getNormal());
+        if (toward.dot(normal) <= HALF) {
+            return false;
+        }
+        Vec3 onFace = normal.scale(HALF + LIFT);
+        pose.translate(HALF + onFace.x, HALF + onFace.y, HALF + onFace.z);
+        pose.mulPose(minecraft.getEntityRenderDispatcher().cameraOrientation());
+        return true;
+    }
+
     public static void fillWindows(PoseStack pose, MultiBufferSource buffers, Level level, BlockPos pos,
             TextureAtlasSprite sprite, int argb, int light) {
         VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
