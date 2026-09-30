@@ -118,25 +118,16 @@ public final class HeldEnergyHeap extends Held {
         return AcervusRegistry.ENERGY_HEAP_ENTITY.get();
     }
 
-    /**
-     * Whatever the battery holds goes in, charged or not — the block asks whether it is
-     * full because the block can also charge it back and needs to know which was meant.
-     * Here there is only one way, and the screen says so.
-     */
     @Override
     public void draw(Vessel vessel) {
         IEnergyStorage container = vessel.held().getCapability(Capabilities.EnergyStorage.ITEM);
         if (container == null) {
-            vessel.done();
             return;
         }
         int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
         int taken = container.extractEnergy((int) Math.min(rate, room()), false);
-        if (taken <= 0) {
-            vessel.done();
-            return;
+        if (taken > 0) {
+            receive(taken);
         }
-        receive(taken);
-        vessel.decide(Vessel.Flow.IN);
     }
 }

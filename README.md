@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep twelve of them in.
-> 51 game tests pass headlessly, with and without Mekanism installed.
+> 61 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -177,6 +177,21 @@ notices and everybody distrusts.
 **An emptied heap forgets what it held.** One that remembered would refuse the next
 thing put into it with nothing on the block to say why.
 
+### Fluid, Energy and Gas heaps
+
+These three share one screen: what the heap holds, a bar, and the amount against the
+capacity (`12.3K B / 1G B`). On each side is a slot for a container — a bucket, a
+tank, a battery.
+
+| slot | what it does |
+|---|---|
+| **In** (left) | empties the container into the heap |
+| **Out** (right) | fills the container from the heap |
+
+The slot decides the direction, not how full the container is, so a half-full tank
+can go either way. A container that cannot move any more stays in its slot until it
+is taken out. Shift-clicking a container from the inventory puts it in **In**.
+
 ### Carrying one
 
 A heap keeps its contents when it is broken, so a heap in an inventory is a full
@@ -192,10 +207,8 @@ heap that nothing was reading. Now something does: **a carried heap collects.**
   screen, same slot and same numbers.
 
 All four heaps open that way, not only the item one. A held fluid, energy or gas
-heap reads exactly as the block does, and the slot beside the gauge still takes a
-container — a bucket, a battery, a tank empties into it. **Only inward.** The blocks
-have to ask which way a half-full container was meant to go, because they can pour
-back out; a held one has one direction and no question.
+heap reads exactly as the block does, and **In** still takes a container — a bucket,
+a battery, a tank empties into it. **Out** takes nothing while the heap is held.
 
 **What is in your hand is left alone**, and that is the escape hatch: it is the one
 place to keep something a heap would otherwise claim. Worn armour is left alone for

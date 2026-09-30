@@ -118,66 +118,34 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         return 0xFFD8A24A;
     }
 
-    private final Vessel vessel = new Vessel();
+    private final Vessel in = new Vessel(Vessel.Flow.IN);
+    private final Vessel out = new Vessel(Vessel.Flow.OUT);
 
     @Override
-    public Vessel vessel() {
-        return vessel;
+    public Vessel vessel(Vessel.Flow flow) {
+        return flow == Vessel.Flow.IN ? in : out;
     }
 
-    /**
-     * The battery in the vessel moves in the direction decided when it was put there:
-     * an empty one is charged from the heap, anything holding a charge is emptied into
-     * it. Deciding it again every tick would charge a battery and then immediately
-     * drain it back, since one tick of charge is enough to change the answer.
-     *
-     * <p>The only ends are the battery's own: empty, or full. A heap that has nothing
-     * to give yet, or no room to take, is a wait — both of those change on their own
-     * once the cables move something, and a battery put in before that happened would
-     * otherwise sit there dead until somebody took it out again.
-     */
-    private void tickVessel() {
-        if (vessel.isEmpty()) {
-            return;
-        }
-        IEnergyStorage container = vessel.held().getCapability(Capabilities.EnergyStorage.ITEM);
-        if (container == null) {
-            vessel.done();
-            return;
-        }
-        if (vessel.undecided()) {
-            vessel.decide(container.getEnergyStored() <= 0 ? Vessel.Flow.OUT : Vessel.Flow.IN);
-        }
-
+    private void tickVessels() {
         int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
-        boolean moved = switch (vessel.flow()) {
-            case IN -> {
-                int taken = container.extractEnergy((int) Math.min(rate, room()), false);
-                if (taken > 0) {
-                    receive(taken, false);
-                }
-                yield taken > 0;
+        IEnergyStorage emptying = battery(in);
+        if (emptying != null) {
+            int taken = emptying.extractEnergy((int) Math.min(rate, room()), false);
+            if (taken > 0) {
+                receive(taken, false);
             }
-            case OUT -> {
-                int given = container.receiveEnergy((int) Math.min(rate, stored), false);
-                if (given > 0) {
-                    give(given, false);
-                }
-                yield given > 0;
+        }
+        IEnergyStorage filling = battery(out);
+        if (filling != null) {
+            int given = filling.receiveEnergy((int) Math.min(rate, stored), false);
+            if (given > 0) {
+                give(given, false);
             }
-            case NONE -> false;
-        };
-        if (!moved && finished(container)) {
-            vessel.done();
         }
     }
 
-    private boolean finished(IEnergyStorage container) {
-        return switch (vessel.flow()) {
-            case OUT -> container.receiveEnergy(1, true) == 0;
-            case IN -> container.extractEnergy(1, true) == 0;
-            case NONE -> true;
-        };
+    private static IEnergyStorage battery(Vessel vessel) {
+        return vessel.isEmpty() ? null : vessel.held().getCapability(Capabilities.EnergyStorage.ITEM);
     }
 
     /**
@@ -199,7 +167,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         }
         // The vessel first, and unconditionally: a battery in the slot is a person
         // asking, and turning pushing off is about cables rather than about them.
-        heap.tickVessel();
+        heap.tickVessels();
         if (!AcervusConfig.ENERGY_PUSHES.get() || heap.isEmpty()) {
             return;
         }
@@ -246,14 +214,16 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, stored);
-        vessel.save(tag, registries);
+        in.save(tag, registries);
+        out.save(tag, registries);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         stored = tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_STORED);
-        vessel.load(tag, registries);
+        in.load(tag, registries);
+        out.load(tag, registries);
     }
 
     @Override

@@ -10,6 +10,7 @@ import io.github.capsicum0907.acervus.data.TestStructures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.stats.Stat;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -1022,13 +1023,12 @@ public final class AcervusTests {
         check(heap.amount() == 5_000, "a held fluid heap should read 5,000, not " + heap.amount());
         check(!heap.gives(), "and must not give anything back while it is being carried");
 
-        Vessel vessel = new Vessel();
+        Vessel vessel = new Vessel(Vessel.Flow.IN);
         vessel.hold(new ItemStack(Items.WATER_BUCKET));
         heap.draw(vessel);
 
         check(heap.amount() == 6_000, "the bucket should have gone in, leaving " + heap.amount());
         check(vessel.held().is(Items.BUCKET), "and left an empty bucket in the slot");
-        check(vessel.flow() == Vessel.Flow.IN, "going inward, and saying so");
         helper.succeed();
     }
 
@@ -1051,11 +1051,11 @@ public final class AcervusTests {
         check(!heap.gives(), "and must not give anything back while it is being carried");
         check(!heap.hasKinds(), "energy has no kinds, here as on the block");
 
-        Vessel vessel = new Vessel();
+        Vessel vessel = new Vessel(Vessel.Flow.IN);
         vessel.hold(new ItemStack(Items.STONE));
         heap.draw(vessel);
         check(heap.amount() == 1_000_000, "and something that is not a battery changes nothing");
-        check(vessel.flow() == Vessel.Flow.NONE, "and moves in no direction");
+        check(vessel.held().is(Items.STONE), "and stays where it was put");
         helper.succeed();
     }
 
@@ -1108,6 +1108,98 @@ public final class AcervusTests {
                 "and the empty bucket should have come back when the screen closed");
         check(menu.slots.get(0).getItem().isEmpty(), "with nothing left in the slot");
         helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theSlotDecidesWhichWayAContainerGoes(GameTestHelper helper) {
+        FluidHeapBlockEntity heap = fluidHeap(helper);
+        heap.insert(new FluidStack(Fluids.WATER, 5_000), false);
+        Vessel in = heap.vessel(Vessel.Flow.IN);
+        Vessel out = heap.vessel(Vessel.Flow.OUT);
+
+        in.hold(new ItemStack(Items.BUCKET));
+        out.hold(new ItemStack(Items.WATER_BUCKET));
+        tick(helper, heap);
+        check(heap.amount() == 5_000, "a full bucket in OUT and an empty one in IN should move nothing, and "
+                + heap.amount() + " is left");
+        check(in.held().is(Items.BUCKET) && out.held().is(Items.WATER_BUCKET), "and both should stay as they were");
+
+        out.hold(new ItemStack(Items.BUCKET));
+        tick(helper, heap);
+        check(out.held().is(Items.WATER_BUCKET), "an empty bucket in OUT should be filled");
+        check(heap.amount() == 4_000, "from the heap, leaving 4,000 rather than " + heap.amount());
+
+        in.hold(new ItemStack(Items.WATER_BUCKET));
+        tick(helper, heap);
+        check(in.held().is(Items.BUCKET), "a full bucket in IN should be emptied");
+        check(heap.amount() == 5_000, "into the heap, making 5,000 rather than " + heap.amount());
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anOldSingleSlotLandsInExactlyOneOfTheTwo(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        for (String legacy : new String[] { "IN", "OUT", "NONE" }) {
+            CompoundTag tag = new CompoundTag();
+            tag.put("Vessel", new ItemStack(Items.BUCKET).save(registries));
+            tag.putString("VesselFlow", legacy);
+
+            Vessel in = new Vessel(Vessel.Flow.IN);
+            Vessel out = new Vessel(Vessel.Flow.OUT);
+            in.load(tag, registries);
+            out.load(tag, registries);
+
+            Vessel expected = "OUT".equals(legacy) ? out : in;
+            Vessel other = expected == in ? out : in;
+            check(expected.held().is(Items.BUCKET), "an old " + legacy + " container should land in " + expected.flow());
+            check(other.isEmpty(), "and only there, not in " + other.flow() + " as well");
+
+            CompoundTag saved = new CompoundTag();
+            in.save(saved, registries);
+            out.save(saved, registries);
+            check(!saved.contains("Vessel") && !saved.contains("VesselFlow"), "and the old keys must not be written back");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aHeldReadoutRefusesAnythingInOut(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.getInventory().setItem(player.getInventory().selected,
+                new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get()));
+        ReadoutMenu held = ReadoutMenu.inHand(1, player.getInventory(), InteractionHand.MAIN_HAND);
+        check(!held.slots.get(1).mayPlace(new ItemStack(Items.BUCKET)), "a held heap's OUT slot must refuse a bucket");
+
+        fluidHeap(helper);
+        ReadoutMenu placed = ReadoutMenu.at(2, player.getInventory(), helper.absolutePos(WHERE));
+        check(placed.slots.get(1).mayPlace(new ItemStack(Items.BUCKET)), "while a placed heap's must take one");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void shiftClickingAContainerPutsItInIn(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        FluidHeapBlockEntity heap = fluidHeap(helper);
+        player.getInventory().setItem(9, new ItemStack(Items.BUCKET));
+        ReadoutMenu menu = ReadoutMenu.at(1, player.getInventory(), helper.absolutePos(WHERE));
+
+        menu.quickMoveStack(player, 2);
+
+        check(heap.vessel(Vessel.Flow.IN).held().is(Items.BUCKET), "the bucket should have gone into IN");
+        check(heap.vessel(Vessel.Flow.OUT).isEmpty(), "and never into OUT");
+        helper.succeed();
+    }
+
+    private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
+        if (helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap) {
+            return heap;
+        }
+        throw new GameTestAssertException("placing a fluid heap should have made one");
+    }
+
+    private static void tick(GameTestHelper helper, FluidHeapBlockEntity heap) {
+        FluidHeapBlockEntity.serverTick(helper.getLevel(), heap.getBlockPos(), heap.getBlockState(), heap);
     }
 
     /**

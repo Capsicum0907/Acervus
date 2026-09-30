@@ -15,8 +15,8 @@ import net.minecraft.world.level.Level;
  * The screen behind a fluid, energy or gas heap, standing in the world or in a hand.
  *
  * <p>One menu for all three resources, because what they have in common is exactly
- * what a screen needs: an amount, a capacity, a name and a slot to put a container
- * in. The item heap keeps its own — there the contents <em>are</em> a slot, and that
+ * what a screen needs: an amount, a capacity, a name and two slots for containers,
+ * one to empty and one to fill. The item heap keeps its own — there the contents <em>are</em> a slot, and that
  * is worth more than sharing this.
  *
  * <p>Nothing about the heap is sent through the menu. A block is already synchronised
@@ -28,15 +28,17 @@ import net.minecraft.world.level.Level;
  */
 public class ReadoutMenu extends AbstractContainerMenu {
     /** Matches the slot positions in the generated screen texture. */
-    private static final int VESSEL_X = 150;
+    private static final int IN_X = 8;
+    private static final int OUT_X = 150;
     private static final int VESSEL_Y = 38;
     private static final int INVENTORY_X = 8;
     private static final int INVENTORY_Y = 84;
     private static final int HOTBAR_Y = 142;
     private static final int SLOT = 18;
 
-    private static final int VESSEL_SLOT = 0;
-    private static final int PLAYER_FIRST = 1;
+    private static final int IN_SLOT = 0;
+    private static final int OUT_SLOT = 1;
+    private static final int PLAYER_FIRST = 2;
     private static final int PLAYER_LAST = PLAYER_FIRST + 36;
 
     /** Where the heap is kept, and what that means for the screen over it. */
@@ -45,7 +47,7 @@ public class ReadoutMenu extends AbstractContainerMenu {
         Heaped heap();
 
         /** Never null either; a heap that has gone gets a spare nothing ever looks at. */
-        Vessel vessel();
+        Vessel vessel(Vessel.Flow flow);
 
         boolean stillValid(Player player);
 
@@ -64,7 +66,7 @@ public class ReadoutMenu extends AbstractContainerMenu {
         default void tick() {
         }
 
-        /** Whether the vessel belongs to the screen and must be handed back when it closes. */
+        /** Whether the vessels belong to the screen and must be handed back when it closes. */
         default boolean lendsTheVessel() {
             return false;
         }
@@ -79,7 +81,13 @@ public class ReadoutMenu extends AbstractContainerMenu {
         // Added unconditionally, even when the heap has gone: the slot indices below are
         // counted from it, so a missing first slot would silently shift the range that
         // shift-clicking moves things into.
-        addSlot(new VesselSlot(source.vessel(), VESSEL_X, VESSEL_Y));
+        addSlot(new VesselSlot(source.vessel(Vessel.Flow.IN), IN_X, VESSEL_Y));
+        addSlot(new VesselSlot(source.vessel(Vessel.Flow.OUT), OUT_X, VESSEL_Y) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return source.heap().gives() && super.mayPlace(stack);
+            }
+        });
 
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
@@ -111,11 +119,6 @@ public class ReadoutMenu extends AbstractContainerMenu {
         return source.heap();
     }
 
-    /** Which way the container in the slot is going, for the screen to say. */
-    public Vessel.Flow flow() {
-        return source.vessel().flow();
-    }
-
     @Override
     public boolean stillValid(Player player) {
         return source.stillValid(player);
@@ -139,14 +142,19 @@ public class ReadoutMenu extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
-        Vessel vessel = source.vessel();
-        if (source.lendsTheVessel() && !player.level().isClientSide && !vessel.isEmpty()) {
-            player.getInventory().placeItemBackInInventory(vessel.held());
-            vessel.hold(ItemStack.EMPTY);
+        if (!source.lendsTheVessel() || player.level().isClientSide) {
+            return;
+        }
+        for (Vessel.Flow flow : Vessel.Flow.values()) {
+            Vessel vessel = source.vessel(flow);
+            if (!vessel.isEmpty()) {
+                player.getInventory().placeItemBackInInventory(vessel.held());
+                vessel.hold(ItemStack.EMPTY);
+            }
         }
     }
 
-    /** Shift-clicking moves a container into the slot, or back out of it. */
+    /** Shift-clicking moves a container into the IN slot, or back out of either. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = slots.get(index);
@@ -155,11 +163,11 @@ public class ReadoutMenu extends AbstractContainerMenu {
         }
         ItemStack moving = slot.getItem().copy();
 
-        if (index == VESSEL_SLOT) {
+        if (index == IN_SLOT || index == OUT_SLOT) {
             if (!moveItemStackTo(slot.getItem(), PLAYER_FIRST, PLAYER_LAST, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!moveItemStackTo(slot.getItem(), VESSEL_SLOT, VESSEL_SLOT + 1, false)) {
+        } else if (!moveItemStackTo(slot.getItem(), IN_SLOT, IN_SLOT + 1, false)) {
             return ItemStack.EMPTY;
         }
 
@@ -168,10 +176,11 @@ public class ReadoutMenu extends AbstractContainerMenu {
     }
 
     /** A heap standing in the world: valid while the player is near the block. */
-    private record AtBlock(Level level, BlockPos pos, ContainerLevelAccess access, Vessel spare)
+    private record AtBlock(Level level, BlockPos pos, ContainerLevelAccess access, Vessel spareIn, Vessel spareOut)
             implements Source {
         AtBlock(Level level, BlockPos pos) {
-            this(level, pos, ContainerLevelAccess.create(level, pos), new Vessel());
+            this(level, pos, ContainerLevelAccess.create(level, pos),
+                    new Vessel(Vessel.Flow.IN), new Vessel(Vessel.Flow.OUT));
         }
 
         @Override
@@ -180,8 +189,11 @@ public class ReadoutMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public Vessel vessel() {
-            return level.getBlockEntity(pos) instanceof HasVessel holder ? holder.vessel() : spare;
+        public Vessel vessel(Vessel.Flow flow) {
+            if (level.getBlockEntity(pos) instanceof HasVessel holder) {
+                return holder.vessel(flow);
+            }
+            return flow == Vessel.Flow.IN ? spareIn : spareOut;
         }
 
         @Override
@@ -194,13 +206,19 @@ public class ReadoutMenu extends AbstractContainerMenu {
     /**
      * A heap being held: valid while that hand still holds one.
      *
-     * <p>The vessel is the menu's own and lasts as long as the screen does. Saving it
+     * <p>The vessels are the menu's own and last as long as the screen does. Saving one
      * onto the item would mean a container could be left inside a heap in a pocket,
      * which is a second kind of storage nobody asked for.
      */
-    private record InHand(Player player, InteractionHand hand, Held held, Vessel vessel) implements Source {
+    private record InHand(Player player, InteractionHand hand, Held held, Vessel in, Vessel out)
+            implements Source {
         InHand(Player player, InteractionHand hand) {
-            this(player, hand, heldHeap(player, hand), new Vessel());
+            this(player, hand, heldHeap(player, hand), new Vessel(Vessel.Flow.IN), new Vessel(Vessel.Flow.OUT));
+        }
+
+        @Override
+        public Vessel vessel(Vessel.Flow flow) {
+            return flow == Vessel.Flow.IN ? in : out;
         }
 
         @Override
@@ -220,8 +238,8 @@ public class ReadoutMenu extends AbstractContainerMenu {
 
         @Override
         public void tick() {
-            if (held != null && !vessel.isEmpty() && !player.level().isClientSide) {
-                held.draw(vessel);
+            if (held != null && !in.isEmpty() && !player.level().isClientSide) {
+                held.draw(in);
             }
         }
 

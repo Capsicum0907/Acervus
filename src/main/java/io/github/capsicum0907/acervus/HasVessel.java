@@ -8,5 +8,5 @@ package io.github.capsicum0907.acervus;
  * cannot be mentioned in a game without Mekanism.
  */
 public interface HasVessel {
-    Vessel vessel();
+    Vessel vessel(Vessel.Flow flow);
 }

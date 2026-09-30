@@ -131,28 +131,18 @@ public final class HeldFluidHeap extends Held {
         return AcervusRegistry.FLUID_HEAP_ENTITY.get();
     }
 
-    /**
-     * Whatever is in the container goes in — not only a full one, which is the rule the
-     * block needs because the block can also pour back out and has to be told which way
-     * a half-empty bucket was meant to go. Here there is only one way.
-     */
     @Override
     public void draw(Vessel vessel) {
         IFluidHandlerItem container = vessel.held().getCapability(Capabilities.FluidHandler.ITEM);
         if (container == null) {
-            vessel.done();
             return;
         }
         FluidStack offered = container.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
         int taken = offered.isEmpty() ? 0 : insert(offered, false);
         if (taken <= 0) {
-            vessel.done();
             return;
         }
         container.drain(offered.copyWithAmount(taken), IFluidHandler.FluidAction.EXECUTE);
-        // A bucket becomes an empty bucket: the container the capability hands back is
-        // a different item from the one that went in.
-        vessel.replace(container.getContainer());
-        vessel.decide(Vessel.Flow.IN);
+        vessel.hold(container.getContainer());
     }
 }

@@ -1,5 +1,7 @@
 package io.github.capsicum0907.acervus;
 
+import java.util.function.BiPredicate;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -131,52 +133,35 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         return out;
     }
 
-    private final Vessel vessel = new Vessel();
+    private final Vessel in = new Vessel(Vessel.Flow.IN);
+    private final Vessel out = new Vessel(Vessel.Flow.OUT);
 
     @Override
-    public Vessel vessel() {
-        return vessel;
+    public Vessel vessel(Vessel.Flow flow) {
+        return flow == Vessel.Flow.IN ? in : out;
     }
 
-    /**
-     * The container in the vessel moves in the direction decided when it was put
-     * there: a full one of the same fluid empties into the heap, anything else is
-     * filled from it. See {@link Vessel} for why the question is only asked once.
-     */
     public static void serverTick(Level level, BlockPos pos, BlockState state, FluidHeapBlockEntity heap) {
-        if (level.isClientSide || heap.vessel.isEmpty()) {
+        if (level.isClientSide) {
             return;
         }
-        IFluidHandlerItem container = heap.vessel.held().getCapability(Capabilities.FluidHandler.ITEM);
-        if (container == null) {
-            heap.vessel.done();
-            return;
-        }
-        if (heap.vessel.undecided()) {
-            heap.vessel.decide(pouring(heap, container) ? Vessel.Flow.IN : Vessel.Flow.OUT);
-        }
-
-        boolean moved = switch (heap.vessel.flow()) {
-            case IN -> pourIn(heap, container);
-            case OUT -> drawOut(heap, container);
-            case NONE -> false;
-        };
+        boolean moved = heap.tickVessel(heap.in, FluidHeapBlockEntity::pourIn);
+        moved |= heap.tickVessel(heap.out, FluidHeapBlockEntity::drawOut);
         if (moved) {
-            heap.vessel.replace(container.getContainer());
             heap.changed();
-        } else {
-            heap.vessel.done();
         }
     }
 
-    /** Full, and of something this heap would take: the one case that goes inward. */
-    private static boolean pouring(FluidHeapBlockEntity heap, IFluidHandlerItem container) {
-        for (int tank = 0; tank < container.getTanks(); tank++) {
-            if (container.getFluidInTank(tank).getAmount() < container.getTankCapacity(tank)) {
-                return false;
-            }
+    private boolean tickVessel(Vessel vessel, BiPredicate<FluidHeapBlockEntity, IFluidHandlerItem> move) {
+        if (vessel.isEmpty()) {
+            return false;
         }
-        return heap.accepts(container.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE));
+        IFluidHandlerItem container = vessel.held().getCapability(Capabilities.FluidHandler.ITEM);
+        if (container == null || !move.test(this, container)) {
+            return false;
+        }
+        vessel.hold(container.getContainer());
+        return true;
     }
 
     private static boolean pourIn(FluidHeapBlockEntity heap, IFluidHandlerItem container) {
@@ -238,7 +223,8 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, amount);
-        vessel.save(tag, registries);
+        in.save(tag, registries);
+        out.save(tag, registries);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
         }
@@ -251,7 +237,8 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
                 ? FluidStack.parse(registries, tag.getCompound(SAMPLE)).orElse(FluidStack.EMPTY)
                 : FluidStack.EMPTY;
         amount = sample.isEmpty() ? 0L : tag.getLong(AMOUNT);
-        vessel.load(tag, registries);
+        in.load(tag, registries);
+        out.load(tag, registries);
     }
 
     @Override

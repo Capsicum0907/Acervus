@@ -58,11 +58,6 @@ public abstract class Held implements Heaped {
         return gives;
     }
 
-    /**
-     * Empties what is in the vessel into the heap, as far as it will go, and says so
-     * through the vessel's own direction — which is always {@link Vessel.Flow#IN} here,
-     * so none of the latching the blocks need applies.
-     */
     public abstract void draw(Vessel vessel);
 
     /** Which block this is the item of; the written contents have to name it. */

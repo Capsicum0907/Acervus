@@ -18,6 +18,7 @@
   "gui.acervus.flow.in": "In",
   "gui.acervus.flow.out": "Out",
   "gui.acervus.intake_only": "Deposit only",
+  "gui.acervus.of": "%s / %s",
   "gui.acervus.room": "%s more will fit",
   "gui.acervus.vessel": "Put a container here"
 }

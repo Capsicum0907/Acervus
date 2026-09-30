@@ -31,7 +31,6 @@ ENERGY_OUT = ASSETS / "block/energy_heap.png"
 CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
 GUI_OUT = ASSETS / "gui/item_heap.png"
 READOUT_OUT = ASSETS / "gui/readout.png"
-READOUT_PLAIN_OUT = ASSETS / "gui/readout_plain.png"
 RACK_OUT = ASSETS / "block/horreum.png"
 RACK_GUI_OUT = ASSETS / "gui/horreum.png"
 BOLT_OUT = ASSETS / "gui/energy_icon.png"
@@ -294,21 +293,18 @@ def draw_rack_screen() -> bytes:
     return _sheet(pixels)
 
 
-# The readout panel: one bar, one slot for a container, and the player's inventory.
-BAR = (8, 20, 160, 10)      # x, y, w, h - the fill is drawn in code, in the resource's colour
-CONTENT_BOX = (8, 38)     # where the contents themselves are drawn
-VESSEL_SLOT = (150, 38)   # where a container goes
+IN_SLOT = (8, 38)
+CONTENT_BOX = (30, 38)
+OUT_SLOT = (150, 38)
+BAR = (52, 41, 94, 6)
 
 
-def draw_readout(with_contents: bool = True) -> bytes:
-    """The same panel with or without the box for the contents. Energy has no kinds,
-    so a box that could only ever be empty is left off rather than drawn."""
+def draw_readout() -> bytes:
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     _panel(pixels, 0, 0)
     _recess(pixels, *BAR)
-    if with_contents:
-        _recess(pixels, CONTENT_BOX[0] - 1, CONTENT_BOX[1] - 1, SLOT, SLOT)
-    _recess(pixels, VESSEL_SLOT[0] - 1, VESSEL_SLOT[1] - 1, SLOT, SLOT)
+    for box in (IN_SLOT, CONTENT_BOX, OUT_SLOT):
+        _recess(pixels, box[0] - 1, box[1] - 1, SLOT, SLOT)
     for row in INVENTORY_ROWS + (HOTBAR,):
         for column in range(9):
             _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)
@@ -336,9 +332,6 @@ def main() -> None:
 
     READOUT_OUT.write_bytes(draw_readout())
     print(f"wrote {READOUT_OUT}")
-
-    READOUT_PLAIN_OUT.write_bytes(draw_readout(False))
-    print(f"wrote {READOUT_PLAIN_OUT}")
 
     RACK_OUT.write_bytes(draw_rack())
     print(f"wrote {RACK_OUT}")

@@ -157,7 +157,6 @@ public final class HeldChemicalHeap extends Held {
     public void draw(Vessel vessel) {
         IChemicalHandler container = vessel.held().getCapability(GasHeap.CHEMICAL_ITEM);
         if (container == null) {
-            vessel.done();
             return;
         }
         for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
@@ -165,10 +164,8 @@ public final class HeldChemicalHeap extends Held {
             long taken = inside.isEmpty() ? 0L : insert(inside, false);
             if (taken > 0) {
                 container.extractChemical(tank, taken, Action.EXECUTE);
-                vessel.decide(Vessel.Flow.IN);
                 return;
             }
         }
-        vessel.done();
     }
 }

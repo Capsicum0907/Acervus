@@ -156,6 +156,7 @@ public final class AcervusDataGen {
             add("gui.acervus.vessel", "Put a container here");
             add("gui.acervus.flow.in", "In");
             add("gui.acervus.flow.out", "Out");
+            add("gui.acervus.of", "%s / %s");
             add("gui.acervus.exact", "%s stored");
             add("gui.acervus.intake_only", "Deposit only");
             add("gui.acervus.energy", "Energy");

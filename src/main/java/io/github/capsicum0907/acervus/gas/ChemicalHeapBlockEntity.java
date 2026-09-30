@@ -120,59 +120,33 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         return out;
     }
 
-    private final io.github.capsicum0907.acervus.Vessel vessel = new io.github.capsicum0907.acervus.Vessel();
+    private final io.github.capsicum0907.acervus.Vessel in = new io.github.capsicum0907.acervus.Vessel(io.github.capsicum0907.acervus.Vessel.Flow.IN);
+    private final io.github.capsicum0907.acervus.Vessel out = new io.github.capsicum0907.acervus.Vessel(io.github.capsicum0907.acervus.Vessel.Flow.OUT);
 
     @Override
-    public io.github.capsicum0907.acervus.Vessel vessel() {
-        return vessel;
+    public io.github.capsicum0907.acervus.Vessel vessel(io.github.capsicum0907.acervus.Vessel.Flow flow) {
+        return flow == io.github.capsicum0907.acervus.Vessel.Flow.IN ? in : out;
     }
 
-    /**
-     * The tank in the vessel moves in the direction decided when it was put there: a
-     * full one of the same chemical empties into the heap, anything else is filled
-     * from it. See {@code Vessel} for why the question is only asked once.
-     */
     public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state,
             ChemicalHeapBlockEntity heap) {
-        if (level.isClientSide || heap.vessel.isEmpty()) {
+        if (level.isClientSide) {
             return;
         }
-        mekanism.api.chemical.IChemicalHandler container =
-                heap.vessel.held().getCapability(GasHeap.CHEMICAL_ITEM);
-        if (container == null) {
-            heap.vessel.done();
-            return;
-        }
-        if (heap.vessel.undecided()) {
-            heap.vessel.decide(pouring(heap, container)
-                    ? io.github.capsicum0907.acervus.Vessel.Flow.IN
-                    : io.github.capsicum0907.acervus.Vessel.Flow.OUT);
-        }
-
-        boolean moved = switch (heap.vessel.flow()) {
-            case IN -> pourIn(heap, container);
-            case OUT -> drawOut(heap, container);
-            case NONE -> false;
-        };
+        boolean moved = heap.tickVessel(heap.in, ChemicalHeapBlockEntity::pourIn);
+        moved |= heap.tickVessel(heap.out, ChemicalHeapBlockEntity::drawOut);
         if (moved) {
             heap.changed();
-        } else {
-            heap.vessel.done();
         }
     }
 
-    /** Full, and of something this heap would take. */
-    private static boolean pouring(ChemicalHeapBlockEntity heap,
-            mekanism.api.chemical.IChemicalHandler container) {
-        boolean anything = false;
-        for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
-            ChemicalStack inside = container.getChemicalInTank(tank);
-            if (inside.getAmount() < container.getChemicalTankCapacity(tank)) {
-                return false;
-            }
-            anything |= !inside.isEmpty() && heap.accepts(inside);
+    private boolean tickVessel(io.github.capsicum0907.acervus.Vessel vessel,
+            java.util.function.BiPredicate<ChemicalHeapBlockEntity, mekanism.api.chemical.IChemicalHandler> move) {
+        if (vessel.isEmpty()) {
+            return false;
         }
-        return anything;
+        mekanism.api.chemical.IChemicalHandler container = vessel.held().getCapability(GasHeap.CHEMICAL_ITEM);
+        return container != null && move.test(this, container);
     }
 
     private static boolean pourIn(ChemicalHeapBlockEntity heap,
@@ -250,7 +224,8 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, amount);
-        vessel.save(tag, registries);
+        in.save(tag, registries);
+        out.save(tag, registries);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
         }
@@ -263,7 +238,8 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
                 ? ChemicalStack.parseOptional(registries, tag.getCompound(SAMPLE))
                 : ChemicalStack.EMPTY;
         amount = sample.isEmpty() ? 0L : tag.getLong(AMOUNT);
-        vessel.load(tag, registries);
+        in.load(tag, registries);
+        out.load(tag, registries);
     }
 
     @Override
