@@ -1,3 +1,77 @@
 {
-  "parent": "acervus:block/energy_heap_0"
+  "parent": "acervus:block/energy_heap_0",
+  "overrides": [
+    {
+      "model": "acervus:block/energy_heap_1",
+      "predicate": {
+        "acervus:lamps": 0.083333336
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_2",
+      "predicate": {
+        "acervus:lamps": 0.16666667
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_3",
+      "predicate": {
+        "acervus:lamps": 0.25
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_4",
+      "predicate": {
+        "acervus:lamps": 0.33333334
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_5",
+      "predicate": {
+        "acervus:lamps": 0.41666666
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_6",
+      "predicate": {
+        "acervus:lamps": 0.5
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_7",
+      "predicate": {
+        "acervus:lamps": 0.5833333
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_8",
+      "predicate": {
+        "acervus:lamps": 0.6666667
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_9",
+      "predicate": {
+        "acervus:lamps": 0.75
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_10",
+      "predicate": {
+        "acervus:lamps": 0.8333333
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_11",
+      "predicate": {
+        "acervus:lamps": 0.9166667
+      }
+    },
+    {
+      "model": "acervus:block/energy_heap_12",
+      "predicate": {
+        "acervus:lamps": 1.0
+      }
+    }
+  ]
 }

@@ -22,6 +22,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
+import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
 import net.neoforged.neoforge.common.conditions.ItemExistsCondition;
@@ -131,7 +132,13 @@ public final class AcervusDataGen {
                     .modelFile(lit[state.getValue(EnergyHeapBlock.LAMPS)])
                     .rotationY(((int) state.getValue(EnergyHeapBlock.FACING).toYRot() + 180) % 360)
                     .build());
-            itemModels().withExistingParent(name, modLoc("block/" + name + "_0"));
+            ItemModelBuilder item = itemModels().withExistingParent(name, modLoc("block/" + name + "_0"));
+            for (int lamps = 1; lamps < lit.length; lamps++) {
+                item.override()
+                        .predicate(modLoc(EnergyHeapBlock.LAMPS_PROPERTY), EnergyHeapBlock.lampFraction(lamps))
+                        .model(lit[lamps])
+                        .end();
+            }
         }
 
         private void glassBox(DeferredBlock<?> block) {

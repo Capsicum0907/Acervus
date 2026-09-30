@@ -1,10 +1,21 @@
 package io.github.capsicum0907.acervus.client;
 
+import io.github.capsicum0907.acervus.Acervus;
+import io.github.capsicum0907.acervus.AcervusConfig;
 import io.github.capsicum0907.acervus.AcervusRegistry;
+import io.github.capsicum0907.acervus.EnergyHeapBlock;
+import io.github.capsicum0907.acervus.HeldEnergyHeap;
 import io.github.capsicum0907.acervus.Mods;
 
 import io.github.capsicum0907.acervus.HeapContents;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -22,6 +33,25 @@ public final class AcervusClient {
             event.registerBlockEntityRenderer(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK_ENTITY.get(),
                     io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::new);
         }
+    }
+
+    public static void registerItemProperties(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> ItemProperties.register(AcervusRegistry.ENERGY_HEAP_ITEM.get(),
+                ResourceLocation.fromNamespaceAndPath(Acervus.MODID, EnergyHeapBlock.LAMPS_PROPERTY),
+                (stack, level, entity, seed) -> EnergyHeapBlock.lampFraction(heldLamps(stack, level))));
+    }
+
+    private static int heldLamps(ItemStack stack, Level level) {
+        if (!AcervusConfig.SPEC.isLoaded()) {
+            return 0;
+        }
+        Level world = level != null ? level : Minecraft.getInstance().level;
+        RegistryAccess registries = world != null ? world.registryAccess() : null;
+        if (registries == null) {
+            return 0;
+        }
+        HeldEnergyHeap heap = HeldEnergyHeap.of(registries, stack);
+        return EnergyHeapBlock.lamps(heap.amount(), heap.capacity());
     }
 
     /** What turns {@link HeapContents} into something drawn. */

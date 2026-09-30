@@ -49,6 +49,12 @@ public class EnergyHeapBlock extends BaseEntityBlock {
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(LAMPS, 0));
     }
 
+    public static final String LAMPS_PROPERTY = "lamps";
+
+    public static float lampFraction(int lamps) {
+        return (float) lamps / MAX_LAMPS;
+    }
+
     public static int lamps(long stored, long capacity) {
         if (stored <= 0L) {
             return 0;
