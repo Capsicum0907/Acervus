@@ -70,6 +70,10 @@ public class ReadoutMenu extends AbstractContainerMenu {
         default void vesselChanged() {
         }
 
+        default boolean emptyContainer(ItemStack stack) {
+            return false;
+        }
+
         /** Whether the vessels belong to the screen and must be handed back when it closes. */
         default boolean lendsTheVessel() {
             return false;
@@ -158,7 +162,7 @@ public class ReadoutMenu extends AbstractContainerMenu {
         }
     }
 
-    /** Shift-clicking moves a container into the IN slot, or back out of either. */
+    /** Shift-clicking moves an empty container into Out and any other into In, or back out of either. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = slots.get(index);
@@ -171,8 +175,11 @@ public class ReadoutMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(slot.getItem(), PLAYER_FIRST, PLAYER_LAST, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!moveItemStackTo(slot.getItem(), IN_SLOT, IN_SLOT + 1, false)) {
-            return ItemStack.EMPTY;
+        } else {
+            int target = source.emptyContainer(slot.getItem()) ? OUT_SLOT : IN_SLOT;
+            if (!moveItemStackTo(slot.getItem(), target, target + 1, false)) {
+                return ItemStack.EMPTY;
+            }
         }
 
         slot.setChanged();
@@ -198,6 +205,11 @@ public class ReadoutMenu extends AbstractContainerMenu {
                 return holder.vessel(flow);
             }
             return flow == Vessel.Flow.IN ? spareIn : spareOut;
+        }
+
+        @Override
+        public boolean emptyContainer(ItemStack stack) {
+            return level.getBlockEntity(pos) instanceof HasVessel holder && holder.emptyContainer(stack);
         }
 
         @Override
@@ -231,6 +243,11 @@ public class ReadoutMenu extends AbstractContainerMenu {
         @Override
         public Vessel vessel(Vessel.Flow flow) {
             return flow == Vessel.Flow.IN ? in : out;
+        }
+
+        @Override
+        public boolean emptyContainer(ItemStack stack) {
+            return held != null && held.emptyContainer(stack);
         }
 
         @Override

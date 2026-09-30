@@ -131,6 +131,16 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         return flow == Vessel.Flow.IN ? in : out;
     }
 
+    @Override
+    public boolean emptyContainer(net.minecraft.world.item.ItemStack stack) {
+        return isEmptyContainer(stack);
+    }
+
+    public static boolean isEmptyContainer(net.minecraft.world.item.ItemStack stack) {
+        IEnergyStorage container = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return container != null && container.getEnergyStored() <= 0;
+    }
+
     private void tickVessels() {
         int rate = (int) Math.min(AcervusConfig.ENERGY_PUSH_RATE.get(), Integer.MAX_VALUE);
         IEnergyStorage emptying = battery(in);

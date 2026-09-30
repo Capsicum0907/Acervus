@@ -128,6 +128,24 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         return flow == io.github.capsicum0907.acervus.Vessel.Flow.IN ? in : out;
     }
 
+    @Override
+    public boolean emptyContainer(net.minecraft.world.item.ItemStack stack) {
+        return isEmptyContainer(stack);
+    }
+
+    public static boolean isEmptyContainer(net.minecraft.world.item.ItemStack stack) {
+        mekanism.api.chemical.IChemicalHandler container = stack.getCapability(GasHeap.CHEMICAL_ITEM);
+        if (container == null) {
+            return false;
+        }
+        for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
+            if (!container.getChemicalInTank(tank).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state,
             ChemicalHeapBlockEntity heap) {
         if (level.isClientSide) {

@@ -60,6 +60,8 @@ public abstract class Held implements Heaped {
 
     public abstract void draw(Vessel vessel);
 
+    public abstract boolean emptyContainer(ItemStack stack);
+
     /** Which block this is the item of; the written contents have to name it. */
     protected abstract BlockEntityType<?> type();
 

@@ -137,6 +137,11 @@ public final class HeldFluidHeap extends Held {
     }
 
     @Override
+    public boolean emptyContainer(ItemStack stack) {
+        return FluidHeapBlockEntity.isEmptyContainer(stack);
+    }
+
+    @Override
     public void draw(Vessel vessel) {
         IFluidHandlerItem container = vessel.held().getCapability(Capabilities.FluidHandler.ITEM);
         if (container == null) {

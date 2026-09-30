@@ -124,6 +124,11 @@ public final class HeldEnergyHeap extends Held {
     }
 
     @Override
+    public boolean emptyContainer(net.minecraft.world.item.ItemStack stack) {
+        return EnergyHeapBlockEntity.isEmptyContainer(stack);
+    }
+
+    @Override
     public void draw(Vessel vessel) {
         IEnergyStorage container = vessel.held().getCapability(Capabilities.EnergyStorage.ITEM);
         if (container == null) {

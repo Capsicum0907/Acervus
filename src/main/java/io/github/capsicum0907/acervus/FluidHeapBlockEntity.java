@@ -141,6 +141,24 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         return flow == Vessel.Flow.IN ? in : out;
     }
 
+    @Override
+    public boolean emptyContainer(ItemStack stack) {
+        return isEmptyContainer(stack);
+    }
+
+    public static boolean isEmptyContainer(ItemStack stack) {
+        IFluidHandlerItem container = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        if (container == null) {
+            return false;
+        }
+        for (int tank = 0; tank < container.getTanks(); tank++) {
+            if (!container.getFluidInTank(tank).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static void serverTick(Level level, BlockPos pos, BlockState state, FluidHeapBlockEntity heap) {
         if (level.isClientSide) {
             return;

@@ -1177,16 +1177,18 @@ public final class AcervusTests {
     }
 
     @GameTest(template = TestStructures.FLOOR)
-    public static void shiftClickingAContainerPutsItInIn(GameTestHelper helper) {
+    public static void shiftClickingSendsAnEmptyContainerOutAndAFullOneIn(GameTestHelper helper) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         FluidHeapBlockEntity heap = fluidHeap(helper);
         player.getInventory().setItem(9, new ItemStack(Items.BUCKET));
+        player.getInventory().setItem(10, new ItemStack(Items.WATER_BUCKET));
         ReadoutMenu menu = ReadoutMenu.at(1, player.getInventory(), helper.absolutePos(WHERE));
 
         menu.quickMoveStack(player, 2);
+        menu.quickMoveStack(player, 3);
 
-        check(heap.vessel(Vessel.Flow.IN).held().is(Items.BUCKET), "the bucket should have gone into IN");
-        check(heap.vessel(Vessel.Flow.OUT).isEmpty(), "and never into OUT");
+        check(heap.vessel(Vessel.Flow.OUT).held().is(Items.BUCKET), "the empty bucket should have gone into Out");
+        check(heap.vessel(Vessel.Flow.IN).held().is(Items.WATER_BUCKET), "and the full one into In");
         helper.succeed();
     }
 

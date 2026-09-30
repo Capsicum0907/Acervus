@@ -192,7 +192,8 @@ bucket, a tank, a battery.
 
 The slot decides the direction, not how full the container is, so a half-full tank
 can go either way. A container that cannot move any more stays in its slot until it
-is taken out. Shift-clicking a container from the inventory puts it in **In**.
+is taken out. Shift-clicking a container from the inventory puts an empty one in
+**Out** and any other in **In**.
 
 **Click the bar** to change what its length means. Pointing at it says which one is
 shown. The choice is kept per player, in the client config (`screen.barScale`).

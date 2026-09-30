@@ -154,6 +154,11 @@ public final class HeldChemicalHeap extends Held {
     }
 
     @Override
+    public boolean emptyContainer(net.minecraft.world.item.ItemStack stack) {
+        return ChemicalHeapBlockEntity.isEmptyContainer(stack);
+    }
+
+    @Override
     public void draw(Vessel vessel) {
         IChemicalHandler container = vessel.held().getCapability(GasHeap.CHEMICAL_ITEM);
         if (container == null) {
