@@ -2909,7 +2909,7 @@ A few brighter cells, as the sheen on a pane. Placed rather than computed: a hig
 
 --- the screen ------------------------------------------------------------ A panel in the game's own idiom: flat fill, a light bevel on the top and left, a dark one on the bottom and right. Every measurement below is also a constant in HeapScreen, and the two have to agree; they are named the same on both sides.
 
-**`FLUID_GLASS = "#7FB8C8"`**
+**`FLUID_GLASS = "#6A9CE0"`**
 
 One frame, three glasses. The colour is the only thing that says which resource a heap is for, which is the intent: they are the same machine.
 
