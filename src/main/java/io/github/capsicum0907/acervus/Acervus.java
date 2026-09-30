@@ -107,6 +107,7 @@ public class Acervus {
             modEventBus.addListener(AcervusClient::registerTooltips);
             modEventBus.addListener(AcervusClient::registerItemProperties);
             modEventBus.addListener(AcervusClient::registerItemExtensions);
+            modEventBus.addListener(AcervusClient::registerItemDecorations);
         }
     }
 }

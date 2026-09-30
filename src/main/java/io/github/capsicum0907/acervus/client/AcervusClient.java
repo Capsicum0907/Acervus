@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
@@ -35,6 +36,10 @@ public final class AcervusClient {
             event.registerBlockEntityRenderer(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK_ENTITY.get(),
                     io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::new);
         }
+    }
+
+    public static void registerItemDecorations(RegisterItemDecorationsEvent event) {
+        event.register(AcervusRegistry.HEAP_ITEM.get(), new HeapItemDecorator());
     }
 
     public static void registerItemExtensions(RegisterClientExtensionsEvent event) {
