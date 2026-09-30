@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep nine of them in.
-> 67 game tests pass headlessly, with and without Mekanism installed.
+> 69 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -176,8 +176,14 @@ never a fourth digit to separate. Both forms live in one place, `Counts`, becaus
 block and its screen disagreeing about the same contents is the kind of thing nobody
 notices and everybody distrusts.
 
-**An emptied heap forgets what it held.** One that remembered would refuse the next
-thing put into it with nothing on the block to say why.
+**An emptied heap forgets what it held** — unless it is locked. One that remembered
+would refuse the next thing put into it with nothing on the block to say why.
+
+**The button at the top right of a heap's screen locks it to what it holds.** Red is
+Locked, grey is Free. A locked heap keeps its kind when it runs empty and takes
+nothing else, so an automated line cannot fill it with the wrong thing first. Only a
+heap with something in it can be locked; unlocking an empty one lets it forget.
+Energy has no kinds, so its screen has no button.
 
 ### Fluid, Energy and Gas heaps
 
@@ -417,18 +423,14 @@ gradlew runData           # regenerate models, recipes and language
   grounds that how much it holds is a setting, so the recipe decides *when* it
   becomes available rather than how strong it is. If it should feel like a
   commitment, the centre is the place to raise: a diamond, or a shulker box.
-- **Whether left-click on the block should take things out**, the way Storage
-  Drawers does. It reads well, but left-click is also how a block is broken, and a
-  heap that swallows the break is a heap that cannot be picked up. Resolving it means
-  giving breaking another gesture — sneak + left-click — and that is a real cost to
-  weigh against a screen that already does the job.
-- Whether the world-side count should abbreviate at a lower threshold than the
-  screen's. They share one rule at the moment, which is simple but means the block
-  is as terse up close as it is from across a room.
-- Whether one heap should be upgradeable in capacity rather than every heap holding
-  the configured maximum.
-- Whether a heap should be able to be locked to a kind while empty, so an automated
-  line cannot fill it with the wrong thing first.
+
+Settled:
+
+- Left-click does not take things out. Left-click stays the way a heap is broken.
+- The count on the block shortens by the same rule as the screen.
+- A heap cannot be upgraded. Every heap holds the configured capacity; that is the
+  point of it.
+- A heap with something in it can be locked to that kind (see *Using one*).
 
 ## Design notes
 
