@@ -74,6 +74,11 @@ public final class HeldFluidHeap extends Held {
     }
 
     @Override
+    public String power(long value) {
+        return Counts.powerBuckets(value);
+    }
+
+    @Override
     public int tint() {
         return 0xFF7FB8C8;
     }

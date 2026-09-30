@@ -88,6 +88,41 @@ public final class Counts {
         return exact(millibuckets / PER_BUCKET) + " B " + (millibuckets % PER_BUCKET) + " mB";
     }
 
+    private static final String SUPERSCRIPT_DIGITS = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+
+    public static String power(long value) {
+        int exponent = exponentOf(value);
+        return exponent < 0 ? exact(value) : "10" + superscript(exponent);
+    }
+
+    public static String powerBuckets(long millibuckets) {
+        if (millibuckets >= PER_BUCKET && millibuckets % PER_BUCKET == 0L
+                && exponentOf(millibuckets / PER_BUCKET) >= 0) {
+            return power(millibuckets / PER_BUCKET) + " B";
+        }
+        return exponentOf(millibuckets) >= 0 ? power(millibuckets) + " mB" : exactBuckets(millibuckets);
+    }
+
+    private static int exponentOf(long value) {
+        if (value <= 0L) {
+            return -1;
+        }
+        int exponent = 0;
+        while (value % 10L == 0L) {
+            value /= 10L;
+            exponent++;
+        }
+        return value == 1L ? exponent : -1;
+    }
+
+    private static String superscript(int exponent) {
+        StringBuilder out = new StringBuilder();
+        for (char digit : Integer.toString(exponent).toCharArray()) {
+            out.append(SUPERSCRIPT_DIGITS.charAt(digit - '0'));
+        }
+        return out.toString();
+    }
+
     private static long tenths(double value) {
         return Math.round(value * 10.0);
     }

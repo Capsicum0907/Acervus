@@ -223,8 +223,8 @@ public class ReadoutScreen extends AbstractContainerScreen<ReadoutMenu> {
             long amount = heap.amount();
             long capacity = heap.capacity();
             if (scale == BarScale.DECADE && amount > 0L && amount < capacity) {
-                lines.add(Component.literal(heap.exact(BarScale.decadeFloor(amount))
-                        + " - " + heap.exact(BarScale.decadeCeiling(amount, capacity)))
+                lines.add(Component.literal(heap.power(BarScale.decadeFloor(amount))
+                        + " - " + heap.power(BarScale.decadeCeiling(amount, capacity)))
                         .withStyle(ChatFormatting.GRAY));
             }
             lines.add(Component.literal(heap.exact(capacity)).withStyle(ChatFormatting.DARK_GRAY));

@@ -207,6 +207,11 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     }
 
     @Override
+    public String power(long value) {
+        return Counts.powerBuckets(value);
+    }
+
+    @Override
     public int tint() {
         return 0xFF7FB8C8;
     }

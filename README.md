@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep twelve of them in.
-> 63 game tests pass headlessly, with and without Mekanism installed.
+> 64 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -200,6 +200,8 @@ shown. The choice is kept per player, in the client config (`screen.barScale`).
 | **Linear** (default) | the capacity — `600G / 1T` is six tenths |
 | **Logarithmic** | the capacity, with one tick per power of ten — `1K / 1T` is a quarter |
 | **Within the decade** | the next power of ten — `55K` is half of the way from `10K` to `100K` |
+
+Within the decade, pointing at the bar names the decade as powers of ten: `10⁴ - 10⁵`.
 
 ### Carrying one
 

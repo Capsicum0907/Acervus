@@ -1226,6 +1226,16 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aPowerOfTenIsWrittenAsOne(GameTestHelper helper) {
+        check(Counts.power(1L).equals("10⁰"), "1 should read 10 to the 0, not " + Counts.power(1L));
+        check(Counts.power(1_000_000_000_000L).equals("10¹²"), "a trillion should read 10 to the 12");
+        check(Counts.power(2_000L).equals("2,000"), "and anything else should stay a plain number");
+        check(Counts.powerBuckets(10_000_000_000L).equals("10⁷ B"), "ten billion mB should read 10 to the 7 buckets");
+        check(Counts.powerBuckets(100L).equals("10² mB"), "and less than a bucket should stay in mB");
+        helper.succeed();
+    }
+
     private static void near(double actual, double expected, String what) {
         check(Math.abs(actual - expected) < 1e-9, what + " should read " + expected + ", not " + actual);
     }

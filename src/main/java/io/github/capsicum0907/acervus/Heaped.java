@@ -33,6 +33,10 @@ public interface Heaped {
     /** Every digit of an amount, for when the detail was asked for. */
     String exact(long value);
 
+    default String power(long value) {
+        return Counts.power(value);
+    }
+
     /** The colour of the fill on a gauge, which is also the colour of the block's glass. */
     int tint();
 

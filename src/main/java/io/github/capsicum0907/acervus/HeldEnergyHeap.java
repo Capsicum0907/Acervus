@@ -72,6 +72,11 @@ public final class HeldEnergyHeap extends Held {
     }
 
     @Override
+    public String power(long value) {
+        return Counts.power(value) + " FE";
+    }
+
+    @Override
     public int tint() {
         return 0xFFD8A24A;
     }
