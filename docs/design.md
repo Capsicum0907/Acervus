@@ -2872,12 +2872,6 @@ Written out by hand it sat against the top-left corner of its frame while every
 other icon in the row was centred, and the fix for that is not to move the dots -
 it is to stop the position being something anyone has to get right.
 
-**`draw_rack`**
-
-The rack block: the same frame as a heap, filled in rather than glazed, with a
-grid of niches for the heaps it holds. It is the one block of the set you cannot
-see into, because what is inside it is heaps and not contents.
-
 **`draw_rack_screen`**
 
 Nine slots and the player's inventory, and nothing else. Each heap says what
@@ -2926,10 +2920,6 @@ Energy has no item and no sprite of its own, so its tooltip row had a hole where
 **`edge = (x - 1, y) not in lit or (x, y - 1) not in lit`**
 
 An edge is any lit pixel with an unlit neighbour above or to the left, which gives the bolt a rim without anyone placing one.
-
-**`for ox in (3, 9)`**
-
-Four niches, two by two, standing for the slots inside. Dark on the top and left so they read as holes rather than as studs.
 
 **`RACK_SLOTS = (62, 18)`**
 

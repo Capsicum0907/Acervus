@@ -2,7 +2,7 @@
   "parent": "minecraft:block/orientable",
   "textures": {
     "front": "acervus:block/horreum_front",
-    "side": "acervus:block/horreum",
-    "top": "acervus:block/horreum"
+    "side": "acervus:block/energy_heap_side",
+    "top": "acervus:block/energy_heap_side"
   }
 }

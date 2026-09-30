@@ -81,8 +81,8 @@ public final class AcervusDataGen {
             drawnItem(AcervusRegistry.FLUID_HEAP);
             energyBox();
             String rack = AcervusRegistry.HORREUM.getId().getPath();
-            ModelFile rackModel = models().orientable(rack, modLoc("block/" + rack),
-                    modLoc("block/" + rack + "_front"), modLoc("block/" + rack));
+            ResourceLocation casing = modLoc("block/" + AcervusRegistry.ENERGY_HEAP.getId().getPath() + "_side");
+            ModelFile rackModel = models().orientable(rack, casing, modLoc("block/" + rack + "_front"), casing);
             horizontalBlock(AcervusRegistry.HORREUM.get(), rackModel);
             itemModels().withExistingParent(rack, modLoc("block/" + rack));
             if (Mods.mekanism()) {

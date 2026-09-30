@@ -16,7 +16,6 @@ ENERGY_SIDE_OUT = ASSETS / "block/energy_heap_side.png"
 ENERGY_FRONT_OUT = ASSETS / "block/energy_heap_front_{}.png"
 CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
 READOUT_OUT = ASSETS / "gui/readout.png"
-RACK_OUT = ASSETS / "block/horreum.png"
 RACK_GUI_OUT = ASSETS / "gui/horreum.png"
 RACK_FRONT_OUT = ASSETS / "block/horreum_front.png"
 RACK_LAMP_OUT = ASSETS / "block/horreum_lamp.png"
@@ -224,24 +223,6 @@ def draw_bolt() -> bytes:
     return _png(pixels)
 
 
-def draw_rack() -> bytes:
-    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
-    for pixel in ALL:
-        pixels[pixel] = _rgb(_tone(pixel, METAL, METAL_TONES)) + (255,)
-    for ox in (3, 9):
-        for oy in (3, 9):
-            for dx in range(4):
-                for dy in range(4):
-                    dark = dx == 0 or dy == 0
-                    colour = RACK_NICHE_DARK if dark else RACK_NICHE
-                    pixels[(ox + dx, oy + dy)] = _rgb(colour) + (255,)
-    return _png(pixels)
-
-
-RACK_NICHE = "#3A3F4A"
-RACK_NICHE_DARK = "#23262E"
-
-
 def rack_lamp_origin(column: int, row: int) -> tuple[int, int]:
     used = RACK_LAMPS_ACROSS * RACK_LAMP + (RACK_LAMPS_ACROSS - 1) * RACK_LAMP_GAP
     start = FRAME * FRONT_SCALE + ((SIZE - 2 * FRAME) * FRONT_SCALE - used) // 2
@@ -333,8 +314,6 @@ def main() -> None:
     READOUT_OUT.write_bytes(draw_readout())
     print(f"wrote {READOUT_OUT}")
 
-    RACK_OUT.write_bytes(draw_rack())
-    print(f"wrote {RACK_OUT}")
 
     RACK_GUI_OUT.write_bytes(draw_rack_screen())
     print(f"wrote {RACK_GUI_OUT}")
