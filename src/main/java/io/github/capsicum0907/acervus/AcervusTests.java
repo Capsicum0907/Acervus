@@ -68,7 +68,7 @@ public final class AcervusTests {
     private static final int MANY = 5_000;
 
     /** The first hotbar slot in a heap menu: the heap's own slot, then three rows. */
-    private static final int HOTBAR_FIRST = 1 + 27;
+    private static final int HOTBAR_FIRST = 2 + 27;
 
     private AcervusTests() {
     }
@@ -934,12 +934,12 @@ public final class AcervusTests {
         player.getInventory().setItem(player.getInventory().selected,
                 carried(helper, new ItemStack(Items.DIAMOND, 100)));
         HeapMenu menu = HeapMenu.inHand(1, player.getInventory(), InteractionHand.MAIN_HAND);
-        Slot heap = menu.slots.get(0);
+        Slot heap = menu.slots.get(1);
 
         check(heap.getItem().getCount() == 64, "the slot should show a stack of what is inside");
         check(!heap.mayPickup(player), "and must refuse to be taken from");
         check(heap.remove(64).isEmpty(), "and hand back nothing when asked outright");
-        check(menu.quickMoveStack(player, 0).isEmpty(), "and nothing when shift-clicked");
+        check(menu.quickMoveStack(player, 1).isEmpty(), "and nothing when shift-clicked");
         check(carriedCount(player, player.getInventory().selected) == 100,
                 "with all 100 still inside");
         helper.succeed();
@@ -1238,6 +1238,30 @@ public final class AcervusTests {
 
     private static void near(double actual, double expected, String what) {
         check(Math.abs(actual - expected) < 1e-9, what + " should read " + expected + ", not " + actual);
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anItemHeapTakesInOnTheLeftAndGivesOnTheRight(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        HeapBlockEntity heap = place(helper);
+        HeapMenu menu = HeapMenu.at(1, player.getInventory(), helper.absolutePos(WHERE));
+        Slot in = menu.slots.get(0);
+        Slot out = menu.slots.get(1);
+
+        ItemStack left = in.safeInsert(new ItemStack(Items.DIAMOND, 10), 10);
+        check(left.isEmpty() && heap.count() == 10, "In should take all ten, and the heap holds " + heap.count());
+        check(in.getItem().isEmpty(), "and In should show nothing afterwards");
+        check(out.getItem().is(Items.DIAMOND) && out.getItem().getCount() == 10, "while Out shows what is inside");
+        check(!out.mayPlace(new ItemStack(Items.DIAMOND)), "Out must not take anything in");
+        check(!in.mayPlace(new ItemStack(Items.DIRT)), "and In must refuse a second kind");
+
+        ItemStack taken = out.remove(4);
+        check(taken.getCount() == 4 && heap.count() == 6, "taking four from Out should leave six, not " + heap.count());
+
+        player.getInventory().setItem(9, new ItemStack(Items.DIAMOND, 5));
+        menu.quickMoveStack(player, 2);
+        check(heap.count() == 11, "and shift-clicking five from the inventory should make eleven, not " + heap.count());
+        helper.succeed();
     }
 
     private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {

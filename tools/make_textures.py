@@ -29,7 +29,6 @@ OUT = ASSETS / "block/item_heap.png"
 FLUID_OUT = ASSETS / "block/fluid_heap.png"
 ENERGY_OUT = ASSETS / "block/energy_heap.png"
 CHEMICAL_OUT = ASSETS / "block/chemical_heap.png"
-GUI_OUT = ASSETS / "gui/item_heap.png"
 READOUT_OUT = ASSETS / "gui/readout.png"
 RACK_OUT = ASSETS / "block/horreum.png"
 RACK_GUI_OUT = ASSETS / "gui/horreum.png"
@@ -112,13 +111,11 @@ PANEL_LIGHT = "#FFFFFF"
 PANEL_DARK = "#555555"
 BEVEL = 3
 
-WELL = (7, 18, 162, 44)          # x, y, w, h - where the contents are described
 WELL_FILL = "#8B8B8B"
 WELL_DARK = "#373737"
 WELL_LIGHT = "#FFFFFF"
 
 SLOT = 18
-HEAP_SLOT = (16, 30)                              # inner top-left of the heap's own slot
 INVENTORY_ROWS = ((8, 84), (8, 102), (8, 120))    # inner top-left of each row
 HOTBAR = (8, 142)
 
@@ -168,21 +165,6 @@ def _sheet(pixels: dict) -> bytes:
         + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
         + chunk(b"IEND", b"")
     )
-
-
-def draw_screen() -> bytes:
-    pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
-    _panel(pixels, 0, 0)
-    _recess(pixels, *WELL)
-
-    # Slot frames are drawn one pixel out from the sixteen the item occupies. The
-    # heap's own slot sits inside the well, so it is drawn after it.
-    _recess(pixels, HEAP_SLOT[0] - 1, HEAP_SLOT[1] - 1, SLOT, SLOT)
-    for row in INVENTORY_ROWS + (HOTBAR,):
-        for column in range(9):
-            _recess(pixels, row[0] - 1 + column * SLOT, row[1] - 1, SLOT, SLOT)
-
-    return _sheet(pixels)
 
 
 # One frame, three glasses. The colour is the only thing that says which resource a
@@ -325,9 +307,6 @@ def main() -> None:
     CHEMICAL_OUT.write_bytes(draw(CHEMICAL_GLASS, CHEMICAL_SHEEN))
     print(f"wrote {CHEMICAL_OUT}")
 
-    GUI_OUT.parent.mkdir(parents=True, exist_ok=True)
-    GUI_OUT.write_bytes(draw_screen())
-    print(f"wrote {GUI_OUT}")
 
     READOUT_OUT.write_bytes(draw_readout())
     print(f"wrote {READOUT_OUT}")

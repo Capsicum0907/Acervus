@@ -9,12 +9,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.Slot;
 
 /**
- * A window onto a heap, shaped like a slot.
+ * A window onto a heap, shaped like a slot: the Out slot of the item heap's screen.
  *
  * <p>The point is that nothing new has to be learnt. Clicking takes a stack,
- * right-clicking takes half, clicking with something in hand puts it in,
- * shift-clicking moves as much as fits — all of that is the game's own handling of a
- * slot, and none of it is written here. What is written here is only the translation
+ * right-clicking takes half, shift-clicking moves as much as fits — all of that is the
+ * game's own handling of a slot, and none of it is written here. Putting things in is
+ * {@link IntakeSlot}'s job. What is written here is only the translation
  * between "a slot holding up to a stack" and "a heap holding billions".
  *
  * <p>That translation is one rule: <b>the slot shows a window, and setting it means
@@ -60,8 +60,7 @@ public class HeapSlot extends Slot {
 
     @Override
     public boolean mayPlace(ItemStack stack) {
-        Pile heap = heap();
-        return heap.accepts(stack) && heap.room() > 0;
+        return false;
     }
 
     /** A heap that does not give cannot be clicked out of, or shift-clicked out of. */
@@ -115,11 +114,6 @@ public class HeapSlot extends Slot {
      */
     @Override
     public ItemStack safeInsert(ItemStack stack, int increment) {
-        if (stack.isEmpty() || !mayPlace(stack)) {
-            return stack;
-        }
-        int taken = heap().insert(stack.copyWithCount(Math.min(increment, stack.getCount())), false);
-        stack.shrink(taken);
         return stack;
     }
 

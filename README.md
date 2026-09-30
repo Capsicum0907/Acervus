@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep twelve of them in.
-> 64 game tests pass headlessly, with and without Mekanism installed.
+> 65 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -125,18 +125,20 @@ like a race is really one of the rows above.
 
 ## Using one
 
-**Right-click it.** The screen has a slot, and the slot behaves like a slot:
+**Right-click it.** The screen is laid out like the other three heaps': what it
+holds, a bar, the count against the capacity, and a slot on each side.
 
 | | |
 |---|---|
-| click it | take a stack |
-| right-click it | take half a stack |
-| click it holding something | put that in |
-| shift-click it | move out as much as will fit in the inventory |
+| click **In** holding something | put that in |
+| right-click **In** holding something | put one in |
+| click **Out** | take a stack |
+| right-click **Out** | take half a stack |
+| shift-click **Out** | move out as much as will fit in the inventory |
 | shift-click something of yours | put all of it in |
 
 None of that is written by this mod. It is the game's own handling of a slot, and
-the reason the heap is presented as one: **it is an item, so it should be handled
+the reason the heap is presented as slots: **it is an item, so it should be handled
 the way items are handled.** An earlier version had buttons instead — take a stack,
 take one — and buttons are a new thing to learn for something the player could
 already do.
@@ -179,9 +181,9 @@ thing put into it with nothing on the block to say why.
 
 ### Fluid, Energy and Gas heaps
 
-These three share one screen: what the heap holds, a bar, and the amount against the
-capacity (`12.3K B / 1G B`). On each side is a slot for a container — a bucket, a
-tank, a battery.
+These three have the item heap's screen: what the heap holds, a bar, and the amount
+against the capacity (`12.3K B / 1G B`). Their two slots take a container — a
+bucket, a tank, a battery.
 
 | slot | what it does |
 |---|---|

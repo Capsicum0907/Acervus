@@ -14,7 +14,8 @@ import net.minecraft.world.level.Level;
 /**
  * The screen's half on the server, for a heap in the world or a heap in a hand.
  *
- * <p>The heap is presented as a slot — see {@link HeapSlot} — rather than as buttons.
+ * <p>The heap is presented as two slots — {@link IntakeSlot} to put things in and
+ * {@link HeapSlot} to take them out — rather than as buttons.
  * It is an item; it should be handled the way items are handled, with the clicks
  * everybody already knows. A button beside it would be a new thing to learn for
  * something the player can already do.
@@ -30,15 +31,17 @@ import net.minecraft.world.level.Level;
  */
 public class HeapMenu extends AbstractContainerMenu {
     /** Matches the slot positions in the generated screen texture. */
-    private static final int HEAP_X = 16;
-    private static final int HEAP_Y = 30;
+    private static final int IN_X = 8;
+    private static final int OUT_X = 150;
+    private static final int HEAP_Y = 38;
     private static final int INVENTORY_X = 8;
     private static final int INVENTORY_Y = 84;
     private static final int HOTBAR_Y = 142;
     private static final int SLOT = 18;
 
-    private static final int HEAP_SLOT = 0;
-    private static final int PLAYER_FIRST = 1;
+    private static final int IN_SLOT = 0;
+    private static final int OUT_SLOT = 1;
+    private static final int PLAYER_FIRST = 2;
     private static final int PLAYER_LAST = PLAYER_FIRST + 36;
 
     /** Where a heap is kept, and what that means for the screen over it. */
@@ -69,7 +72,8 @@ public class HeapMenu extends AbstractContainerMenu {
         // Added unconditionally, even when the heap has gone. The slot indices below
         // are counted from it, so a missing first slot would silently shift the range
         // that shift-clicking moves things into.
-        addSlot(new HeapSlot(source::pile, HEAP_X, HEAP_Y));
+        addSlot(new IntakeSlot(source::pile, IN_X, HEAP_Y));
+        addSlot(new HeapSlot(source::pile, OUT_X, HEAP_Y));
 
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
@@ -119,7 +123,10 @@ public class HeapMenu extends AbstractContainerMenu {
         }
 
         Pile heap = pile();
-        return index == HEAP_SLOT ? outward(heap) : inward(heap, slot);
+        if (index == IN_SLOT) {
+            return ItemStack.EMPTY;
+        }
+        return index == OUT_SLOT ? outward(heap) : inward(heap, slot);
     }
 
     /**
