@@ -18,6 +18,14 @@ public class ChemicalHeapRenderer implements BlockEntityRenderer<ChemicalHeapBlo
 
     private final Font font;
 
+    public static io.github.capsicum0907.acervus.client.HeapItemRenderer.Window window(
+            net.minecraft.core.HolderLookup.Provider registries, net.minecraft.world.item.ItemStack stack) {
+        HeldChemicalHeap heap = HeldChemicalHeap.of(registries, stack);
+        return heap.isEmpty() ? null
+                : new io.github.capsicum0907.acervus.client.HeapItemRenderer.Window(heap.contentTexture(),
+                        heap.contentTint());
+    }
+
     public ChemicalHeapRenderer(BlockEntityRendererProvider.Context context) {
         this.font = context.getFont();
     }

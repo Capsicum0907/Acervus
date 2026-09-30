@@ -17,6 +17,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
@@ -33,6 +35,29 @@ public final class AcervusClient {
             event.registerBlockEntityRenderer(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK_ENTITY.get(),
                     io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::new);
         }
+    }
+
+    public static void registerItemExtensions(RegisterClientExtensionsEvent event) {
+        event.registerItem(drawnBy(HeapItemRenderer::fluid), AcervusRegistry.FLUID_HEAP_ITEM.get());
+        if (Mods.mekanism()) {
+            event.registerItem(drawnBy(io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::window),
+                    io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get());
+        }
+    }
+
+    private static IClientItemExtensions drawnBy(
+            java.util.function.BiFunction<net.minecraft.core.HolderLookup.Provider, ItemStack, HeapItemRenderer.Window> contents) {
+        return new IClientItemExtensions() {
+            private HeapItemRenderer renderer;
+
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer == null) {
+                    renderer = new HeapItemRenderer(contents);
+                }
+                return renderer;
+            }
+        };
     }
 
     public static void registerItemProperties(FMLClientSetupEvent event) {

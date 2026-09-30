@@ -22,6 +22,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
@@ -103,6 +104,7 @@ public final class AcervusDataGen {
         protected void registerStatesAndModels() {
             glassBox(AcervusRegistry.HEAP);
             glassBox(AcervusRegistry.FLUID_HEAP);
+            drawnItem(AcervusRegistry.FLUID_HEAP);
             energyBox();
             // Solid: a rack holds heaps rather than contents, so there is nothing
             // to see through and no reason to pay for translucency.
@@ -113,6 +115,7 @@ public final class AcervusDataGen {
             // Mekanism in run/mods when regenerating, or these assets go stale.
             if (Mods.mekanism()) {
                 glassBox(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
+                drawnItem(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
             }
         }
 
@@ -120,6 +123,20 @@ public final class AcervusDataGen {
          * translucent, because the middle of the texture is see-through and the
          * default render type would draw those pixels as fully opaque.
          */
+        private void drawnItem(DeferredBlock<?> block) {
+            itemModels().getBuilder(block.getId().getPath())
+                    .parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"))
+                    .transforms()
+                    .transform(ItemDisplayContext.GUI).rotation(30, 225, 0).scale(0.625F).end()
+                    .transform(ItemDisplayContext.GROUND).translation(0, 3, 0).scale(0.25F).end()
+                    .transform(ItemDisplayContext.FIXED).scale(0.5F).end()
+                    .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND).rotation(75, 45, 0)
+                    .translation(0, 2.5F, 0).scale(0.375F).end()
+                    .transform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND).rotation(0, 45, 0).scale(0.4F).end()
+                    .transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND).rotation(0, 225, 0).scale(0.4F).end()
+                    .end();
+        }
+
         private void energyBox() {
             String name = AcervusRegistry.ENERGY_HEAP.getId().getPath();
             ResourceLocation side = modLoc("block/" + name + "_side");
