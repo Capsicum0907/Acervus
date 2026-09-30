@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import io.github.capsicum0907.acervus.Acervus;
+import io.github.capsicum0907.acervus.HeapColors;
 import io.github.capsicum0907.acervus.HorreumBlock;
 import io.github.capsicum0907.acervus.HorreumBlockEntity;
 
@@ -44,22 +45,23 @@ public class HorreumRenderer implements BlockEntityRenderer<HorreumBlockEntity> 
                         if (rack.heap(slot).isEmpty()) {
                             continue;
                         }
+                        int colour = HeapColors.of(rack.heap(slot));
                         float left = -HALF + (START + (slot % ACROSS) * STEP) / FACE;
                         float top = HALF - (START + (slot / ACROSS) * STEP) / FACE;
                         float right = left + SIZE / FACE;
                         float bottom = top - SIZE / FACE;
-                        corner(consumer, last, left, bottom, 0.0F, 1.0F, light);
-                        corner(consumer, last, right, bottom, 1.0F, 1.0F, light);
-                        corner(consumer, last, right, top, 1.0F, 0.0F, light);
-                        corner(consumer, last, left, top, 0.0F, 0.0F, light);
+                        corner(consumer, last, left, bottom, 0.0F, 1.0F, colour, light);
+                        corner(consumer, last, right, bottom, 1.0F, 1.0F, colour, light);
+                        corner(consumer, last, right, top, 1.0F, 0.0F, colour, light);
+                        corner(consumer, last, left, top, 0.0F, 0.0F, colour, light);
                     }
                 });
     }
 
     private static void corner(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float u, float v,
-            int light) {
+            int colour, int light) {
         consumer.addVertex(pose, x, y, 0.0F)
-                .setColor(255, 255, 255, 255)
+                .setColor(colour >> 16 & 0xFF, colour >> 8 & 0xFF, colour & 0xFF, 255)
                 .setUv(u, v)
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setLight(light)

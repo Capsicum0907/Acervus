@@ -178,6 +178,8 @@ FRONT_SCALE = 4
 RACK_LAMPS_ACROSS = 3
 RACK_LAMP = 12
 RACK_LAMP_GAP = 4
+RACK_LAMP_BODY = "#FFFFFF"
+RACK_LAMP_EDGE = "#B4B4B4"
 CHEMICAL_GLASS = "#8FCF8A"
 CHEMICAL_SHEEN = "#D6F2D2"
 
@@ -251,7 +253,7 @@ def draw_rack_lamp() -> bytes:
     for x in range(SIZE):
         for y in range(SIZE):
             edge = x < FRONT_SCALE // 2 or y < FRONT_SCALE // 2 or x >= SIZE - FRONT_SCALE // 2 or y >= SIZE - FRONT_SCALE // 2
-            pixels[(x, y)] = _rgb(LAMP_ON_EDGE if edge else LAMP_ON) + (255,)
+            pixels[(x, y)] = _rgb(RACK_LAMP_EDGE if edge else RACK_LAMP_BODY) + (255,)
     return _png(pixels)
 
 RACK_SLOTS = (62, 18)
