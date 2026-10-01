@@ -22,7 +22,6 @@ Heap は壊しても中身を保ちます。Item Heap をインベントリに�
 |---|---|
 | [Heap と Horreum](docs/heaps.ja.md) | 各ブロックの働きと使い方 |
 | [設定](docs/config.ja.md) | すべての設定項目 |
-| [背景](docs/background.ja.md) | 今の作りになっている理由 |
 | [設計メモ](docs/design.ja.md) | ソースについてのメモ（ファイルごと） |
 
 ## 動作環境

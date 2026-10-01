@@ -23,7 +23,6 @@ picks up the item it holds.
 |---|---|
 | [Heaps and the Horreum](docs/heaps.md) | What each block does and how to use it |
 | [Config](docs/config.md) | Every setting |
-| [Background](docs/background.md) | Why it works the way it does |
 | [Design notes](docs/design.md) | Notes on the source, file by file |
 
 ## Requirements
