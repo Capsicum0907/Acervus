@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep nine of them in.
-> 78 game tests pass headlessly, with and without Mekanism installed.
+> 79 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -388,9 +388,9 @@ Nothing about RS was the limit; the adapter between them was. Point an External
 Storage at a heap or at a Horreum and the network is told the real total.
 
 RS uses every external storage provider that applies to a block and adds up what they
-report, and its own item handler provider always applies to a heap. So the heap's
-provider reports only what lies beyond an int — the part the item handler cannot
-carry — and the two together come to the heap's real count. If a later RS stops
+report, and its own item and fluid handler providers always apply to a heap. So the
+heap's provider reports only what lies beyond an int — the part those handlers cannot
+carry — and together they come to the heap's real count, items and fluids alike. If a later RS stops
 adding them up that way, the grid will show it: after updating RS, compare a heap's
 count with the grid's.
 

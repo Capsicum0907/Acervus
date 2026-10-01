@@ -2883,7 +2883,8 @@ report, without removing duplicates. Its own item handler provider answers for e
 heap, because a heap has an item handler for hoppers and pipes, and it reports each
 slot capped at an int. Reporting the whole count here as well counted every heap
 twice. So this provider reports `Counts.beyondAnInt(count)`, the part the item handler
-cannot carry, and the sum is the real count. A game test pins the heap's side of that:
+cannot carry, and the sum is the real count. Fluid heaps are read the same way, in
+millibuckets, against RS's fluid handler provider. A game test pins the heap's side of that:
 what a pipe sees plus what only a long can carry is the whole count.
 ## `rs/RefinedStorage.java`
 

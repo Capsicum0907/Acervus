@@ -1305,6 +1305,31 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aFluidPipeAndTheLongReaderAddUpToTheWholeAmount(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        CompoundTag tag = new CompoundTag();
+        tag.put("Sample", new FluidStack(Fluids.WATER, 1).save(registries));
+        tag.putLong("Amount", 42_900_000_000L);
+
+        FluidHeapBlockEntity heap = fluidHeap(helper);
+        heap.loadWithComponents(tag, registries);
+        long seenByAPipe = heap.handler().getFluidInTank(0).getAmount();
+        check(seenByAPipe == Integer.MAX_VALUE, "a pipe should see at most an int of millibuckets, not " + seenByAPipe);
+        check(seenByAPipe + Counts.beyondAnInt(heap.amount()) == 42_900_000_000L,
+                "and with what only longs can carry, all of it");
+
+        HorreumBlockEntity rack = rack(helper, OTHER);
+        ItemStack tank = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        BlockItem.setBlockEntityData(tank, AcervusRegistry.FLUID_HEAP_ENTITY.get(), tag);
+        rack.heaps().set(0, tank);
+        long rackPipe = rack.fluids().getFluidInTank(0).getAmount();
+        long rackLong = Counts.beyondAnInt(HeldFluidHeap.stored(registries, tank).amount());
+        check(rackPipe + rackLong == 42_900_000_000L, "a rack's fluid heap should add up the same way, not "
+                + (rackPipe + rackLong));
+        helper.succeed();
+    }
+
     private static CompoundTag lost(long amount) {
         CompoundTag sample = new CompoundTag();
         sample.putString("id", "nonexistent:thing");
