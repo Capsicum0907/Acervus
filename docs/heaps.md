@@ -12,7 +12,7 @@ English | [日本語](heaps.ja.md)
 | Gas Heap | 4 iron blocks, 2 nether stars, 2 netherite ingots, 1 block of osmium (Mekanism only) |
 | Horreum | 4 netherite ingots, 4 nether stars, 1 empty heap of any kind |
 
-Only an empty heap can be used to make a Horreum.
+Only an empty, unlocked heap can be used to make a Horreum.
 
 ## The screen
 
