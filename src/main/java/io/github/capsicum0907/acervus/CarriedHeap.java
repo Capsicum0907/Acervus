@@ -127,11 +127,11 @@ public final class CarriedHeap implements Pile {
         if (stack.isEmpty()) {
             return false;
         }
-        return sample().isEmpty() || ItemStack.isSameItemSameComponents(sample(), stack);
+        return sample().isEmpty() || Compression.sameKind(sample(), stack);
     }
 
     public boolean holds(ItemStack stack) {
-        return !isEmpty() && !stack.isEmpty() && ItemStack.isSameItemSameComponents(sample(), stack);
+        return !isEmpty() && !stack.isEmpty() && Compression.sameKind(sample(), stack);
     }
 
     @Override
@@ -139,21 +139,22 @@ public final class CarriedHeap implements Pile {
         if (!accepts(stack)) {
             return 0;
         }
-        int taken = (int) Math.min(room(), stack.getCount());
+        CompoundTag tag = settled();
+        boolean first = sample().isEmpty();
+        long registered = first ? Compression.unitOf(stack.getItem()) : unit(tag);
+        long each = first || stack.is(sample().getItem()) ? registered : Compression.unitOf(stack.getItem());
+        long held = first ? 0L : amount(tag);
+        int taken = (int) Math.min(roomFor(stack), stack.getCount());
         if (taken <= 0 || simulate) {
             return Math.max(taken, 0);
         }
 
         ItemStack heap = where.get();
-        CompoundTag tag = settled();
-        if (sample().isEmpty()) {
+        if (first) {
             tag.put(SAMPLE, stack.copyWithCount(1).save(registries));
-            tag.putLong(AMOUNT, 0L);
-            tag.putLong(UNIT, Compression.unitOf(stack.getItem()));
         }
-        long unit = unit(tag);
-        tag.putLong(AMOUNT, amount(tag) + taken * unit);
-        tag.putLong(UNIT, unit);
+        tag.putLong(AMOUNT, held + taken * each);
+        tag.putLong(UNIT, registered);
         tag.remove(LEGACY_COUNT);
         write(heap, tag);
         return taken;
@@ -189,6 +190,19 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public void setChanged() {
+    }
+
+    @Override
+    public long roomFor(ItemStack stack) {
+        if (!accepts(stack)) {
+            return 0L;
+        }
+        CompoundTag tag = settled();
+        boolean first = sample().isEmpty();
+        long registered = first ? Compression.unitOf(stack.getItem()) : unit(tag);
+        long each = first || stack.is(sample().getItem()) ? registered : Compression.unitOf(stack.getItem());
+        long space = Math.max(0L, Compression.times(capacity(), registered) - (first ? 0L : amount(tag)));
+        return space / each;
     }
 
     @Override

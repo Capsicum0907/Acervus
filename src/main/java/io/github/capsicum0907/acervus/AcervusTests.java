@@ -1156,6 +1156,42 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aHeapTakesEveryFormOfWhatItHolds(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.GOLD_INGOT, 2), false);
+        check(heap.insert(new ItemStack(Items.GOLD_NUGGET, 9), false) == 9, "nuggets should go into a heap of ingots");
+        check(heap.insert(new ItemStack(Items.GOLD_BLOCK), false) == 1, "and so should a block");
+        check(heap.count() == 12L, "two ingots, nine nuggets and a block are twelve ingots, not " + heap.count());
+        check(heap.holds(new ItemStack(Items.GOLD_NUGGET)), "a carried heap of ingots should pick up nuggets");
+        check(!heap.accepts(new ItemStack(Items.IRON_NUGGET)), "but not a different metal");
+        ItemStack named = new ItemStack(Items.GOLD_NUGGET);
+        named.set(DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Lucky"));
+        check(!heap.accepts(named), "and not a nugget that is more than a nugget");
+
+        ItemStack out = heap.extract(64, false);
+        check(out.is(Items.GOLD_INGOT) && out.getCount() == 12, "what comes out is ingots, all twelve, not " + out);
+        check(heap.isEmpty(), "leaving it empty");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aLargerFormIsRefusedWhenItWouldNotFit(GameTestHelper helper) {
+        long was = AcervusConfig.CAPACITY.get();
+        try {
+            AcervusConfig.CAPACITY.set(2L);
+            HeapBlockEntity heap = place(helper);
+            heap.insert(new ItemStack(Items.GOLD_INGOT), false);
+            check(heap.roomFor(new ItemStack(Items.GOLD_BLOCK)) == 0L, "a block is nine ingots and only one more fits");
+            check(heap.insert(new ItemStack(Items.GOLD_BLOCK), false) == 0, "so the block must be refused");
+            check(heap.roomFor(new ItemStack(Items.GOLD_NUGGET)) == 9L, "while nine nuggets still fit");
+            check(heap.count() == 1L, "and nothing is lost, leaving " + heap.count());
+        } finally {
+            AcervusConfig.CAPACITY.set(was);
+        }
+        helper.succeed();
+    }
+
     private static CompoundTag goldTag(HolderLookup.Provider registries, long amount, Long unit) {
         CompoundTag tag = new CompoundTag();
         tag.put("Sample", new ItemStack(Items.GOLD_INGOT).save(registries));

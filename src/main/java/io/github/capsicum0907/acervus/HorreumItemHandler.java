@@ -69,6 +69,6 @@ public class HorreumItemHandler implements IItemHandler {
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
         CarriedHeap heap = at(slot);
-        return heap != null && heap.accepts(stack) && heap.room() > 0;
+        return heap != null && heap.roomFor(stack) > 0;
     }
 }

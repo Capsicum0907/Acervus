@@ -49,6 +49,21 @@ public final class Compression {
         return 1L;
     }
 
+    public static boolean sameKind(ItemStack held, ItemStack offered) {
+        if (ItemStack.isSameItemSameComponents(held, offered)) {
+            return true;
+        }
+        if (!ready || !held.getComponentsPatch().isEmpty() || !offered.getComponentsPatch().isEmpty()) {
+            return false;
+        }
+        for (Form form : chainOf(held.getItem())) {
+            if (form.item() == offered.getItem()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static long rebase(long amount, long from, long to) {
         if (from == to || from <= 0L || to <= 0L) {
             return amount;

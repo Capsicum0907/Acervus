@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep nine of them in.
-> 70 game tests pass headlessly, with and without Mekanism installed.
+> 74 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -175,6 +175,13 @@ Three digits is also what makes grouping unnecessary in the short form: there is
 never a fourth digit to separate. Both forms live in one place, `Counts`, because a
 block and its screen disagreeing about the same contents is the kind of thing nobody
 notices and everybody distrusts.
+
+**A heap takes every form of what it holds.** Where nine (or four) of one item craft
+into one of another and back again at no cost — nuggets, ingots and blocks of a metal,
+slime balls and slime blocks — a heap of one of them takes the others too, counted in
+the form that went in first. What comes out, to a hand or to a pipe, is always that
+first form. The links are read from the game's own recipes, so other mods' forms are
+included.
 
 **An emptied heap forgets what it held** — unless it is locked. One that remembered
 would refuse the next thing put into it with nothing on the block to say why.

@@ -25,6 +25,10 @@ public interface Pile {
         return true;
     }
 
+    default long roomFor(ItemStack stack) {
+        return accepts(stack) ? room() : 0L;
+    }
+
     default boolean locked() {
         return false;
     }

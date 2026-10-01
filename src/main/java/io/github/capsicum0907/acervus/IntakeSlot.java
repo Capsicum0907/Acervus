@@ -31,7 +31,7 @@ public class IntakeSlot extends Slot {
     @Override
     public boolean mayPlace(ItemStack stack) {
         Pile pile = heap.get();
-        return pile.accepts(stack) && pile.room() > 0;
+        return pile.roomFor(stack) > 0;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class IntakeSlot extends Slot {
 
     @Override
     public int getMaxStackSize(ItemStack stack) {
-        return (int) Math.min(heap.get().room(), Integer.MAX_VALUE);
+        return (int) Math.min(heap.get().roomFor(stack), Integer.MAX_VALUE);
     }
 
     @Override

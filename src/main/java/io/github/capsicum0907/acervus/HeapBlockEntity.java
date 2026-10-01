@@ -75,11 +75,11 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         if (stack.isEmpty()) {
             return false;
         }
-        return sample.isEmpty() || ItemStack.isSameItemSameComponents(sample, stack);
+        return sample.isEmpty() || Compression.sameKind(sample, stack);
     }
 
     public boolean holds(ItemStack stack) {
-        return !isEmpty() && !stack.isEmpty() && ItemStack.isSameItemSameComponents(sample, stack);
+        return !isEmpty() && !stack.isEmpty() && Compression.sameKind(sample, stack);
     }
 
     public int insert(ItemStack stack, boolean simulate) {
@@ -87,7 +87,8 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
             return 0;
         }
         settleUnit();
-        int taken = (int) Math.min(room(), stack.getCount());
+        long each = each(stack);
+        int taken = (int) Math.min(roomFor(stack), stack.getCount());
         if (taken <= 0 || simulate) {
             return Math.max(taken, 0);
         }
@@ -97,7 +98,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
             amount = 0L;
             unit = Compression.unitOf(sample.getItem());
         }
-        amount += taken * unit;
+        amount += taken * each;
         changed();
         return taken;
     }
@@ -144,6 +145,24 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
             sample = ItemStack.EMPTY;
         }
         changed();
+    }
+
+    @Override
+    public long roomFor(ItemStack stack) {
+        if (!accepts(stack)) {
+            return 0L;
+        }
+        boolean first = sample.isEmpty();
+        long registered = first ? Compression.unitOf(stack.getItem()) : unit;
+        long space = Math.max(0L, Compression.times(capacity(), registered) - (first ? 0L : amount));
+        return space / each(stack);
+    }
+
+    private long each(ItemStack stack) {
+        if (sample.isEmpty() || stack.is(sample.getItem())) {
+            return sample.isEmpty() ? Compression.unitOf(stack.getItem()) : unit;
+        }
+        return Compression.unitOf(stack.getItem());
     }
 
     private void settleUnit() {
