@@ -87,7 +87,7 @@ public final class HeldChemicalHeap extends Held {
     @Override
     public int contentTint() {
         ChemicalStack sample = sample();
-        return sample.isEmpty() ? 0xFFFFFFFF : sample.getChemicalTint();
+        return sample.isEmpty() ? 0xFFFFFFFF : 0xFF000000 | sample.getChemicalTint();
     }
 
     public long insert(ChemicalStack stack, boolean simulate) {
