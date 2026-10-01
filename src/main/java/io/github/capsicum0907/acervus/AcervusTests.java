@@ -1212,6 +1212,61 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void contentsThatCannotBeReadAreKeptAndNeverMoved(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+
+        HeapBlockEntity heap = place(helper);
+        heap.loadWithComponents(lost(500L), registries);
+        check(heap.unreadable() && !heap.isEmpty(), "an item heap of something no longer in the game is not empty");
+        check(!heap.accepts(new ItemStack(Items.DIAMOND)), "and takes nothing");
+        check(heap.extract(64, false).isEmpty() && heap.extract(64, false, true).isEmpty(), "and gives nothing");
+        heap.lock(true);
+        check(!heap.locked(), "and cannot be locked");
+        check(kept(heap.saveWithoutMetadata(registries)), "and is written back exactly as it was");
+
+        ItemStack item = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        BlockItem.setBlockEntityData(item, AcervusRegistry.HEAP_ENTITY.get(), lost(500L));
+        CarriedHeap carried = CarriedHeap.stored(registries, item);
+        check(carried.unreadable() && carried.insert(new ItemStack(Items.DIAMOND), false) == 0,
+                "a carried one takes nothing either");
+        check(carried.extract(64, false).isEmpty(), "and gives nothing");
+        check(kept(item.get(DataComponents.BLOCK_ENTITY_DATA).copyTag()), "and keeps its data");
+
+        helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity fluid)) {
+            throw new GameTestAssertException("placing a fluid heap should have made one");
+        }
+        fluid.loadWithComponents(lost(500L), registries);
+        check(fluid.unreadable() && !fluid.isEmpty(), "a fluid heap of something gone is not empty");
+        check(fluid.insert(new FluidStack(Fluids.WATER, 1_000), false) == 0, "and takes nothing");
+        check(fluid.extract(1_000, false).isEmpty(), "and gives nothing");
+        check(kept(fluid.saveWithoutMetadata(registries)), "and is written back exactly as it was");
+
+        ItemStack tank = new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get());
+        BlockItem.setBlockEntityData(tank, AcervusRegistry.FLUID_HEAP_ENTITY.get(), lost(500L));
+        HeldFluidHeap held = HeldFluidHeap.stored(registries, tank);
+        check(held.unreadable() && held.insert(new FluidStack(Fluids.WATER, 1_000), false) == 0,
+                "a carried fluid heap takes nothing either");
+        check(held.extract(1_000, false).isEmpty() && kept(tank.get(DataComponents.BLOCK_ENTITY_DATA).copyTag()),
+                "and gives nothing and keeps its data");
+        helper.succeed();
+    }
+
+    private static CompoundTag lost(long amount) {
+        CompoundTag sample = new CompoundTag();
+        sample.putString("id", "nonexistent:thing");
+        sample.putInt("count", 1);
+        CompoundTag tag = new CompoundTag();
+        tag.put("Sample", sample);
+        tag.putLong("Amount", amount);
+        return tag;
+    }
+
+    private static boolean kept(CompoundTag tag) {
+        return "nonexistent:thing".equals(tag.getCompound("Sample").getString("id")) && tag.getLong("Amount") == 500L;
+    }
+
     private static CompoundTag goldTag(HolderLookup.Provider registries, long amount, Long unit) {
         CompoundTag tag = new CompoundTag();
         tag.put("Sample", new ItemStack(Items.GOLD_INGOT).save(registries));

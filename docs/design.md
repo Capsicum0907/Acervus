@@ -1400,6 +1400,15 @@ getLong reads a tag that was written as an int too, so a heap saved before the t
 
 The client is sent the same fields, because it draws them.
 
+
+**Contents the game cannot read**
+
+When the saved kind cannot be parsed — the mod that adds it is gone — the heap keeps
+the raw sample tag and its amount instead of reading the amount as zero, and writes
+them back unchanged. Until the kind is readable again it takes nothing and gives
+nothing on any path, and it cannot be locked or unlocked. Putting the mod back
+restores it, because nothing about it was ever rewritten. The fluid heap and the
+carried forms of both do the same.
 ## `HeapBlockItem.java`
 
 **`public class HeapBlockItem extends ContentsBlockItem`**

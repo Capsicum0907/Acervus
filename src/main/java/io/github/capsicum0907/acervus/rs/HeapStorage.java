@@ -53,7 +53,7 @@ public class HeapStorage implements ExternalStorageProvider {
     public Iterator<ResourceAmount> iterator() {
         List<ResourceAmount> amounts = new ArrayList<>();
         for (Pile pile : piles()) {
-            if (pile.count() > 0) {
+            if (pile.count() > 0 && !pile.sample().isEmpty()) {
                 amounts.add(new ResourceAmount(ItemResource.ofItemStack(pile.sample()), pile.count()));
             }
         }

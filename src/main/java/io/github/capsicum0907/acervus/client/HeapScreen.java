@@ -30,7 +30,9 @@ public class HeapScreen extends ReadoutPanel<HeapMenu> {
     @Override
     protected void drawContents(GuiGraphics graphics, Heaped heap) {
         Pile pile = menu.pile();
-        if (!pile.isEmpty()) {
+        if (pile.unreadable()) {
+            graphics.blit(leftPos + CONTENT_X, topPos + CONTENT_Y, 0, CONTENT_SIZE, CONTENT_SIZE, Missing.sprite());
+        } else if (!pile.isEmpty()) {
             graphics.renderItem(pile.sample(), leftPos + CONTENT_X, topPos + CONTENT_Y);
         }
     }
@@ -79,6 +81,9 @@ public class HeapScreen extends ReadoutPanel<HeapMenu> {
 
         @Override
         public Component contentName() {
+            if (pile.unreadable()) {
+                return Component.literal(pile.unreadableId());
+            }
             return pile.isEmpty() ? Component.empty() : pile.sample().getHoverName();
         }
 

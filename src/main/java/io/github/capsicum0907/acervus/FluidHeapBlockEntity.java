@@ -27,6 +27,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     private FluidStack sample = FluidStack.EMPTY;
     private long amount;
     private boolean locked;
+    private CompoundTag unreadable;
 
     private final FluidHeapHandler handler = new FluidHeapHandler(this);
 
@@ -35,7 +36,17 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     }
 
     public boolean isEmpty() {
-        return sample.isEmpty() || amount <= 0;
+        return (sample.isEmpty() && unreadable == null) || amount <= 0;
+    }
+
+    @Override
+    public boolean unreadable() {
+        return unreadable != null;
+    }
+
+    @Override
+    public String unreadableId() {
+        return unreadable == null ? "" : unreadable.getString("id");
     }
 
     public FluidStack sample() {
@@ -66,14 +77,14 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     }
 
     public boolean accepts(FluidStack stack) {
-        if (stack.isEmpty()) {
+        if (stack.isEmpty() || unreadable != null) {
             return false;
         }
         return sample.isEmpty() || FluidStack.isSameFluidSameComponents(sample, stack);
     }
 
     public boolean holds(FluidStack stack) {
-        return !isEmpty() && !stack.isEmpty() && FluidStack.isSameFluidSameComponents(sample, stack);
+        return unreadable == null && !isEmpty() && !stack.isEmpty() && FluidStack.isSameFluidSameComponents(sample, stack);
     }
 
     public int insert(FluidStack stack, boolean simulate) {
@@ -95,7 +106,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     }
 
     public FluidStack extract(int wanted, boolean simulate) {
-        if (isEmpty() || wanted <= 0) {
+        if (unreadable != null || isEmpty() || wanted <= 0) {
             return FluidStack.EMPTY;
         }
         int taken = (int) Math.min(Math.min(wanted, amount), Integer.MAX_VALUE);
@@ -192,6 +203,9 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
 
     @Override
     public Component contentName() {
+        if (unreadable != null) {
+            return Component.literal(unreadableId());
+        }
         return sample.isEmpty() ? Component.empty() : sample.getHoverName();
     }
 
@@ -227,7 +241,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
 
     @Override
     public void lock(boolean on) {
-        if (on == locked || (on && !canLock())) {
+        if (unreadable != null || on == locked || (on && !canLock())) {
             return;
         }
         locked = on;
@@ -253,6 +267,8 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         out.save(tag, registries);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
+        } else if (unreadable != null) {
+            tag.put(SAMPLE, unreadable.copy());
         }
     }
 
@@ -262,8 +278,10 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         sample = tag.contains(SAMPLE)
                 ? FluidStack.parse(registries, tag.getCompound(SAMPLE)).orElse(FluidStack.EMPTY)
                 : FluidStack.EMPTY;
-        locked = tag.getBoolean(LOCKED) && !sample.isEmpty();
-        amount = sample.isEmpty() ? 0L : tag.getLong(AMOUNT);
+        unreadable = tag.contains(SAMPLE) && sample.isEmpty() ? tag.getCompound(SAMPLE).copy() : null;
+        boolean known = !sample.isEmpty() || unreadable != null;
+        locked = tag.getBoolean(LOCKED) && known;
+        amount = known ? tag.getLong(AMOUNT) : 0L;
         in.load(tag, registries);
         out.load(tag, registries);
     }

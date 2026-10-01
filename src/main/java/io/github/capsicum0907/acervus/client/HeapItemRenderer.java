@@ -34,7 +34,11 @@ public class HeapItemRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     public static Window fluid(HolderLookup.Provider registries, ItemStack stack) {
-        FluidStack sample = HeldFluidHeap.of(registries, stack).sample();
+        HeldFluidHeap held = HeldFluidHeap.of(registries, stack);
+        if (held.unreadable()) {
+            return new Window(Missing.LOCATION, 0xFFFFFFFF);
+        }
+        FluidStack sample = held.sample();
         if (sample.isEmpty()) {
             return null;
         }

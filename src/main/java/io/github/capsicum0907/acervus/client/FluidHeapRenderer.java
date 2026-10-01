@@ -33,12 +33,17 @@ public class FluidHeapRenderer implements BlockEntityRenderer<FluidHeapBlockEnti
             return;
         }
 
-        FluidStack sample = heap.sample();
-        IClientFluidTypeExtensions look = IClientFluidTypeExtensions.of(sample.getFluid());
-        TextureAtlasSprite sprite = Minecraft.getInstance()
-                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(look.getStillTexture(sample));
-        BlockSurface.fillWindows(pose, buffers, heap.getLevel(), heap.getBlockPos(), sprite,
-                0xFF000000 | look.getTintColor(sample), packedLight);
+        if (heap.unreadable()) {
+            BlockSurface.fillWindows(pose, buffers, heap.getLevel(), heap.getBlockPos(), Missing.sprite(),
+                    0xFFFFFFFF, packedLight);
+        } else {
+            FluidStack sample = heap.sample();
+            IClientFluidTypeExtensions look = IClientFluidTypeExtensions.of(sample.getFluid());
+            TextureAtlasSprite sprite = Minecraft.getInstance()
+                    .getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(look.getStillTexture(sample));
+            BlockSurface.fillWindows(pose, buffers, heap.getLevel(), heap.getBlockPos(), sprite,
+                    0xFF000000 | look.getTintColor(sample), packedLight);
+        }
 
         BlockSurface.onEachSide(pose, heap.getLevel(), heap.getBlockPos(), packedLight,
                 (side, light) -> draw(Counts.buckets(heap.amount()), side, buffers, light));

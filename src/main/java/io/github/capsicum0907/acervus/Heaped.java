@@ -41,6 +41,14 @@ public interface Heaped {
         return true;
     }
 
+    default boolean unreadable() {
+        return false;
+    }
+
+    default String unreadableId() {
+        return "";
+    }
+
     default boolean locked() {
         return false;
     }

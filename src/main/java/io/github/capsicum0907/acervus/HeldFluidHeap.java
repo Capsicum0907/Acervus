@@ -48,11 +48,24 @@ public final class HeldFluidHeap extends Held {
 
     @Override
     public boolean isEmpty() {
-        return sample().isEmpty() || amount() <= 0;
+        return (sample().isEmpty() && !unreadable()) || amount() <= 0;
+    }
+
+    @Override
+    public boolean unreadable() {
+        return tag().contains(SAMPLE) && sample().isEmpty();
+    }
+
+    @Override
+    public String unreadableId() {
+        return unreadable() ? tag().getCompound(SAMPLE).getString("id") : "";
     }
 
     @Override
     public Component contentName() {
+        if (unreadable()) {
+            return Component.literal(unreadableId());
+        }
         FluidStack sample = sample();
         return sample.isEmpty() ? Component.empty() : sample.getHoverName();
     }
@@ -79,7 +92,7 @@ public final class HeldFluidHeap extends Held {
 
     public int insert(FluidStack stack, boolean simulate) {
         FluidStack sample = sample();
-        if (stack.isEmpty() || (!sample.isEmpty() && !FluidStack.isSameFluidSameComponents(sample, stack))) {
+        if (stack.isEmpty() || unreadable() || (!sample.isEmpty() && !FluidStack.isSameFluidSameComponents(sample, stack))) {
             return 0;
         }
         int taken = (int) Math.min(room(), stack.getAmount());
@@ -98,7 +111,7 @@ public final class HeldFluidHeap extends Held {
     }
 
     public FluidStack extract(int wanted, boolean simulate) {
-        if (!gives() || isEmpty() || wanted <= 0) {
+        if (!gives() || unreadable() || isEmpty() || wanted <= 0) {
             return FluidStack.EMPTY;
         }
         int taken = (int) Math.min(Math.min(wanted, amount()), Integer.MAX_VALUE);

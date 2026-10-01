@@ -39,6 +39,14 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
             return;
         }
 
+        if (heap.unreadable()) {
+            BlockSurface.fillWindows(pose, buffers, heap.getLevel(), heap.getBlockPos(), Missing.sprite(),
+                    0xFFFFFFFF, packedLight);
+            BlockSurface.onEachSide(pose, heap.getLevel(), heap.getBlockPos(), packedLight,
+                    (side, light) -> drawCount(heap.count(), side, buffers, light));
+            return;
+        }
+
         ItemStack sample = heap.sample();
         pose.pushPose();
         pose.translate(0.5, 0.5, 0.5);

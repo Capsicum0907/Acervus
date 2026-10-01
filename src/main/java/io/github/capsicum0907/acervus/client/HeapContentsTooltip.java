@@ -80,16 +80,27 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
         return rows;
     }
 
+    private static Row unreadable(String id, String amount) {
+        return new Row(ItemStack.EMPTY, FluidStack.EMPTY, Missing.LOCATION, true, 0xFFFFFFFF,
+                Component.literal(id), amount);
+    }
+
     private static Row row(ItemStack heap, HolderLookup.Provider registries) {
         Item kind = heap.getItem();
 
         if (kind == AcervusRegistry.HEAP_ITEM.get()) {
             CarriedHeap held = CarriedHeap.of(registries, heap);
+            if (held.unreadable()) {
+                return unreadable(held.unreadableId(), Counts.exact(held.count()));
+            }
             return held.isEmpty() ? null : new Row(held.sample(), FluidStack.EMPTY, null, false, 0,
                     held.sample().getHoverName(), Counts.exact(held.count()));
         }
         if (kind == AcervusRegistry.FLUID_HEAP_ITEM.get()) {
             HeldFluidHeap held = HeldFluidHeap.of(registries, heap);
+            if (held.unreadable()) {
+                return unreadable(held.unreadableId(), held.brief(held.amount()));
+            }
             return held.isEmpty() ? null : new Row(ItemStack.EMPTY, held.sample(), null, false, 0,
                     held.contentName(), held.brief(held.amount()));
         }

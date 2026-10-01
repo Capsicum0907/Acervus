@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep nine of them in.
-> 75 game tests pass headlessly, with and without Mekanism installed.
+> 76 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -187,6 +187,11 @@ Inside, a heap counts in the smallest form, so nothing is rounded away: four nug
 put into a heap of ingots stay as four nuggets. **Click the word Out** on the screen to
 switch the Out slot to the smallest form and take those out, or anything else in that
 form. The slot shows which form it is giving.
+
+**A heap whose contents the game no longer knows keeps them.** If the mod that adds
+what a heap holds is removed, the heap shows the missing-texture checkerboard and the
+id it held, takes nothing and gives nothing, by hand or by pipe. Put the mod back and
+it is as it was.
 
 **An emptied heap forgets what it held** — unless it is locked. One that remembered
 would refuse the next thing put into it with nothing on the block to say why.

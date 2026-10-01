@@ -66,7 +66,7 @@ public abstract class Held implements Heaped {
 
     @Override
     public void lock(boolean on) {
-        if (on == locked() || (on && !canLock())) {
+        if (unreadable() || on == locked() || (on && !canLock())) {
             return;
         }
         CompoundTag tag = tag();

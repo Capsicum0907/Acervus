@@ -27,6 +27,8 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     private long amount;
     private long unit = 1L;
     private Item smallest;
+    private CompoundTag unreadable;
+    private String unreadableSmallest;
     private boolean locked;
 
     private final HeapItemHandler handler = new HeapItemHandler(this);
@@ -36,7 +38,17 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public boolean isEmpty() {
-        return sample.isEmpty() || amount <= 0;
+        return (sample.isEmpty() && unreadable == null) || amount <= 0;
+    }
+
+    @Override
+    public boolean unreadable() {
+        return unreadable != null;
+    }
+
+    @Override
+    public String unreadableId() {
+        return unreadable == null ? "" : unreadable.getString("id");
     }
 
     public ItemStack sample() {
@@ -77,14 +89,14 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public boolean accepts(ItemStack stack) {
-        if (stack.isEmpty()) {
+        if (stack.isEmpty() || unreadable != null) {
             return false;
         }
         return sample.isEmpty() || Compression.sameKind(sample, stack);
     }
 
     public boolean holds(ItemStack stack) {
-        return !isEmpty() && !stack.isEmpty() && Compression.sameKind(sample, stack);
+        return unreadable == null && !isEmpty() && !stack.isEmpty() && Compression.sameKind(sample, stack);
     }
 
     public int insert(ItemStack stack, boolean simulate) {
@@ -110,7 +122,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public ItemStack extract(int amount, boolean simulate) {
-        if (isEmpty() || amount <= 0) {
+        if (unreadable != null || isEmpty() || amount <= 0) {
             return ItemStack.EMPTY;
         }
         settleUnit();
@@ -144,7 +156,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
 
     @Override
     public void lock(boolean on) {
-        if (on == locked || (on && !canLock())) {
+        if (unreadable != null || on == locked || (on && !canLock())) {
             return;
         }
         locked = on;
@@ -225,7 +237,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         if (!least || !hasSmaller()) {
             return extract(wanted, simulate);
         }
-        if (isEmpty() || wanted <= 0) {
+        if (unreadable != null || isEmpty() || wanted <= 0) {
             return ItemStack.EMPTY;
         }
         settleUnit();
@@ -263,10 +275,14 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         tag.putLong(UNIT, unit);
         if (smallest != null) {
             tag.putString(SMALLEST, BuiltInRegistries.ITEM.getKey(smallest).toString());
+        } else if (unreadableSmallest != null) {
+            tag.putString(SMALLEST, unreadableSmallest);
         }
         tag.putBoolean(LOCKED, locked);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
+        } else if (unreadable != null) {
+            tag.put(SAMPLE, unreadable.copy());
         }
     }
 
@@ -276,8 +292,11 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         sample = tag.contains(SAMPLE)
                 ? ItemStack.parse(registries, tag.getCompound(SAMPLE)).orElse(ItemStack.EMPTY)
                 : ItemStack.EMPTY;
-        locked = tag.getBoolean(LOCKED) && !sample.isEmpty();
-        amount = sample.isEmpty() ? 0L
+        unreadable = tag.contains(SAMPLE) && sample.isEmpty() ? tag.getCompound(SAMPLE).copy() : null;
+        unreadableSmallest = unreadable != null && tag.contains(SMALLEST) ? tag.getString(SMALLEST) : null;
+        boolean known = !sample.isEmpty() || unreadable != null;
+        locked = tag.getBoolean(LOCKED) && known;
+        amount = !known ? 0L
                 : tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
         unit = Math.max(1L, tag.contains(UNIT) ? tag.getLong(UNIT) : 1L);
         ResourceLocation least = tag.contains(SMALLEST) ? ResourceLocation.tryParse(tag.getString(SMALLEST)) : null;

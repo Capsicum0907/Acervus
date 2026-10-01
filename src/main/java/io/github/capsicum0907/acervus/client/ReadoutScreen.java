@@ -35,6 +35,10 @@ public class ReadoutScreen extends ReadoutPanel<ReadoutMenu> {
                     CONTENT_SIZE, CONTENT_SIZE, CONTENT_SIZE, CONTENT_SIZE);
             return;
         }
+        if (heap.unreadable()) {
+            graphics.blit(leftPos + CONTENT_X, topPos + CONTENT_Y, 0, CONTENT_SIZE, CONTENT_SIZE, Missing.sprite());
+            return;
+        }
         if (heap.isEmpty()) {
             return;
         }

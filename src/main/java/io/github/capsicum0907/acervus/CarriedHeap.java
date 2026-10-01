@@ -56,7 +56,17 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public boolean isEmpty() {
-        return sample().isEmpty() || amount(tag()) <= 0;
+        return (sample().isEmpty() && !unreadable()) || amount(tag()) <= 0;
+    }
+
+    @Override
+    public boolean unreadable() {
+        return tag().contains(SAMPLE) && sample().isEmpty();
+    }
+
+    @Override
+    public String unreadableId() {
+        return unreadable() ? tag().getCompound(SAMPLE).getString("id") : "";
     }
 
     @Override
@@ -124,14 +134,14 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public boolean accepts(ItemStack stack) {
-        if (stack.isEmpty()) {
+        if (stack.isEmpty() || unreadable()) {
             return false;
         }
         return sample().isEmpty() || Compression.sameKind(sample(), stack);
     }
 
     public boolean holds(ItemStack stack) {
-        return !isEmpty() && !stack.isEmpty() && Compression.sameKind(sample(), stack);
+        return !unreadable() && !isEmpty() && !stack.isEmpty() && Compression.sameKind(sample(), stack);
     }
 
     @Override
@@ -162,7 +172,7 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public ItemStack extract(int amount, boolean simulate) {
-        if (!gives() || isEmpty() || amount <= 0) {
+        if (!gives() || unreadable() || isEmpty() || amount <= 0) {
             return ItemStack.EMPTY;
         }
         int taken = (int) Math.min(Math.min(amount, count()), Integer.MAX_VALUE);
@@ -217,7 +227,7 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public void lock(boolean on) {
-        if (on == locked() || (on && !canLock())) {
+        if (unreadable() || on == locked() || (on && !canLock())) {
             return;
         }
         CompoundTag tag = tag();

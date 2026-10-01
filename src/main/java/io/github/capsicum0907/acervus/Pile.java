@@ -25,6 +25,14 @@ public interface Pile {
         return true;
     }
 
+    default boolean unreadable() {
+        return false;
+    }
+
+    default String unreadableId() {
+        return "";
+    }
+
     default long count(boolean smallest) {
         return smallest ? 0L : count();
     }

@@ -19,11 +19,20 @@ public class HeapItemDecorator implements IItemDecorator {
         if (minecraft.level == null) {
             return false;
         }
-        ItemStack sample = CarriedHeap.of(minecraft.level.registryAccess(), stack).sample();
+        CarriedHeap heap = CarriedHeap.of(minecraft.level.registryAccess(), stack);
+        float inset = ICON * (1.0F - SCALE) / 2.0F;
+        if (heap.unreadable()) {
+            int size = (int) (ICON * SCALE);
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, 0.0F, ABOVE + ICON * 10.0F);
+            graphics.blit(x + (int) inset, y + (int) inset, 0, size, size, Missing.sprite());
+            graphics.pose().popPose();
+            return true;
+        }
+        ItemStack sample = heap.sample();
         if (sample.isEmpty()) {
             return false;
         }
-        float inset = ICON * (1.0F - SCALE) / 2.0F;
         graphics.pose().pushPose();
         graphics.pose().translate(x + inset, y + inset, ABOVE);
         graphics.pose().scale(SCALE, SCALE, 1.0F);
