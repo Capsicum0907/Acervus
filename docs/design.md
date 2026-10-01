@@ -835,6 +835,24 @@ inventory is being saved, which takes the world down. Nothing catches it earlier
 the network codec does not check, so a heap written by hand looks perfectly well
 until the first autosave. See `Held.write`.
 
+## `Compression.java`
+
+**`public final class Compression`**
+
+Which items are the same thing in another form, found from the game's own crafting
+recipes. Two items are linked only when both directions exist and cost nothing: four or
+nine of the smaller make exactly one of the larger, and one of the larger gives back
+exactly that many of the smaller. A recipe that only goes one way, such as quartz into
+a quartz block, is not a conversion. An item that would link to two different larger or
+smaller forms is left unlinked, because there is no way to say which one was meant.
+
+The scan starts from the recipes rather than from the items. Trying every item in a
+grid against every recipe grows with the product of the two, which a large modpack
+would feel at every start; reading the recipes first keeps only those made of four or
+nine of one thing, and only those are tried both ways.
+
+It runs when the server has started and again whenever `/reload` reloads the recipes.
+
 ## `ContentsBlockItem.java`
 
 **`public abstract class ContentsBlockItem extends BlockItem`**

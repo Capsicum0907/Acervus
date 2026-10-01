@@ -10,6 +10,8 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -43,9 +45,22 @@ public class Acervus {
         modEventBus.addListener(Acervus::addToCreativeTab);
 
         NeoForge.EVENT_BUS.addListener(Carried::onPickup);
+        NeoForge.EVENT_BUS.addListener(Acervus::onServerStarted);
+        NeoForge.EVENT_BUS.addListener(Acervus::onDatapackSync);
         NeoForge.EVENT_BUS.addListener(Carried::onTick);
 
         LOGGER.info("Acervus {} loaded.", modContainer.getModInfo().getVersion());
+    }
+
+    private static void onServerStarted(ServerStartedEvent event) {
+        Compression.rebuild(event.getServer().getRecipeManager(), event.getServer().overworld());
+    }
+
+    private static void onDatapackSync(OnDatapackSyncEvent event) {
+        if (event.getPlayer() == null) {
+            Compression.rebuild(event.getPlayerList().getServer().getRecipeManager(),
+                    event.getPlayerList().getServer().overworld());
+        }
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {

@@ -1109,6 +1109,26 @@ public final class AcervusTests {
                 .orElse(ItemStack.EMPTY);
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void freeConversionsAreFoundFromTheRecipes(GameTestHelper helper) {
+        chain(Items.GOLD_INGOT, List.of(Items.GOLD_NUGGET, Items.GOLD_INGOT, Items.GOLD_BLOCK), List.of(1L, 9L, 81L));
+        chain(Items.IRON_BLOCK, List.of(Items.IRON_NUGGET, Items.IRON_INGOT, Items.IRON_BLOCK), List.of(1L, 9L, 81L));
+        chain(Items.SLIME_BALL, List.of(Items.SLIME_BALL, Items.SLIME_BLOCK), List.of(1L, 9L));
+        chain(Items.WHEAT, List.of(Items.WHEAT, Items.HAY_BLOCK), List.of(1L, 9L));
+        chain(Items.QUARTZ, List.of(Items.QUARTZ), List.of(1L));
+        chain(Items.SNOWBALL, List.of(Items.SNOWBALL), List.of(1L));
+        chain(Items.DIRT, List.of(Items.DIRT), List.of(1L));
+        helper.succeed();
+    }
+
+    private static void chain(Item asked, List<Item> forms, List<Long> factors) {
+        List<Compression.Form> chain = Compression.chainOf(asked);
+        check(chain.stream().map(Compression.Form::item).toList().equals(forms),
+                asked + " should belong to " + forms + ", not " + chain);
+        check(chain.stream().map(Compression.Form::factor).toList().equals(factors),
+                "with factors " + factors + ", not " + chain);
+    }
+
     private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap) {
