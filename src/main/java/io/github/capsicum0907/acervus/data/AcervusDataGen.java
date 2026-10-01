@@ -1,5 +1,10 @@
 package io.github.capsicum0907.acervus.data;
 
+import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponentPredicate;
 import java.util.concurrent.CompletableFuture;
 
 import io.github.capsicum0907.acervus.Acervus;
@@ -184,59 +189,46 @@ public final class AcervusDataGen {
 
         @Override
         protected void buildRecipes(RecipeOutput output) {
-            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.HEAP.get())
-                    .pattern("GIG")
-                    .pattern("ICI")
-                    .pattern("GIG")
-                    .define('G', Blocks.GLASS)
-                    .define('I', Items.IRON_INGOT)
-                    .define('C', Blocks.CHEST)
-                    .unlockedBy("has_chest", has(Blocks.CHEST))
-                    .save(output);
-
-            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.FLUID_HEAP.get())
-                    .pattern("GIG")
-                    .pattern("ICI")
-                    .pattern("GIG")
-                    .define('G', Blocks.GLASS)
-                    .define('I', Items.IRON_INGOT)
-                    .define('C', Blocks.CAULDRON)
-                    .unlockedBy("has_cauldron", has(Blocks.CAULDRON))
-                    .save(output);
-
-            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.HORREUM.get())
-                    .pattern("III")
-                    .pattern("ICI")
-                    .pattern("III")
-                    .define('I', Items.IRON_INGOT)
-                    .define('C', Blocks.CHEST)
-                    .unlockedBy("has_chest", has(Blocks.CHEST))
-                    .save(output);
-
-            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.ENERGY_HEAP.get())
-                    .pattern("GIG")
-                    .pattern("ICI")
-                    .pattern("GIG")
-                    .define('G', Blocks.GLASS)
-                    .define('I', Items.IRON_INGOT)
-                    .define('C', Blocks.REDSTONE_BLOCK)
-                    .unlockedBy("has_redstone_block", has(Blocks.REDSTONE_BLOCK))
-                    .save(output);
+            heap(output, AcervusRegistry.HEAP.get(), Blocks.CHEST);
+            heap(output, AcervusRegistry.FLUID_HEAP.get(), Blocks.CAULDRON);
+            heap(output, AcervusRegistry.ENERGY_HEAP.get(), Blocks.REDSTONE_BLOCK);
+            rack(output, AcervusRegistry.HEAP_ITEM.get());
+            rack(output, AcervusRegistry.FLUID_HEAP_ITEM.get());
+            rack(output, AcervusRegistry.ENERGY_HEAP_ITEM.get());
 
             if (Mods.mekanism()) {
                 RecipeOutput whenGasHeapExists = output.withConditions(
                         new ItemExistsCondition(Acervus.MODID, "chemical_heap"));
-                ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS,
-                                io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get())
-                        .pattern("GIG")
-                        .pattern("ICI")
-                        .pattern("GIG")
-                        .define('G', Blocks.GLASS)
-                        .define('I', Items.IRON_INGOT)
-                        .define('C', Items.GLASS_BOTTLE)
-                        .unlockedBy("has_glass_bottle", has(Items.GLASS_BOTTLE))
-                        .save(whenGasHeapExists);
+                heap(whenGasHeapExists, io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(),
+                        BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mekanism", "block_osmium")));
+                rack(whenGasHeapExists, io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get());
             }
+        }
+
+        private static void heap(RecipeOutput output, ItemLike heap, ItemLike centre) {
+            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, heap)
+                    .pattern("ISI")
+                    .pattern("NCN")
+                    .pattern("ISI")
+                    .define('I', Blocks.IRON_BLOCK)
+                    .define('S', Items.NETHER_STAR)
+                    .define('N', Items.NETHERITE_INGOT)
+                    .define('C', centre)
+                    .unlockedBy("has_nether_star", has(Items.NETHER_STAR))
+                    .save(output);
+        }
+
+        private static void rack(RecipeOutput output, Item heap) {
+            ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.HORREUM.get())
+                    .pattern("NSN")
+                    .pattern("SHS")
+                    .pattern("NSN")
+                    .define('N', Items.NETHERITE_INGOT)
+                    .define('S', Items.NETHER_STAR)
+                    .define('H', DataComponentIngredient.of(true, DataComponentPredicate.EMPTY, heap))
+                    .unlockedBy("has_heap", has(heap))
+                    .save(output, ResourceLocation.fromNamespaceAndPath(Acervus.MODID,
+                            "horreum_from_" + BuiltInRegistries.ITEM.getKey(heap).getPath()));
         }
     }
 }

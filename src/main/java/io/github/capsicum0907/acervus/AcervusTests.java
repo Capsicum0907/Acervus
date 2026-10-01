@@ -1089,6 +1089,26 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aRackIsMadeOnlyFromAnEmptyHeap(GameTestHelper helper) {
+        ItemStack empty = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        ItemStack full = carried(helper, new ItemStack(Items.DIAMOND, 100));
+        check(crafted(helper, empty).is(AcervusRegistry.HORREUM_ITEM.get()), "an empty heap should make a rack");
+        check(crafted(helper, full).isEmpty(), "and a heap with something in it must not, or what it holds is lost");
+        helper.succeed();
+    }
+
+    private static ItemStack crafted(GameTestHelper helper, ItemStack heap) {
+        ItemStack netherite = new ItemStack(Items.NETHERITE_INGOT);
+        ItemStack star = new ItemStack(Items.NETHER_STAR);
+        net.minecraft.world.item.crafting.CraftingInput grid = net.minecraft.world.item.crafting.CraftingInput.of(3, 3,
+                List.of(netherite, star, netherite, star, heap, star, netherite, star, netherite));
+        return helper.getLevel().getRecipeManager()
+                .getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid, helper.getLevel())
+                .map(found -> found.value().assemble(grid, helper.getLevel().registryAccess()))
+                .orElse(ItemStack.EMPTY);
+    }
+
     private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {
         helper.setBlock(WHERE, AcervusRegistry.FLUID_HEAP.get());
         if (helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap) {

@@ -5,17 +5,20 @@
     "C": {
       "item": "minecraft:cauldron"
     },
-    "G": {
-      "item": "minecraft:glass"
-    },
     "I": {
-      "item": "minecraft:iron_ingot"
+      "item": "minecraft:iron_block"
+    },
+    "N": {
+      "item": "minecraft:netherite_ingot"
+    },
+    "S": {
+      "item": "minecraft:nether_star"
     }
   },
   "pattern": [
-    "GIG",
-    "ICI",
-    "GIG"
+    "ISI",
+    "NCN",
+    "ISI"
   ],
   "result": {
     "count": 1,

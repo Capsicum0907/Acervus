@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_chest": {
+    "has_nether_star": {
       "conditions": {
         "items": [
           {
-            "items": "minecraft:chest"
+            "items": "minecraft:nether_star"
           }
         ]
       },
@@ -21,7 +21,7 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_chest"
+      "has_nether_star"
     ]
   ],
   "rewards": {

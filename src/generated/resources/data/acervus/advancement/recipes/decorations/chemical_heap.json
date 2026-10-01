@@ -7,11 +7,11 @@
   ],
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_glass_bottle": {
+    "has_nether_star": {
       "conditions": {
         "items": [
           {
-            "items": "minecraft:glass_bottle"
+            "items": "minecraft:nether_star"
           }
         ]
       },
@@ -27,7 +27,7 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_glass_bottle"
+      "has_nether_star"
     ]
   ],
   "rewards": {

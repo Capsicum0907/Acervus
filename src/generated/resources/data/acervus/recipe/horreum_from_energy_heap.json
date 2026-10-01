@@ -2,11 +2,11 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "C": {
-      "item": "minecraft:chest"
-    },
-    "I": {
-      "item": "minecraft:iron_block"
+    "H": {
+      "type": "neoforge:components",
+      "components": {},
+      "items": "acervus:energy_heap",
+      "strict": true
     },
     "N": {
       "item": "minecraft:netherite_ingot"
@@ -16,12 +16,12 @@
     }
   },
   "pattern": [
-    "ISI",
-    "NCN",
-    "ISI"
+    "NSN",
+    "SHS",
+    "NSN"
   ],
   "result": {
     "count": 1,
-    "id": "acervus:item_heap"
+    "id": "acervus:horreum"
   }
 }

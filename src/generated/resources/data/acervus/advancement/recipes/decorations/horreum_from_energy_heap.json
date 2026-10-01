@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_chest": {
+    "has_heap": {
       "conditions": {
         "items": [
           {
-            "items": "minecraft:chest"
+            "items": "acervus:energy_heap"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "acervus:horreum"
+        "recipe": "acervus:horreum_from_energy_heap"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_chest"
+      "has_heap"
     ]
   ],
   "rewards": {
     "recipes": [
-      "acervus:horreum"
+      "acervus:horreum_from_energy_heap"
     ]
   }
 }

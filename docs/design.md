@@ -2494,21 +2494,23 @@ Shared by all four: emptiness is not a fact about any one of them.
 
 **`private static class Recipes extends RecipeProvider`**
 
-A chest you can see into, held together with iron. Deliberately not gated
-behind anything rare: how much a heap holds is a setting, so the recipe is
-about when it becomes available, not about how strong it is.
+Every heap shares one frame — iron blocks at the corners, nether stars above and below,
+netherite ingots at the sides — around the piece that says what it holds: a chest, a
+cauldron, a redstone block or Mekanism's block of osmium, which its gas tanks are made of. Heaps are meant to be built in numbers, so
+every ingredient stacks; nothing in it is a one-off. Iron and nether stars can be
+farmed, and netherite is the one that has to be dug. Glass is not in it: the windows are how three of
+the heaps look, not something all four share.
 
-**inside, at `ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.FLUID_HEAP.get())`**
+**`private static void rack(RecipeOutput output, Item heap)`**
 
-The same frame around a cauldron instead of a chest: the pair should read as one machine holding two kinds of thing.
-
-**inside, at `ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, AcervusRegistry.HORREUM.get())`**
-
-A frame of iron around a chest, with no glass: a rack is the one block of the set you cannot see into, and it costs what a heap costs to make.
+A rack is netherite ingots at the corners and nether stars at the sides around a
+heap. Only an empty heap will do. Crafting uses the ingredient up, and a heap with
+something in it would take everything it holds with it. There is one recipe per kind
+of heap, so that the gas heap's can carry the condition that the gas heap exists.
 
 **inside, at `if (Mods.mekanism())`**
 
-A bottle rather than a cauldron: the same ingredients cannot make two different blocks, and a bottle is the vanilla thing that holds a vapour. Two different questions, asked at two different times, and both have to be answered or the recipe is wrong in one direction or the other: - The guard: is Mekanism here NOW, while this runs? Naming the block at all loads the class that holds it, and that class cannot exist without Mekanism. So the file is only written when datagen is run with Mekanism in run/mods -- and, because of --all, a datagen run WITHOUT it would delete the committed file rather than leave it alone. - The condition: does the item exist in the game the recipe is being loaded into? The file ships in the jar always, Mekanism or not, and without it the recipe names an item nobody registered. That is not silently skipped: it is an ERROR in the log every launch. The condition asks after our own item rather than after Mekanism, for the same reason the pickaxe tag uses addOptional -- the thing that must exist is ours, and naming somebody else's mod would only be a guess at why.
+A block of osmium rather than anything vanilla: the same ingredients cannot make two different blocks, and osmium is what Mekanism's own gas tanks are made of. Two different questions, asked at two different times, and both have to be answered or the recipe is wrong in one direction or the other: - The guard: is Mekanism here NOW, while this runs? Naming the block at all loads the class that holds it, and that class cannot exist without Mekanism. So the file is only written when datagen is run with Mekanism in run/mods -- and, because of --all, a datagen run WITHOUT it would delete the committed file rather than leave it alone. - The condition: does the item exist in the game the recipe is being loaded into? The file ships in the jar always, Mekanism or not, and without it the recipe names an item nobody registered. That is not silently skipped: it is an ERROR in the log every launch. The condition asks after our own item rather than after Mekanism, for the same reason the pickaxe tag uses addOptional -- the thing that must exist is ours, and naming somebody else's mod would only be a guess at why.
 
 ## `data/TestStructures.java`
 

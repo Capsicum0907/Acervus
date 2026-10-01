@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_nether_star": {
+    "has_heap": {
       "conditions": {
         "items": [
           {
-            "items": "minecraft:nether_star"
+            "items": "acervus:fluid_heap"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "acervus:energy_heap"
+        "recipe": "acervus:horreum_from_fluid_heap"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_nether_star"
+      "has_heap"
     ]
   ],
   "rewards": {
     "recipes": [
-      "acervus:energy_heap"
+      "acervus:horreum_from_fluid_heap"
     ]
   }
 }

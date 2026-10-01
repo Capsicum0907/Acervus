@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep nine of them in.
-> 69 game tests pass headlessly, with and without Mekanism installed.
+> 70 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -414,23 +414,20 @@ gradlew runData           # regenerate models, recipes and language
   there is nothing new to learn
 - [x] **4** — a carried heap collects: what is walked over, what arrives in a slot,
   and a screen of its own on sneak + right-click. It only ever takes
-- [ ] **5** — open questions below
+- [x] **5** — the open questions, decided below
 
-## Open questions
-
-- **The recipe.** Currently four glass, four iron and a chest — a chest you can see
-  into, held together with iron. Deliberately not gated behind anything rare, on the
-  grounds that how much it holds is a setting, so the recipe decides *when* it
-  becomes available rather than how strong it is. If it should feel like a
-  commitment, the centre is the place to raise: a diamond, or a shulker box.
-
-Settled:
+## Decided
 
 - Left-click does not take things out. Left-click stays the way a heap is broken.
 - The count on the block shortens by the same rule as the screen.
 - A heap cannot be upgraded. Every heap holds the configured capacity; that is the
   point of it.
 - A heap with something in it can be locked to that kind (see *Using one*).
+- The recipe. A heap is a type piece — chest, cauldron, redstone block or Mekanism's block of osmium —
+  in a frame of four iron blocks, two nether stars and two netherite ingots. A rack is an
+  empty heap ringed by four nether stars and four netherite ingots. Every ingredient
+  stacks, because heaps are meant to be built in numbers. Iron and nether stars can be
+  farmed; netherite is the one that has to be dug.
 
 ## Design notes
 
