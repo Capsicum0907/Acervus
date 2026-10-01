@@ -81,7 +81,7 @@ values.
 
 Grouped by resource, one section each, and the comments are kept to a line or
 two. A config file is read while looking for one setting, not read through — the
-reasoning behind these numbers belongs in the README, and putting it here instead
+reasoning behind these numbers belongs in docs/background.md, and putting it here instead
 turned the file into a wall nobody could find anything in.
 
 **`private static ModConfigSpec.Builder pop()`**

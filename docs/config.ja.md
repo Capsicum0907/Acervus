@@ -1,0 +1,24 @@
+# 設定
+
+[English](config.md) | 日本語
+
+## サーバー（`acervus-server.toml`）
+
+ワールドに対する設定です。サーバーでは、サーバー側の値が使われます。
+
+| 設定 | 既定値 | 範囲 | |
+|---|---|---|---|
+| `item.capacity` | 2,000,000,000 | 64 – 9,223,372,036,854,775,807 | Item Heap 1個に入るアイテムの数 |
+| `item.absorbsWhenCarried` | `true` | | 持ち歩いている Item Heap が、入っている物を拾い集める |
+| `fluid.capacity` | 1,000,000,000,000 | 1,000 – 9,223,372,036,854,775,807 | Fluid Heap 1個に入る量（mB） |
+| `energy.capacity` | 1,000,000,000,000 | 1,000 – 9,223,372,036,854,775,807 | Energy Heap 1個に入る量（FE） |
+| `energy.pushes` | `true` | | Energy Heap が隣り合うブロックに電力を送る |
+| `energy.pushRate` | 1,000,000,000 | 1 – 9,223,372,036,854,775,807 | 1ティックに隣のブロック1つへ送る量（FE）。最大でも 2,147,483,647 |
+| `chemical.capacity` | 1,000,000,000,000 | 1,000 – 9,223,372,036,854,775,807 | Gas Heap 1個に入る量（mB） |
+| `display.showsContents` | `true` | | 入っている物と量をブロックに描く |
+
+## クライアント（`acervus-client.toml`）
+
+| 設定 | 既定値 | |
+|---|---|---|
+| `screen.barScale` | `LINEAR` | バーの表し方。`LINEAR`（割合）・`LOG`（対数）・`DECADE`（桁の中）のどれか。バーをクリックしても変わります |
