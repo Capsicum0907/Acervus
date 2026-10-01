@@ -1,5 +1,6 @@
 package io.github.capsicum0907.acervus;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import net.minecraft.world.SimpleContainer;
@@ -12,10 +13,12 @@ public class HeapSlot extends Slot {
     private static final SimpleContainer UNUSED = new SimpleContainer(0);
 
     private final Supplier<Pile> heap;
+    private final BooleanSupplier smallest;
 
-    public HeapSlot(Supplier<Pile> heap, int x, int y) {
+    public HeapSlot(Supplier<Pile> heap, BooleanSupplier smallest, int x, int y) {
         super(UNUSED, 0, x, y);
         this.heap = heap;
+        this.smallest = smallest;
     }
 
     private Pile heap() {
@@ -24,12 +27,12 @@ public class HeapSlot extends Slot {
 
     @Override
     public ItemStack getItem() {
-        return heap().stack();
+        return heap().stack(smallest.getAsBoolean());
     }
 
     @Override
     public boolean hasItem() {
-        return !heap().isEmpty();
+        return !getItem().isEmpty();
     }
 
     @Override
@@ -39,12 +42,15 @@ public class HeapSlot extends Slot {
 
     @Override
     public boolean mayPickup(Player player) {
-        Pile heap = heap();
-        return heap.gives() && !heap.isEmpty();
+        return heap().gives() && hasItem();
     }
 
     @Override
     public int getMaxStackSize() {
+        ItemStack shown = getItem();
+        if (!shown.isEmpty()) {
+            return shown.getMaxStackSize();
+        }
         ItemStack sample = heap().sample();
         return sample.isEmpty() ? Item.ABSOLUTE_MAX_STACK_SIZE : sample.getMaxStackSize();
     }
@@ -56,7 +62,7 @@ public class HeapSlot extends Slot {
 
     @Override
     public ItemStack remove(int amount) {
-        return heap().extract(amount, false);
+        return heap().extract(amount, false, smallest.getAsBoolean());
     }
 
     @Override
@@ -69,7 +75,7 @@ public class HeapSlot extends Slot {
         if (difference > 0) {
             heap.insert(stack.copyWithCount(difference), false);
         } else if (difference < 0) {
-            heap.extract(-difference, false);
+            heap.extract(-difference, false, smallest.getAsBoolean());
         }
     }
 

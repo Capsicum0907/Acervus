@@ -169,6 +169,7 @@ public final class AcervusDataGen {
             add("gui.acervus.of", "%s / %s");
             add("gui.acervus.locked", "Locked");
             add("gui.acervus.free", "Free");
+            add("gui.acervus.switch_form", "Click to switch what comes out");
             add("gui.acervus.scale", "%s - click to change");
             add("gui.acervus.scale.linear", "Linear");
             add("gui.acervus.scale.log", "Logarithmic");

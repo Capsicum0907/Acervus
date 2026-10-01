@@ -26,5 +26,6 @@
   "gui.acervus.scale.decade": "Within the decade",
   "gui.acervus.scale.linear": "Linear",
   "gui.acervus.scale.log": "Logarithmic",
+  "gui.acervus.switch_form": "Click to switch what comes out",
   "gui.acervus.vessel": "Put a container here"
 }

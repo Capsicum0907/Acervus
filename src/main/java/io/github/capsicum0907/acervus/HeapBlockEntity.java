@@ -6,6 +6,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -18,10 +21,12 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     private static final String AMOUNT = "Amount";
     private static final String LEGACY_COUNT = "Count";
     private static final String UNIT = "Unit";
+    private static final String SMALLEST = "Smallest";
 
     private ItemStack sample = ItemStack.EMPTY;
     private long amount;
     private long unit = 1L;
+    private Item smallest;
     private boolean locked;
 
     private final HeapItemHandler handler = new HeapItemHandler(this);
@@ -97,6 +102,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
             sample = stack.copyWithCount(1);
             amount = 0L;
             unit = Compression.unitOf(sample.getItem());
+            settleUnit();
         }
         amount += taken * each;
         changed();
@@ -118,6 +124,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         if (this.amount <= 0) {
             if (!locked) {
                 sample = ItemStack.EMPTY;
+                smallest = null;
             }
             this.amount = 0L;
         }
@@ -143,6 +150,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         locked = on;
         if (!on && amount <= 0) {
             sample = ItemStack.EMPTY;
+            smallest = null;
         }
         changed();
     }
@@ -165,15 +173,80 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         return Compression.unitOf(stack.getItem());
     }
 
-    private void settleUnit() {
+    private boolean settleUnit() {
         if (!Compression.ready() || sample.isEmpty()) {
-            return;
+            return false;
         }
+        boolean changed = false;
         long current = Compression.unitOf(sample.getItem());
         if (current != unit) {
             amount = Compression.rebase(amount, unit, current);
             unit = current;
+            changed = true;
         }
+        Item least = Compression.chainOf(sample.getItem()).get(0).item();
+        Item wanted = least == sample.getItem() ? null : least;
+        if (wanted != smallest) {
+            smallest = wanted;
+            changed = true;
+        }
+        return changed;
+    }
+
+    @Override
+    public void settle() {
+        if (settleUnit()) {
+            changed();
+        }
+    }
+
+    @Override
+    public long count(boolean least) {
+        return least && hasSmaller() ? amount : count();
+    }
+
+    @Override
+    public boolean hasSmaller() {
+        return smallest != null && !sample.isEmpty();
+    }
+
+    @Override
+    public ItemStack stack(boolean least) {
+        if (!least || !hasSmaller()) {
+            return stack();
+        }
+        ItemStack shown = new ItemStack(smallest);
+        shown.setCount((int) Math.min(Math.min(amount, shown.getMaxStackSize()), Integer.MAX_VALUE));
+        return amount <= 0 ? ItemStack.EMPTY : shown;
+    }
+
+    @Override
+    public ItemStack extract(int wanted, boolean simulate, boolean least) {
+        if (!least || !hasSmaller()) {
+            return extract(wanted, simulate);
+        }
+        if (isEmpty() || wanted <= 0) {
+            return ItemStack.EMPTY;
+        }
+        settleUnit();
+        if (!hasSmaller()) {
+            return extract(wanted, simulate);
+        }
+        int taken = (int) Math.min(Math.min(wanted, amount), Integer.MAX_VALUE);
+        ItemStack out = new ItemStack(smallest, taken);
+        if (simulate) {
+            return out;
+        }
+        amount -= taken;
+        if (amount <= 0) {
+            if (!locked) {
+                sample = ItemStack.EMPTY;
+                smallest = null;
+            }
+            amount = 0L;
+        }
+        changed();
+        return out;
     }
 
     private void changed() {
@@ -188,6 +261,9 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         super.saveAdditional(tag, registries);
         tag.putLong(AMOUNT, amount);
         tag.putLong(UNIT, unit);
+        if (smallest != null) {
+            tag.putString(SMALLEST, BuiltInRegistries.ITEM.getKey(smallest).toString());
+        }
         tag.putBoolean(LOCKED, locked);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
@@ -204,6 +280,8 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         amount = sample.isEmpty() ? 0L
                 : tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
         unit = Math.max(1L, tag.contains(UNIT) ? tag.getLong(UNIT) : 1L);
+        ResourceLocation least = tag.contains(SMALLEST) ? ResourceLocation.tryParse(tag.getString(SMALLEST)) : null;
+        smallest = least == null ? null : BuiltInRegistries.ITEM.getOptional(least).orElse(null);
     }
 
     @Override

@@ -1073,7 +1073,7 @@ public final class AcervusTests {
         FluidHeapBlockEntity heap = fluidHeap(helper);
         heap.insert(new FluidStack(Fluids.WATER, 1_000), false);
         ReadoutMenu menu = ReadoutMenu.at(1, player.getInventory(), helper.absolutePos(WHERE));
-        menu.clickMenuButton(player, LockButton.ID);
+        menu.clickMenuButton(player, MenuButtons.LOCK);
         check(heap.locked(), "the screen's button should lock the heap");
         heap.extract(1_000, false);
 
@@ -1189,6 +1189,26 @@ public final class AcervusTests {
         } finally {
             AcervusConfig.CAPACITY.set(was);
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void outCanGiveTheSmallestFormAndTheRemainder(GameTestHelper helper) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        HeapBlockEntity heap = place(helper);
+        heap.insert(new ItemStack(Items.GOLD_INGOT), false);
+        heap.insert(new ItemStack(Items.GOLD_NUGGET, 4), false);
+        HeapMenu menu = HeapMenu.at(1, player.getInventory(), helper.absolutePos(WHERE));
+        Slot out = menu.slots.get(1);
+
+        check(out.getItem().is(Items.GOLD_INGOT) && out.getItem().getCount() == 1, "Out starts with the ingot");
+        out.remove(1);
+        check(!out.hasItem() && !heap.isEmpty(), "four nuggets are less than an ingot and stay inside");
+
+        menu.clickMenuButton(player, MenuButtons.FORM);
+        check(out.getItem().is(Items.GOLD_NUGGET) && out.getItem().getCount() == 4, "switched, Out shows the four nuggets");
+        ItemStack nuggets = out.remove(4);
+        check(nuggets.is(Items.GOLD_NUGGET) && nuggets.getCount() == 4 && heap.isEmpty(), "and gives them, leaving it empty");
         helper.succeed();
     }
 

@@ -7,6 +7,7 @@ import io.github.capsicum0907.acervus.Counts;
 import io.github.capsicum0907.acervus.HeapColors;
 import io.github.capsicum0907.acervus.HeapMenu;
 import io.github.capsicum0907.acervus.HeapSlot;
+import io.github.capsicum0907.acervus.MenuButtons;
 import io.github.capsicum0907.acervus.Heaped;
 import io.github.capsicum0907.acervus.Pile;
 
@@ -35,13 +36,24 @@ public class HeapScreen extends ReadoutPanel<HeapMenu> {
     }
 
     @Override
+    protected boolean outSwitches() {
+        return menu.pile().hasSmaller() && menu.pile().gives();
+    }
+
+    @Override
+    protected void switchOut() {
+        menu.clickMenuButton(minecraft.player, MenuButtons.FORM);
+        minecraft.gameMode.handleInventoryButtonClick(menu.containerId, MenuButtons.FORM);
+    }
+
+    @Override
     protected boolean slotTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         Pile pile = menu.pile();
-        if (minecraft == null || pile.isEmpty() || !(hoveredSlot instanceof HeapSlot)) {
+        if (minecraft == null || pile.isEmpty() || !(hoveredSlot instanceof HeapSlot) || !hoveredSlot.hasItem()) {
             return false;
         }
-        List<Component> lines = new ArrayList<>(getTooltipFromItem(minecraft, pile.sample()));
-        lines.add(Component.translatable("gui.acervus.exact", Counts.exact(pile.count()))
+        List<Component> lines = new ArrayList<>(getTooltipFromItem(minecraft, hoveredSlot.getItem()));
+        lines.add(Component.translatable("gui.acervus.exact", Counts.exact(pile.count(menu.smallest())))
                 .withStyle(ChatFormatting.GRAY));
         lines.add(Component.translatable("gui.acervus.room", Counts.exact(pile.room()))
                 .withStyle(ChatFormatting.DARK_GRAY));

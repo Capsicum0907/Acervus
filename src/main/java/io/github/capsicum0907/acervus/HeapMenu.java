@@ -36,13 +36,14 @@ public class HeapMenu extends AbstractContainerMenu {
     }
 
     private final Source source;
+    private boolean smallest;
 
     private HeapMenu(MenuType<?> type, int id, Inventory inventory, Source source) {
         super(type, id);
         this.source = source;
 
         addSlot(new IntakeSlot(source::pile, IN_X, HEAP_Y));
-        addSlot(new HeapSlot(source::pile, OUT_X, HEAP_Y));
+        addSlot(new HeapSlot(source::pile, () -> smallest, OUT_X, HEAP_Y));
 
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
@@ -59,8 +60,12 @@ public class HeapMenu extends AbstractContainerMenu {
     }
 
     public static HeapMenu at(int id, Inventory inventory, BlockPos pos) {
-        return new HeapMenu(AcervusRegistry.HEAP_MENU.get(), id, inventory,
+        HeapMenu menu = new HeapMenu(AcervusRegistry.HEAP_MENU.get(), id, inventory,
                 new AtBlock(inventory.player.level(), pos));
+        if (!inventory.player.level().isClientSide) {
+            menu.pile().settle();
+        }
+        return menu;
     }
 
     public static HeapMenu inHand(int id, Inventory inventory, InteractionHand hand) {
@@ -72,9 +77,17 @@ public class HeapMenu extends AbstractContainerMenu {
         return source.pile();
     }
 
+    public boolean smallest() {
+        return smallest;
+    }
+
     @Override
     public boolean clickMenuButton(Player player, int id) {
-        if (id != LockButton.ID) {
+        if (id == MenuButtons.FORM) {
+            smallest = !smallest;
+            return true;
+        }
+        if (id != MenuButtons.LOCK) {
             return false;
         }
         Pile heap = pile();
@@ -105,7 +118,7 @@ public class HeapMenu extends AbstractContainerMenu {
     }
 
     private ItemStack outward(Pile heap) {
-        ItemStack taken = heap.extract(heap.sample().getMaxStackSize(), false);
+        ItemStack taken = heap.extract(slots.get(OUT_SLOT).getMaxStackSize(), false, smallest);
         if (taken.isEmpty()) {
             return ItemStack.EMPTY;
         }

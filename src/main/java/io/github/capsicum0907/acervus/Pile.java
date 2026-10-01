@@ -25,6 +25,25 @@ public interface Pile {
         return true;
     }
 
+    default long count(boolean smallest) {
+        return smallest ? 0L : count();
+    }
+
+    default boolean hasSmaller() {
+        return false;
+    }
+
+    default ItemStack stack(boolean smallest) {
+        return smallest ? ItemStack.EMPTY : stack();
+    }
+
+    default ItemStack extract(int amount, boolean simulate, boolean smallest) {
+        return smallest ? ItemStack.EMPTY : extract(amount, simulate);
+    }
+
+    default void settle() {
+    }
+
     default long roomFor(ItemStack stack) {
         return accepts(stack) ? room() : 0L;
     }

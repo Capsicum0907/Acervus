@@ -96,7 +96,7 @@ public class ReadoutMenu extends AbstractContainerMenu {
 
     @Override
     public boolean clickMenuButton(Player player, int id) {
-        if (id != LockButton.ID) {
+        if (id != MenuButtons.LOCK) {
             return false;
         }
         Heaped heap = heap();

@@ -8,7 +8,7 @@ import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.AcervusClientConfig;
 import io.github.capsicum0907.acervus.BarScale;
 import io.github.capsicum0907.acervus.Heaped;
-import io.github.capsicum0907.acervus.LockButton;
+import io.github.capsicum0907.acervus.MenuButtons;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -72,7 +72,7 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
         super.init();
         lock = addRenderableWidget(new LockToggle(leftPos + LOCK_X, topPos + LOCK_Y, this::heap, () -> {
             if (minecraft != null && minecraft.gameMode != null) {
-                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, LockButton.ID);
+                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, MenuButtons.LOCK);
             }
         }));
         lock.refresh();
@@ -90,6 +90,19 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
 
     protected boolean slotTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         return false;
+    }
+
+    protected boolean outSwitches() {
+        return false;
+    }
+
+    protected void switchOut() {
+    }
+
+    private boolean overOut(int x, int y) {
+        Component label = Component.translatable("gui.acervus.flow.out");
+        int left = OUT_X + CONTENT_SIZE / 2 - font.width(label) / 2;
+        return within(x, y, left, LABEL_Y, font.width(label), font.lineHeight);
     }
 
     @Override
@@ -165,6 +178,10 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
 
         int x = mouseX - leftPos;
         int y = mouseY - topPos;
+        if (outSwitches() && overOut(x, y)) {
+            graphics.renderTooltip(font, Component.translatable("gui.acervus.switch_form"), mouseX, mouseY);
+            return;
+        }
         if (within(x, y, COLUMN_X, CAPTION_Y, font.width(caption(heap)), font.lineHeight)) {
             graphics.renderComponentTooltip(font, List.of(
                     Component.literal(heap.exact(heap.amount())),
@@ -208,6 +225,11 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         int x = (int) mouseX - leftPos;
         int y = (int) mouseY - topPos;
+        if (button == 0 && menu.getCarried().isEmpty() && outSwitches() && overOut(x, y)) {
+            switchOut();
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            return true;
+        }
         if (button == 0 && menu.getCarried().isEmpty() && within(x, y, BAR_X, BAR_Y, BAR_W, BAR_H)) {
             AcervusClientConfig.BAR_SCALE.set(AcervusClientConfig.BAR_SCALE.get().next());
             AcervusClientConfig.BAR_SCALE.save();
