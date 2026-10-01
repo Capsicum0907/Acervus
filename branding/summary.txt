@@ -1,0 +1,1 @@
+Storage blocks that each hold one kind of item, fluid, energy or Mekanism chemical, in amounts far beyond a chest. Heaps keep their contents when broken, and a Horreum puts nine of them behind one block.
