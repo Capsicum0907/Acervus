@@ -15,6 +15,7 @@ public final class CarriedHeap implements Pile {
     private static final String SAMPLE = "Sample";
     private static final String AMOUNT = "Amount";
     private static final String LOCKED = "Locked";
+    private static final String UNIT = "Unit";
 
     private static final String LEGACY_COUNT = "Count";
 
@@ -55,7 +56,7 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public boolean isEmpty() {
-        return sample().isEmpty() || count() <= 0;
+        return sample().isEmpty() || amount(tag()) <= 0;
     }
 
     @Override
@@ -75,7 +76,30 @@ public final class CarriedHeap implements Pile {
     @Override
     public long count() {
         CompoundTag tag = tag();
+        return amount(tag) / unit(tag);
+    }
+
+    private static long amount(CompoundTag tag) {
         return tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
+    }
+
+    private static long unit(CompoundTag tag) {
+        return Math.max(1L, tag.contains(UNIT) ? tag.getLong(UNIT) : 1L);
+    }
+
+    private CompoundTag settled() {
+        CompoundTag tag = tag();
+        ItemStack sample = sample();
+        if (Compression.ready() && !sample.isEmpty()) {
+            long current = Compression.unitOf(sample.getItem());
+            long stored = unit(tag);
+            if (current != stored) {
+                tag.putLong(AMOUNT, Compression.rebase(amount(tag), stored, current));
+                tag.putLong(UNIT, current);
+                tag.remove(LEGACY_COUNT);
+            }
+        }
+        return tag;
     }
 
     public long capacity() {
@@ -84,7 +108,9 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public long room() {
-        return Math.max(0L, capacity() - count());
+        CompoundTag tag = tag();
+        long unit = unit(tag);
+        return Math.max(0L, Compression.times(capacity(), unit) - amount(tag)) / unit;
     }
 
     @Override
@@ -119,12 +145,15 @@ public final class CarriedHeap implements Pile {
         }
 
         ItemStack heap = where.get();
-        CompoundTag tag = tag();
-        long held = isEmpty() ? 0L : count();
-        if (isEmpty()) {
+        CompoundTag tag = settled();
+        if (sample().isEmpty()) {
             tag.put(SAMPLE, stack.copyWithCount(1).save(registries));
+            tag.putLong(AMOUNT, 0L);
+            tag.putLong(UNIT, Compression.unitOf(stack.getItem()));
         }
-        tag.putLong(AMOUNT, held + taken);
+        long unit = unit(tag);
+        tag.putLong(AMOUNT, amount(tag) + taken * unit);
+        tag.putLong(UNIT, unit);
         tag.remove(LEGACY_COUNT);
         write(heap, tag);
         return taken;
@@ -142,8 +171,11 @@ public final class CarriedHeap implements Pile {
         }
 
         ItemStack heap = where.get();
-        CompoundTag tag = tag();
-        long left = count() - taken;
+        CompoundTag tag = settled();
+        long unit = unit(tag);
+        long left = amount(tag) - taken * unit;
+        tag.putLong(UNIT, unit);
+        tag.remove(LEGACY_COUNT);
         if (left <= 0) {
             if (!tag.getBoolean(LOCKED)) {
                 tag.remove(SAMPLE);
@@ -179,7 +211,7 @@ public final class CarriedHeap implements Pile {
             tag.putBoolean(LOCKED, true);
         } else {
             tag.remove(LOCKED);
-            if (count() <= 0) {
+            if (amount(tag) <= 0) {
                 tag.remove(SAMPLE);
             }
         }

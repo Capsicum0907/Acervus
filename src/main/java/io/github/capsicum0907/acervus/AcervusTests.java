@@ -30,6 +30,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -1127,6 +1128,42 @@ public final class AcervusTests {
                 asked + " should belong to " + forms + ", not " + chain);
         check(chain.stream().map(Compression.Form::factor).toList().equals(factors),
                 "with factors " + factors + ", not " + chain);
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aHeapCountsInItsSmallestFormAndKeepsTheCount(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        HeapBlockEntity heap = place(helper);
+        heap.loadWithComponents(goldTag(registries, 5L, null), registries);
+        heap.insert(new ItemStack(Items.GOLD_INGOT), false);
+        CompoundTag saved = heap.saveWithoutMetadata(registries);
+        check(heap.count() == 6L, "an old heap of five ingots plus one should hold six, not " + heap.count());
+        check(saved.getLong("Unit") == 9L && saved.getLong("Amount") == 54L,
+                "counted as 54 nuggets in units of nine, not " + saved);
+
+        heap.loadWithComponents(goldTag(registries, 100L, 81L), registries);
+        heap.extract(1, false);
+        saved = heap.saveWithoutMetadata(registries);
+        check(heap.count() == 0L && saved.getLong("Unit") == 9L && saved.getLong("Amount") == 2L,
+                "a unit that no longer exists should be rebased, keeping the whole ingot it held, not " + saved);
+
+        ItemStack item = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        BlockItem.setBlockEntityData(item, AcervusRegistry.HEAP_ENTITY.get(), goldTag(registries, 5L, null));
+        CarriedHeap carried = CarriedHeap.stored(registries, item);
+        carried.insert(new ItemStack(Items.GOLD_INGOT, 2), false);
+        check(carried.count() == 7L, "a carried heap should keep its count too, and holds " + carried.count());
+        check(carried.extract(7, false).getCount() == 7 && carried.isEmpty(), "and give all seven back");
+        helper.succeed();
+    }
+
+    private static CompoundTag goldTag(HolderLookup.Provider registries, long amount, Long unit) {
+        CompoundTag tag = new CompoundTag();
+        tag.put("Sample", new ItemStack(Items.GOLD_INGOT).save(registries));
+        tag.putLong("Amount", amount);
+        if (unit != null) {
+            tag.putLong("Unit", unit);
+        }
+        return tag;
     }
 
     private static FluidHeapBlockEntity fluidHeap(GameTestHelper helper) {

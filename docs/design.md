@@ -853,6 +853,21 @@ nine of one thing, and only those are tried both ways.
 
 It runs when the server has started and again whenever `/reload` reloads the recipes.
 
+
+**Counting an item heap: `Amount` and `Unit`**
+
+An item heap counts in the smallest form its kind comes in, and remembers how many of
+those its registered form is worth: `Unit`. A heap of gold ingots holds `Amount`
+nuggets and a `Unit` of 9, and everything outside the heap — the screen, pipes, the
+capacity — is in ingots, `Amount / Unit`. The capacity is in the registered form, so
+counting smaller costs it nothing.
+
+The unit is a ratio to the registered form, not the name of the smallest item, so
+nothing breaks when the mod that adds the smallest form is removed. When the chain
+changes, the count is rebased to the new unit the next time something goes in or
+out: a smaller form appearing multiplies it, and losing one divides it, dropping only
+the part that was less than one of the new unit. A heap written before `Unit` existed
+reads as a unit of 1.
 ## `ContentsBlockItem.java`
 
 **`public abstract class ContentsBlockItem extends BlockItem`**

@@ -31,8 +31,41 @@ public final class Compression {
 
     private static volatile Map<Item, Link> up = Map.of();
     private static volatile Map<Item, Link> down = Map.of();
+    private static volatile boolean ready;
 
     private Compression() {
+    }
+
+    public static boolean ready() {
+        return ready;
+    }
+
+    public static long unitOf(Item item) {
+        for (Form form : chainOf(item)) {
+            if (form.item() == item) {
+                return form.factor();
+            }
+        }
+        return 1L;
+    }
+
+    public static long rebase(long amount, long from, long to) {
+        if (from == to || from <= 0L || to <= 0L) {
+            return amount;
+        }
+        if (to % from == 0L) {
+            long by = to / from;
+            return amount > Long.MAX_VALUE / by ? Long.MAX_VALUE : amount * by;
+        }
+        if (from % to == 0L) {
+            return amount / (from / to);
+        }
+        long whole = amount / from;
+        return whole > Long.MAX_VALUE / to ? Long.MAX_VALUE : whole * to;
+    }
+
+    public static long times(long value, long by) {
+        return by > 0L && value > Long.MAX_VALUE / by ? Long.MAX_VALUE : value * by;
     }
 
     public static List<Form> chainOf(Item item) {
@@ -80,6 +113,7 @@ public final class Compression {
         foundDown.entrySet().removeIf(entry -> ambiguous.contains(entry.getValue().other()));
         up = Map.copyOf(foundUp);
         down = Map.copyOf(foundDown);
+        ready = true;
         Acervus.LOGGER.info("Found {} free conversions in {} ms", up.size(), (System.nanoTime() - started) / 1_000_000L);
     }
 

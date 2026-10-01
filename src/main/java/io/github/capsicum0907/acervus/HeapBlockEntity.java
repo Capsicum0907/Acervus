@@ -17,9 +17,11 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
 
     private static final String AMOUNT = "Amount";
     private static final String LEGACY_COUNT = "Count";
+    private static final String UNIT = "Unit";
 
     private ItemStack sample = ItemStack.EMPTY;
-    private long count;
+    private long amount;
+    private long unit = 1L;
     private boolean locked;
 
     private final HeapItemHandler handler = new HeapItemHandler(this);
@@ -29,7 +31,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public boolean isEmpty() {
-        return sample.isEmpty() || count <= 0;
+        return sample.isEmpty() || amount <= 0;
     }
 
     public ItemStack sample() {
@@ -37,7 +39,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public long count() {
-        return count;
+        return amount / unit;
     }
 
     public long capacity() {
@@ -45,7 +47,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public long room() {
-        return Math.max(0L, capacity() - count);
+        return Math.max(0L, Compression.times(capacity(), unit) - amount) / unit;
     }
 
     public HeapItemHandler handler() {
@@ -65,7 +67,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
             return ItemStack.EMPTY;
         }
         ItemStack shown = sample.copy();
-        shown.setCount((int) Math.min(Math.min(count, most), Integer.MAX_VALUE));
+        shown.setCount((int) Math.min(Math.min(count(), most), Integer.MAX_VALUE));
         return shown;
     }
 
@@ -84,16 +86,18 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         if (!accepts(stack)) {
             return 0;
         }
+        settleUnit();
         int taken = (int) Math.min(room(), stack.getCount());
         if (taken <= 0 || simulate) {
             return Math.max(taken, 0);
         }
 
-        if (isEmpty()) {
+        if (sample.isEmpty()) {
             sample = stack.copyWithCount(1);
-            count = 0;
+            amount = 0L;
+            unit = Compression.unitOf(sample.getItem());
         }
-        count += taken;
+        amount += taken * unit;
         changed();
         return taken;
     }
@@ -102,18 +106,19 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         if (isEmpty() || amount <= 0) {
             return ItemStack.EMPTY;
         }
-        int taken = (int) Math.min(Math.min(amount, count), Integer.MAX_VALUE);
+        settleUnit();
+        int taken = (int) Math.min(Math.min(amount, count()), Integer.MAX_VALUE);
         ItemStack out = sample.copyWithCount(taken);
         if (simulate) {
             return out;
         }
 
-        count -= taken;
-        if (count <= 0) {
+        this.amount -= taken * unit;
+        if (this.amount <= 0) {
             if (!locked) {
                 sample = ItemStack.EMPTY;
             }
-            count = 0;
+            this.amount = 0L;
         }
         changed();
         return out;
@@ -135,10 +140,21 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
             return;
         }
         locked = on;
-        if (!on && count <= 0) {
+        if (!on && amount <= 0) {
             sample = ItemStack.EMPTY;
         }
         changed();
+    }
+
+    private void settleUnit() {
+        if (!Compression.ready() || sample.isEmpty()) {
+            return;
+        }
+        long current = Compression.unitOf(sample.getItem());
+        if (current != unit) {
+            amount = Compression.rebase(amount, unit, current);
+            unit = current;
+        }
     }
 
     private void changed() {
@@ -151,7 +167,8 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putLong(AMOUNT, count);
+        tag.putLong(AMOUNT, amount);
+        tag.putLong(UNIT, unit);
         tag.putBoolean(LOCKED, locked);
         if (!sample.isEmpty()) {
             tag.put(SAMPLE, sample.save(registries));
@@ -165,8 +182,9 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
                 ? ItemStack.parse(registries, tag.getCompound(SAMPLE)).orElse(ItemStack.EMPTY)
                 : ItemStack.EMPTY;
         locked = tag.getBoolean(LOCKED) && !sample.isEmpty();
-        count = sample.isEmpty() ? 0L
+        amount = sample.isEmpty() ? 0L
                 : tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
+        unit = Math.max(1L, tag.contains(UNIT) ? tag.getLong(UNIT) : 1L);
     }
 
     @Override
