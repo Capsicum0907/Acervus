@@ -2875,6 +2875,16 @@ A heap, wherever it is kept. The two places differ only in who to tell.
 
 A heap in a rack, which has to be told that one of its items changed.
 
+
+**Only what lies beyond an int**
+
+RS combines every provider whose factory answers for a block and sums what they
+report, without removing duplicates. Its own item handler provider answers for every
+heap, because a heap has an item handler for hoppers and pipes, and it reports each
+slot capped at an int. Reporting the whole count here as well counted every heap
+twice. So this provider reports `Counts.beyondAnInt(count)`, the part the item handler
+cannot carry, and the sum is the real count. A game test pins the heap's side of that:
+what a pipe sees plus what only a long can carry is the whole count.
 ## `rs/RefinedStorage.java`
 
 **`public final class RefinedStorage`**

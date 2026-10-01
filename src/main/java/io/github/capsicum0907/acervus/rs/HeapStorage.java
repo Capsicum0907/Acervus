@@ -14,6 +14,7 @@ import com.refinedmods.refinedstorage.common.support.resource.ItemResource;
 
 import io.github.capsicum0907.acervus.AcervusRegistry;
 import io.github.capsicum0907.acervus.CarriedHeap;
+import io.github.capsicum0907.acervus.Counts;
 import io.github.capsicum0907.acervus.HeapBlockEntity;
 import io.github.capsicum0907.acervus.HorreumBlockEntity;
 
@@ -53,8 +54,9 @@ public class HeapStorage implements ExternalStorageProvider {
     public Iterator<ResourceAmount> iterator() {
         List<ResourceAmount> amounts = new ArrayList<>();
         for (Pile pile : piles()) {
-            if (pile.count() > 0 && !pile.sample().isEmpty()) {
-                amounts.add(new ResourceAmount(ItemResource.ofItemStack(pile.sample()), pile.count()));
+            long beyond = Counts.beyondAnInt(pile.count());
+            if (beyond > 0 && !pile.sample().isEmpty()) {
+                amounts.add(new ResourceAmount(ItemResource.ofItemStack(pile.sample()), beyond));
             }
         }
         return Collections.unmodifiableList(amounts).iterator();

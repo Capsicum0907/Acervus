@@ -11,6 +11,10 @@ public final class Counts {
     private Counts() {
     }
 
+    public static long beyondAnInt(long count) {
+        return Math.max(0L, count - Integer.MAX_VALUE);
+    }
+
     public static String exact(long count) {
         return String.format("%,d", count);
     }

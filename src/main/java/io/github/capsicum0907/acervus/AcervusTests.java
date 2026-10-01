@@ -1276,6 +1276,35 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aPipeAndTheLongReaderAddUpToTheWholeCount(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        HeapBlockEntity heap = place(helper);
+        for (long held : new long[] { 55_806_145L, 5_000_000_000L }) {
+            CompoundTag tag = new CompoundTag();
+            tag.put("Sample", new ItemStack(Items.OAK_LOG).save(registries));
+            tag.putLong("Amount", held);
+            heap.loadWithComponents(tag, registries);
+            long seenByAPipe = heap.handler().getStackInSlot(0).getCount();
+            long seenInLongs = Counts.beyondAnInt(heap.count());
+            check(seenByAPipe == Math.min(held, Integer.MAX_VALUE), "a pipe should see at most an int, not " + seenByAPipe);
+            check(seenByAPipe + seenInLongs == held, "and with what only longs can carry, all " + held
+                    + ", not " + (seenByAPipe + seenInLongs));
+        }
+
+        HorreumBlockEntity rack = rack(helper, OTHER);
+        ItemStack big = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        CompoundTag tag = new CompoundTag();
+        tag.put("Sample", new ItemStack(Items.OAK_LOG).save(registries));
+        tag.putLong("Amount", 5_000_000_000L);
+        BlockItem.setBlockEntityData(big, AcervusRegistry.HEAP_ENTITY.get(), tag);
+        rack.heaps().set(0, big);
+        long rackPipe = rack.items().getStackInSlot(0).getCount();
+        long rackLong = Counts.beyondAnInt(CarriedHeap.stored(registries, big).count());
+        check(rackPipe + rackLong == 5_000_000_000L, "a rack's heap should add up the same way, not " + (rackPipe + rackLong));
+        helper.succeed();
+    }
+
     private static CompoundTag lost(long amount) {
         CompoundTag sample = new CompoundTag();
         sample.putString("id", "nonexistent:thing");
