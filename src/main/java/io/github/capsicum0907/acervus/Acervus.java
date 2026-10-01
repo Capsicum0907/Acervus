@@ -34,9 +34,7 @@ public class Acervus {
         AcervusRegistry.BLOCK_ENTITIES.register(modEventBus);
         AcervusRegistry.MENUS.register(modEventBus);
 
-        if (Mods.mekanism()) {
-            io.github.capsicum0907.acervus.gas.GasHeap.register(modEventBus);
-        }
+        io.github.capsicum0907.acervus.gas.GasHeap.register(modEventBus);
         if (Mods.refinedStorage()) {
             io.github.capsicum0907.acervus.rs.RefinedStorage.register(modEventBus);
         }
@@ -77,9 +75,6 @@ public class Acervus {
                 (rack, side) -> rack.fluids());
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, AcervusRegistry.HORREUM_ENTITY.get(),
                 (rack, side) -> rack.energy());
-        if (Mods.mekanism()) {
-            io.github.capsicum0907.acervus.gas.GasHeap.registerRackCapability(event);
-        }
     }
 
     private static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {

@@ -1,6 +1,10 @@
-package io.github.capsicum0907.acervus.gas;
+package io.github.capsicum0907.acervus.gas.mek;
+
+import java.util.List;
 
 import io.github.capsicum0907.acervus.HorreumBlockEntity;
+import io.github.capsicum0907.acervus.gas.GasHeap;
+import io.github.capsicum0907.acervus.gas.HeldChemicalHeap;
 
 import mekanism.api.Action;
 import mekanism.api.chemical.ChemicalStack;
@@ -13,12 +17,12 @@ public class HorreumChemicalHandler implements IChemicalHandler {
         this.rack = rack;
     }
 
-    private java.util.List<HeldChemicalHeap> tanks() {
+    private List<HeldChemicalHeap> tanks() {
         return rack.readAll(GasHeap.ITEM.get(), HeldChemicalHeap::stored);
     }
 
     private HeldChemicalHeap at(int tank) {
-        java.util.List<HeldChemicalHeap> tanks = tanks();
+        List<HeldChemicalHeap> tanks = tanks();
         return tank < 0 || tank >= tanks.size() ? null : tanks.get(tank);
     }
 
@@ -30,21 +34,21 @@ public class HorreumChemicalHandler implements IChemicalHandler {
     @Override
     public ChemicalStack getChemicalInTank(int tank) {
         HeldChemicalHeap heap = at(tank);
-        if (heap == null || heap.isEmpty()) {
+        if (heap == null || heap.isEmpty() || heap.unreadable()) {
             return ChemicalStack.EMPTY;
         }
-        return heap.sample().copyWithAmount(heap.amount());
+        return MekanismChemistry.stack(heap.kind(), heap.amount(), heap.registries());
     }
 
     @Override
     public void setChemicalInTank(int tank, ChemicalStack stack) {
         HeldChemicalHeap heap = at(tank);
-        if (heap == null) {
+        if (heap == null || heap.unreadable()) {
             return;
         }
-        heap.extract(Long.MAX_VALUE, false);
+        heap.extractAmount(Long.MAX_VALUE, false);
         if (!stack.isEmpty()) {
-            heap.insert(stack, false);
+            heap.insertKind(MekanismChemistry.kind(stack, heap.registries()), stack.getAmount(), false);
         }
         rack.changed();
     }
@@ -58,7 +62,8 @@ public class HorreumChemicalHandler implements IChemicalHandler {
     @Override
     public boolean isValid(int tank, ChemicalStack stack) {
         HeldChemicalHeap heap = at(tank);
-        return heap != null && heap.insert(stack, true) > 0;
+        return heap != null && !stack.isEmpty()
+                && heap.insertKind(MekanismChemistry.kind(stack, heap.registries()), stack.getAmount(), true) > 0;
     }
 
     @Override
@@ -67,12 +72,12 @@ public class HorreumChemicalHandler implements IChemicalHandler {
         if (heap == null || stack.isEmpty()) {
             return stack;
         }
-        long taken = heap.insert(stack, action.simulate());
+        long taken = heap.insertKind(MekanismChemistry.kind(stack, heap.registries()), stack.getAmount(),
+                action.simulate());
         if (taken > 0 && action.execute()) {
             rack.changed();
         }
-        return taken >= stack.getAmount() ? ChemicalStack.EMPTY
-                : stack.copyWithAmount(stack.getAmount() - taken);
+        return taken >= stack.getAmount() ? ChemicalStack.EMPTY : stack.copyWithAmount(stack.getAmount() - taken);
     }
 
     @Override
@@ -81,7 +86,8 @@ public class HorreumChemicalHandler implements IChemicalHandler {
         if (heap == null) {
             return ChemicalStack.EMPTY;
         }
-        ChemicalStack out = heap.extract(amount, action.simulate());
+        ChemicalStack out = MekanismChemistry.stack(heap.kind(), heap.extractAmount(amount, action.simulate()),
+                heap.registries());
         if (!out.isEmpty() && action.execute()) {
             rack.changed();
         }

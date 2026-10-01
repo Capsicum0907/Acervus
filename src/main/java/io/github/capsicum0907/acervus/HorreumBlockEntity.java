@@ -156,8 +156,7 @@ public class HorreumBlockEntity extends BlockEntity {
         return item == AcervusRegistry.HEAP_ITEM.get()
                 || item == AcervusRegistry.FLUID_HEAP_ITEM.get()
                 || item == AcervusRegistry.ENERGY_HEAP_ITEM.get()
-                || (Mods.mekanism()
-                        && item == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get());
+                || item == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get();
     }
 
     public boolean isEmpty() {

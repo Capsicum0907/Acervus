@@ -109,7 +109,7 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
             return held.isEmpty() ? null : new Row(ItemStack.EMPTY, FluidStack.EMPTY, BOLT, false,
                     0xFFFFFFFF, Component.translatable("gui.acervus.energy"), held.brief(held.amount()));
         }
-        if (Mods.mekanism() && kind == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get()) {
+        if (kind == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get()) {
             return io.github.capsicum0907.acervus.gas.GasRow.of(registries, heap);
         }
         return null;

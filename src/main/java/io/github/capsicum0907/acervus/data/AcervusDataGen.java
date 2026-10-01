@@ -1,5 +1,8 @@
 package io.github.capsicum0907.acervus.data;
 
+import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.tags.ItemTags;
 import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.item.Item;
@@ -10,7 +13,6 @@ import java.util.concurrent.CompletableFuture;
 import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.AcervusRegistry;
 import io.github.capsicum0907.acervus.EnergyHeapBlock;
-import io.github.capsicum0907.acervus.Mods;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
@@ -31,7 +33,6 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
-import net.neoforged.neoforge.common.conditions.ItemExistsCondition;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.common.data.LanguageProvider;
@@ -90,10 +91,8 @@ public final class AcervusDataGen {
             ModelFile rackModel = models().orientable(rack, casing, modLoc("block/" + rack + "_front"), casing);
             horizontalBlock(AcervusRegistry.HORREUM.get(), rackModel);
             itemModels().withExistingParent(rack, modLoc("block/" + rack));
-            if (Mods.mekanism()) {
-                glassBox(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
-                drawnItem(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
-            }
+            glassBox(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
+            drawnItem(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
         }
 
         private void drawnItem(DeferredBlock<?> block) {
@@ -159,9 +158,7 @@ public final class AcervusDataGen {
             add("block.acervus.energy_heap.holding", "%s FE");
             add("block.acervus.chemical_heap.holding", "%s, %s");
             add("block.acervus.item_heap.absorbing", "Collecting what you pick up");
-            if (Mods.mekanism()) {
-                add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "Gas Heap");
-            }
+            add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "Gas Heap");
             add("gui.acervus.room", "%s more will fit");
             add("gui.acervus.vessel", "Put a container here");
             add("gui.acervus.flow.in", "In");
@@ -190,23 +187,21 @@ public final class AcervusDataGen {
 
         @Override
         protected void buildRecipes(RecipeOutput output) {
-            heap(output, AcervusRegistry.HEAP.get(), Blocks.CHEST);
-            heap(output, AcervusRegistry.FLUID_HEAP.get(), Blocks.CAULDRON);
-            heap(output, AcervusRegistry.ENERGY_HEAP.get(), Blocks.REDSTONE_BLOCK);
+            heap(output, AcervusRegistry.HEAP.get(), Ingredient.of(Blocks.CHEST));
+            heap(output, AcervusRegistry.FLUID_HEAP.get(), Ingredient.of(Blocks.CAULDRON));
+            heap(output, AcervusRegistry.ENERGY_HEAP.get(), Ingredient.of(Blocks.REDSTONE_BLOCK));
             rack(output, AcervusRegistry.HEAP_ITEM.get());
             rack(output, AcervusRegistry.FLUID_HEAP_ITEM.get());
             rack(output, AcervusRegistry.ENERGY_HEAP_ITEM.get());
 
-            if (Mods.mekanism()) {
-                RecipeOutput whenGasHeapExists = output.withConditions(
-                        new ItemExistsCondition(Acervus.MODID, "chemical_heap"));
-                heap(whenGasHeapExists, io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(),
-                        BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mekanism", "block_osmium")));
-                rack(whenGasHeapExists, io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get());
-            }
+            heap(output.withConditions(new ModLoadedCondition(MEKANISM)), io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(),
+                    Ingredient.of(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "storage_blocks/osmium"))));
+            rack(output, io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get());
         }
 
-        private static void heap(RecipeOutput output, ItemLike heap, ItemLike centre) {
+        private static final String MEKANISM = "mekanism";
+
+        private static void heap(RecipeOutput output, ItemLike heap, Ingredient centre) {
             ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, heap)
                     .pattern("ISI")
                     .pattern("NCN")

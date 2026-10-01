@@ -5,7 +5,6 @@ import java.util.List;
 import io.github.capsicum0907.acervus.ContentsBlockItem;
 import io.github.capsicum0907.acervus.Counts;
 
-import mekanism.api.chemical.ChemicalStack;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -42,13 +41,10 @@ public class ChemicalHeapBlockItem extends ContentsBlockItem {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, context, lines, flag);
 
-        HolderLookup.Provider registries = context.registries();
         CompoundTag tag = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
-        ChemicalStack sample = registries == null || !tag.contains("Sample") ? ChemicalStack.EMPTY
-                : ChemicalStack.parseOptional(registries, tag.getCompound("Sample"));
         long amount = tag.getLong("Amount");
 
-        if (sample.isEmpty() || amount <= 0) {
+        if (!tag.contains("Sample") || amount <= 0) {
             lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));
             return;
         }

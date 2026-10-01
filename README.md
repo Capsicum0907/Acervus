@@ -6,7 +6,7 @@ One kind of item, in numbers a chest cannot hold.
 
 > **Status: stage 5.** Four heaps — Item, Fluid, Energy and Gas — with screens for
 > each in the world and in the hand, and a **Horreum** to keep nine of them in.
-> 76 game tests pass headlessly, with and without Mekanism installed.
+> 77 game tests pass headlessly, with and without Mekanism installed.
 
 The item one is **Item Heap**, `acervus:item_heap`. It was `acervus:heap` while it
 was the only one; being written first is not a reason to be the one without a
@@ -373,6 +373,12 @@ Acervus needs **nothing but NeoForge**. Mekanism and Refined Storage are things 
 notices, not things it requires — and both are checked by running the tests with the
 mods folder emptied, not by reading the code and hoping.
 
+**Mekanism** is what lets the gas heap hold chemicals and talk to pipes, but the gas
+heap itself exists either way. Take Mekanism out of a world and its gas heaps stay
+where they are, keeping what they held as contents the game cannot read — the
+checkerboard, nothing in, nothing out — until Mekanism comes back. It can only be
+crafted with Mekanism installed.
+
 **Refined Storage** gets one thing: an external storage provider that reads a heap in
 longs. RS counts in longs everywhere — `ResourceAmount` carries one, `insert` and
 `extract` take one — and a heap holds a long, so the two agree perfectly. Until now
@@ -440,7 +446,7 @@ gradlew runData           # regenerate models, recipes and language
 - A heap cannot be upgraded. Every heap holds the configured capacity; that is the
   point of it.
 - A heap with something in it can be locked to that kind (see *Using one*).
-- The recipe. A heap is a type piece — chest, cauldron, redstone block or Mekanism's block of osmium —
+- The recipe. A heap is a type piece — chest, cauldron, redstone block or a block of osmium —
   in a frame of four iron blocks, two nether stars and two netherite ingots. A rack is an
   empty heap ringed by four nether stars and four netherite ingots. Every ingredient
   stacks, because heaps are meant to be built in numbers. Iron and nether stars can be

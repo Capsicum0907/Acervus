@@ -21,6 +21,10 @@ public class ChemicalHeapRenderer implements BlockEntityRenderer<ChemicalHeapBlo
     public static io.github.capsicum0907.acervus.client.HeapItemRenderer.Window window(
             net.minecraft.core.HolderLookup.Provider registries, net.minecraft.world.item.ItemStack stack) {
         HeldChemicalHeap heap = HeldChemicalHeap.of(registries, stack);
+        if (heap.unreadable()) {
+            return new io.github.capsicum0907.acervus.client.HeapItemRenderer.Window(
+                    io.github.capsicum0907.acervus.client.Missing.LOCATION, 0xFFFFFFFF);
+        }
         return heap.isEmpty() ? null
                 : new io.github.capsicum0907.acervus.client.HeapItemRenderer.Window(heap.contentTexture(),
                         heap.contentTint());
@@ -37,11 +41,14 @@ public class ChemicalHeapRenderer implements BlockEntityRenderer<ChemicalHeapBlo
             return;
         }
 
-        String name = heap.sample().getChemical().getTextComponent().getString();
+        String name = heap.contentName().getString();
         String amount = Counts.brief(heap.amount());
 
         net.minecraft.resources.ResourceLocation texture = heap.contentTexture();
-        if (texture != null) {
+        if (heap.unreadable()) {
+            io.github.capsicum0907.acervus.client.BlockSurface.fillWindows(pose, buffers, heap.getLevel(),
+                    heap.getBlockPos(), io.github.capsicum0907.acervus.client.Missing.sprite(), 0xFFFFFFFF, packedLight);
+        } else if (texture != null) {
             net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = Minecraft.getInstance()
                     .getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(texture);
             io.github.capsicum0907.acervus.client.BlockSurface.fillWindows(pose, buffers, heap.getLevel(),

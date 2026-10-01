@@ -2577,6 +2577,28 @@ Every cell is listed, air included: an omitted cell is left as whatever was alre
 
 Hashing.sha1 is what CachedOutput expects
 
+## `gas/Chemistry.java`
+
+**`public interface Chemistry`**
+
+The gas heap is registered in every game, so that taking Mekanism out of a world does
+not take the blocks with it. Nothing that is always loaded may name a Mekanism type,
+because the JVM can go looking for a type it sees in a class being loaded, not only
+one that is called. So the heap keeps what it holds as Mekanism wrote it — the saved
+chemical as a tag, and an amount — and compares kinds by their id.
+
+Everything that needs Mekanism to understand the tag goes through this interface:
+whether it can be read, its name, icon and tint, whether a container is empty, and
+moving chemicals between a heap and the containers in its slots. With Mekanism it is
+`MekanismChemistry`, in `gas.mek`, which is only ever loaded when Mekanism is present
+and also registers the chemical handlers for pipes. Without it, `NONE` reads nothing,
+so every gas heap's contents are unreadable: kept, shown as the missing texture, and
+never moved.
+
+The recipe asks for any block in `c:storage_blocks/osmium` rather than for Mekanism's
+own item by id, so that the file can be written without Mekanism, and it carries the
+condition that Mekanism is loaded.
+
 ## `gas/ChemicalHeapBlock.java`
 
 **`public class ChemicalHeapBlock extends BaseEntityBlock`**

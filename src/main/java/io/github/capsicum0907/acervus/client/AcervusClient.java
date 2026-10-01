@@ -32,10 +32,8 @@ public final class AcervusClient {
         event.registerBlockEntityRenderer(AcervusRegistry.FLUID_HEAP_ENTITY.get(), FluidHeapRenderer::new);
         event.registerBlockEntityRenderer(AcervusRegistry.ENERGY_HEAP_ENTITY.get(), EnergyHeapRenderer::new);
         event.registerBlockEntityRenderer(AcervusRegistry.HORREUM_ENTITY.get(), HorreumRenderer::new);
-        if (Mods.mekanism()) {
-            event.registerBlockEntityRenderer(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK_ENTITY.get(),
-                    io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::new);
-        }
+        event.registerBlockEntityRenderer(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK_ENTITY.get(),
+                io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::new);
     }
 
     public static void registerItemDecorations(RegisterItemDecorationsEvent event) {
@@ -44,10 +42,8 @@ public final class AcervusClient {
 
     public static void registerItemExtensions(RegisterClientExtensionsEvent event) {
         event.registerItem(drawnBy(HeapItemRenderer::fluid), AcervusRegistry.FLUID_HEAP_ITEM.get());
-        if (Mods.mekanism()) {
-            event.registerItem(drawnBy(io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::window),
-                    io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get());
-        }
+        event.registerItem(drawnBy(io.github.capsicum0907.acervus.gas.ChemicalHeapRenderer::window),
+                io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get());
     }
 
     private static IClientItemExtensions drawnBy(

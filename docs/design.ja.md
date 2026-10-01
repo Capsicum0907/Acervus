@@ -1945,6 +1945,16 @@ Heap はどれも同じ枠で作ります。四隅が鉄ブロック、上下が
 
 CachedOutput が求めるのは `Hashing.sha1` です
 
+## `gas/Chemistry.java`
+
+**`public interface Chemistry`**
+
+Gas Heap は、どのゲームでも登録します。Mekanism を世界から抜いたときに、ブロックごと消えないようにするためです。いつも読み込むクラスには、Mekanism の型の名前を一切書きません。Java は、読み込むクラスの中に出てくる型を、呼ばれる前に探しに行くことがあるからです。なので Heap は、中身を Mekanism が書いた形のまま（保存された化学物質のデータと量）で持ち、種類は ID で比べます。
+
+そのデータを Mekanism に読ませる必要がある処理は、すべてこの窓口を通します。読めるか・名前・アイコン・色・容器が空か・Heap と容器スロットの間の出し入れ、です。Mekanism があるときの実装は `gas.mek` の `MekanismChemistry` で、Mekanism があるときにしか読み込まれません。パイプ用の窓口の登録もここで行います。Mekanism が無いときは `NONE` が何も読めないと答えるので、Gas Heap の中身はすべて読めない中身になります。保持され、市松模様で見え、動かせません。
+
+レシピは Mekanism のアイテムを ID で指さず、`c:storage_blocks/osmium` に入るブロックならどれでもよい形にしています。Mekanism が無くてもレシピのファイルを書き出せるようにするためです。Mekanism が読み込まれていることを条件にしています。
+
 ## `gas/ChemicalHeapBlock.java`
 
 **`public class ChemicalHeapBlock extends BaseEntityBlock`**

@@ -20,7 +20,7 @@ public final class HeapColors {
         if (kind == AcervusRegistry.ENERGY_HEAP_ITEM.get()) {
             return ENERGY;
         }
-        if (Mods.mekanism() && kind == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get()) {
+        if (kind == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get()) {
             return CHEMICAL;
         }
         return ITEM;

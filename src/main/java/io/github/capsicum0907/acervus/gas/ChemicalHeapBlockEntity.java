@@ -1,221 +1,178 @@
 package io.github.capsicum0907.acervus.gas;
 
 import io.github.capsicum0907.acervus.AcervusConfig;
-
-import mekanism.api.chemical.ChemicalStack;
+import io.github.capsicum0907.acervus.Counts;
+import io.github.capsicum0907.acervus.HasVessel;
+import io.github.capsicum0907.acervus.HeapColors;
+import io.github.capsicum0907.acervus.Heaped;
+import io.github.capsicum0907.acervus.Vessel;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.capsicum0907.acervus.Heaped, io.github.capsicum0907.acervus.HasVessel {
+public class ChemicalHeapBlockEntity extends BlockEntity implements Heaped, HasVessel {
     private static final String SAMPLE = "Sample";
     private static final String LOCKED = "Locked";
     private static final String AMOUNT = "Amount";
+    private static final String ID = "id";
 
-    private ChemicalStack sample = ChemicalStack.EMPTY;
+    private CompoundTag kind;
     private long amount;
     private boolean locked;
 
-    private final ChemicalHeapHandler handler = new ChemicalHeapHandler(this);
+    private final Vessel in = new Vessel(Vessel.Flow.IN);
+    private final Vessel out = new Vessel(Vessel.Flow.OUT);
 
     public ChemicalHeapBlockEntity(BlockPos pos, BlockState state) {
         super(GasHeap.BLOCK_ENTITY.get(), pos, state);
     }
 
+    public HolderLookup.Provider registries() {
+        return level == null ? null : level.registryAccess();
+    }
+
+    public CompoundTag kind() {
+        return kind == null ? null : kind.copy();
+    }
+
+    @Override
     public boolean isEmpty() {
-        return sample.isEmpty() || amount <= 0;
+        return kind == null || amount <= 0;
     }
 
-    public ChemicalStack sample() {
-        return sample.copy();
+    @Override
+    public boolean unreadable() {
+        HolderLookup.Provider registries = registries();
+        return kind != null && registries != null && !Chemistry.get().readable(kind, registries);
     }
 
+    @Override
+    public String unreadableId() {
+        return unreadable() ? kind.getString(ID) : "";
+    }
+
+    @Override
     public long amount() {
         return amount;
     }
 
+    @Override
     public long capacity() {
         return AcervusConfig.CHEMICAL_CAPACITY.get();
     }
 
+    @Override
     public long room() {
         return Math.max(0L, capacity() - amount);
     }
 
-    public ChemicalHeapHandler handler() {
-        return handler;
-    }
-
-    public ChemicalStack contents() {
-        return isEmpty() ? ChemicalStack.EMPTY : sample.copyWithAmount(amount);
-    }
-
-    public boolean accepts(ChemicalStack stack) {
-        if (stack.isEmpty()) {
+    public boolean accepts(CompoundTag offered) {
+        if (offered == null || unreadable()) {
             return false;
         }
-        return sample.isEmpty() || ChemicalStack.isSameChemical(sample, stack);
+        return kind == null || kind.getString(ID).equals(offered.getString(ID));
     }
 
-    public boolean holds(ChemicalStack stack) {
-        return !isEmpty() && !stack.isEmpty() && ChemicalStack.isSameChemical(sample, stack);
-    }
-
-    public long insert(ChemicalStack stack, boolean simulate) {
-        if (!accepts(stack)) {
+    public long insertKind(CompoundTag offered, long wanted, boolean simulate) {
+        if (wanted <= 0L || !accepts(offered)) {
             return 0L;
         }
-        long taken = Math.min(room(), stack.getAmount());
-        if (taken <= 0 || simulate) {
+        long taken = Math.min(room(), wanted);
+        if (taken <= 0L || simulate) {
             return Math.max(taken, 0L);
         }
-
-        if (isEmpty()) {
-            sample = stack.copyWithAmount(1);
-            amount = 0;
+        if (kind == null) {
+            kind = offered.copy();
+            amount = 0L;
         }
         amount += taken;
         changed();
         return taken;
     }
 
-    public ChemicalStack extract(long wanted, boolean simulate) {
-        if (isEmpty() || wanted <= 0) {
-            return ChemicalStack.EMPTY;
+    public long extractAmount(long wanted, boolean simulate) {
+        if (unreadable() || isEmpty() || wanted <= 0L) {
+            return 0L;
         }
         long taken = Math.min(wanted, amount);
-        ChemicalStack out = sample.copyWithAmount(taken);
         if (simulate) {
-            return out;
+            return taken;
         }
-
         amount -= taken;
-        if (amount <= 0) {
+        if (amount <= 0L) {
             if (!locked) {
-                sample = ChemicalStack.EMPTY;
+                kind = null;
             }
-            amount = 0;
+            amount = 0L;
         }
         changed();
-        return out;
-    }
-
-    private final io.github.capsicum0907.acervus.Vessel in = new io.github.capsicum0907.acervus.Vessel(io.github.capsicum0907.acervus.Vessel.Flow.IN);
-    private final io.github.capsicum0907.acervus.Vessel out = new io.github.capsicum0907.acervus.Vessel(io.github.capsicum0907.acervus.Vessel.Flow.OUT);
-
-    @Override
-    public io.github.capsicum0907.acervus.Vessel vessel(io.github.capsicum0907.acervus.Vessel.Flow flow) {
-        return flow == io.github.capsicum0907.acervus.Vessel.Flow.IN ? in : out;
+        return taken;
     }
 
     @Override
-    public boolean emptyContainer(net.minecraft.world.item.ItemStack stack) {
-        return isEmptyContainer(stack);
+    public Vessel vessel(Vessel.Flow flow) {
+        return flow == Vessel.Flow.IN ? in : out;
     }
 
-    public static boolean isEmptyContainer(net.minecraft.world.item.ItemStack stack) {
-        mekanism.api.chemical.IChemicalHandler container = stack.getCapability(GasHeap.CHEMICAL_ITEM);
-        if (container == null) {
-            return false;
-        }
-        for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
-            if (!container.getChemicalInTank(tank).isEmpty()) {
-                return false;
-            }
-        }
-        return true;
+    @Override
+    public boolean emptyContainer(ItemStack stack) {
+        return Chemistry.get().emptyContainer(stack);
     }
 
-    public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state,
-            ChemicalHeapBlockEntity heap) {
+    public static void serverTick(Level level, BlockPos pos, BlockState state, ChemicalHeapBlockEntity heap) {
         if (level.isClientSide) {
             return;
         }
-        boolean moved = heap.tickVessel(heap.in, ChemicalHeapBlockEntity::pourIn);
-        moved |= heap.tickVessel(heap.out, ChemicalHeapBlockEntity::drawOut);
-        if (moved) {
+        if (Chemistry.get().tickVessels(heap)) {
             heap.changed();
         }
     }
 
-    private boolean tickVessel(io.github.capsicum0907.acervus.Vessel vessel,
-            java.util.function.BiPredicate<ChemicalHeapBlockEntity, mekanism.api.chemical.IChemicalHandler> move) {
-        if (vessel.isEmpty()) {
-            return false;
-        }
-        mekanism.api.chemical.IChemicalHandler container = vessel.held().getCapability(GasHeap.CHEMICAL_ITEM);
-        return container != null && move.test(this, container);
-    }
-
-    private static boolean pourIn(ChemicalHeapBlockEntity heap,
-            mekanism.api.chemical.IChemicalHandler container) {
-        for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
-            ChemicalStack inside = container.getChemicalInTank(tank);
-            if (inside.isEmpty() || !heap.accepts(inside)) {
-                continue;
-            }
-            long taken = heap.insert(inside, false);
-            if (taken > 0) {
-                container.extractChemical(tank, taken, mekanism.api.Action.EXECUTE);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean drawOut(ChemicalHeapBlockEntity heap,
-            mekanism.api.chemical.IChemicalHandler container) {
-        if (heap.isEmpty()) {
-            return false;
-        }
-        for (int tank = 0; tank < container.getChemicalTanks(); tank++) {
-            ChemicalStack offer = heap.extract(container.getChemicalTankCapacity(tank), true);
-            ChemicalStack left = container.insertChemical(tank, offer, mekanism.api.Action.EXECUTE);
-            long given = offer.getAmount() - left.getAmount();
-            if (given > 0) {
-                heap.extract(given, false);
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
-    public net.minecraft.network.chat.Component contentName() {
-        return sample.isEmpty() ? net.minecraft.network.chat.Component.empty()
-                : sample.getChemical().getTextComponent();
+    public Component contentName() {
+        if (kind == null) {
+            return Component.empty();
+        }
+        HolderLookup.Provider registries = registries();
+        return registries == null ? Component.literal(kind.getString(ID)) : Chemistry.get().name(kind, registries);
     }
 
     @Override
     public String brief(long value) {
-        return io.github.capsicum0907.acervus.Counts.brief(value);
+        return Counts.brief(value);
     }
 
     @Override
     public String exact(long value) {
-        return io.github.capsicum0907.acervus.Counts.exact(value);
+        return Counts.exact(value);
     }
 
     @Override
-    public net.minecraft.resources.ResourceLocation contentTexture() {
-        return sample.isEmpty() ? null : sample.getChemical().getIcon();
+    public ResourceLocation contentTexture() {
+        HolderLookup.Provider registries = registries();
+        return kind == null || registries == null ? null : Chemistry.get().icon(kind, registries);
     }
 
     @Override
     public int contentTint() {
-        return sample.isEmpty() ? 0xFFFFFFFF : 0xFF000000 | sample.getChemical().getTint();
+        HolderLookup.Provider registries = registries();
+        return kind == null || registries == null ? 0xFFFFFFFF : Chemistry.get().tint(kind, registries);
     }
 
     @Override
     public int tint() {
-        return io.github.capsicum0907.acervus.HeapColors.CHEMICAL;
+        return HeapColors.CHEMICAL;
     }
 
     @Override
@@ -225,17 +182,17 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
 
     @Override
     public boolean canLock() {
-        return !isEmpty();
+        return !isEmpty() && !unreadable();
     }
 
     @Override
     public void lock(boolean on) {
-        if (on == locked || (on && !canLock())) {
+        if (unreadable() || on == locked || (on && !canLock())) {
             return;
         }
         locked = on;
-        if (!on && amount <= 0) {
-            sample = ChemicalStack.EMPTY;
+        if (!on && amount <= 0L) {
+            kind = null;
         }
         changed();
     }
@@ -254,19 +211,17 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements io.github.ca
         tag.putBoolean(LOCKED, locked);
         in.save(tag, registries);
         out.save(tag, registries);
-        if (!sample.isEmpty()) {
-            tag.put(SAMPLE, sample.save(registries));
+        if (kind != null) {
+            tag.put(SAMPLE, kind.copy());
         }
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        sample = tag.contains(SAMPLE)
-                ? ChemicalStack.parseOptional(registries, tag.getCompound(SAMPLE))
-                : ChemicalStack.EMPTY;
-        locked = tag.getBoolean(LOCKED) && !sample.isEmpty();
-        amount = sample.isEmpty() ? 0L : tag.getLong(AMOUNT);
+        kind = tag.contains(SAMPLE) ? tag.getCompound(SAMPLE).copy() : null;
+        locked = tag.getBoolean(LOCKED) && kind != null;
+        amount = kind == null ? 0L : tag.getLong(AMOUNT);
         in.load(tag, registries);
         out.load(tag, registries);
     }

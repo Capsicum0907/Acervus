@@ -1253,6 +1253,29 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aGasHeapExistsAndKeepsWhatItCannotRead(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        helper.setBlock(WHERE, io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof io.github.capsicum0907.acervus.gas.ChemicalHeapBlockEntity gas)) {
+            throw new GameTestAssertException("placing a gas heap should have made one, Mekanism or not");
+        }
+        gas.loadWithComponents(lost(500L), registries);
+        check(gas.unreadable() && !gas.isEmpty(), "a gas heap of something unknown is not empty");
+        CompoundTag hydrogen = new CompoundTag();
+        hydrogen.putString("id", "mekanism:hydrogen");
+        check(gas.insertKind(hydrogen, 1_000L, false) == 0L, "and takes nothing");
+        check(gas.extractAmount(1_000L, false) == 0L, "and gives nothing");
+        check(kept(gas.saveWithoutMetadata(registries)), "and is written back exactly as it was");
+
+        if (Mods.mekanism()) {
+            gas.loadWithComponents(new CompoundTag(), registries);
+            check(gas.insertKind(hydrogen, 1_000L, false) == 1_000L, "with Mekanism, hydrogen should go in");
+            check(gas.extractAmount(400L, false) == 400L && gas.amount() == 600L, "and come back out");
+        }
+        helper.succeed();
+    }
+
     private static CompoundTag lost(long amount) {
         CompoundTag sample = new CompoundTag();
         sample.putString("id", "nonexistent:thing");
@@ -1529,6 +1552,9 @@ public final class AcervusTests {
         for (Item item : BuiltInRegistries.ITEM) {
             ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
             if (!Acervus.MODID.equals(id.getNamespace())) {
+                continue;
+            }
+            if (item == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get() && !Mods.mekanism()) {
                 continue;
             }
             check(craftable.contains(item), id + " has no recipe");

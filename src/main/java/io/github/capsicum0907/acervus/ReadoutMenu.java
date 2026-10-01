@@ -249,8 +249,7 @@ public class ReadoutMenu extends AbstractContainerMenu {
         if (stack.getItem() == AcervusRegistry.ENERGY_HEAP_ITEM.get()) {
             return HeldEnergyHeap.inHand(player, hand);
         }
-        if (Mods.mekanism()
-                && stack.getItem() == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get()) {
+        if (stack.getItem() == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get()) {
             return io.github.capsicum0907.acervus.gas.HeldChemicalHeap.inHand(player, hand);
         }
         return null;
