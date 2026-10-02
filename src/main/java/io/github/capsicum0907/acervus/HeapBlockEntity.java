@@ -94,7 +94,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public boolean accepts(ItemStack stack) {
-        if (stack.isEmpty() || unreadable != null) {
+        if (stack.isEmpty() || unreadable != null || !Storable.allowed(stack)) {
             return false;
         }
         return sample.isEmpty() || Compression.sameKind(sample, stack);

@@ -139,7 +139,7 @@ public final class CarriedHeap implements Pile {
 
     @Override
     public boolean accepts(ItemStack stack) {
-        if (stack.isEmpty() || unreadable()) {
+        if (stack.isEmpty() || unreadable() || !Storable.allowed(stack)) {
             return false;
         }
         return sample().isEmpty() || Compression.sameKind(sample(), stack);

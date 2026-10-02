@@ -59,6 +59,10 @@ form pipes and hoppers take out. Mods' forms are included.
 Click the word **Out** to switch the Out slot to the smallest form. Anything less than
 one of the first form, such as 4 nuggets in a heap of ingots, comes out this way.
 
+**What cannot go in.** Heaps and Horreums, empty or not, shulker boxes, bundles, and
+anything carrying what was stored in it, such as a chest picked up with its contents.
+An empty chest goes in like any other item.
+
 **Carrying one.** An Item Heap in the inventory picks up what it holds:
 
 - what is walked over

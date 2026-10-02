@@ -1378,6 +1378,33 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aHeapTakesNothingThatKeepsContentsOfItsOwn(GameTestHelper helper) {
+        HeapBlockEntity heap = place(helper);
+        ItemStack[] refused = {
+                new ItemStack(AcervusRegistry.HEAP_ITEM.get()),
+                new ItemStack(AcervusRegistry.FLUID_HEAP_ITEM.get()),
+                new ItemStack(AcervusRegistry.ENERGY_HEAP_ITEM.get()),
+                new ItemStack(AcervusRegistry.HORREUM_ITEM.get()),
+                new ItemStack(Items.SHULKER_BOX),
+                new ItemStack(Items.RED_SHULKER_BOX),
+                new ItemStack(Items.BUNDLE) };
+        for (ItemStack stack : refused) {
+            check(!heap.accepts(stack), "a heap should refuse " + stack.getItem());
+            check(heap.insert(stack, false) == 0, "and take none of " + stack.getItem());
+        }
+        check(heap.accepts(new ItemStack(Items.CHEST)), "an empty chest keeps nothing, so it may go in");
+        ItemStack packed = new ItemStack(Items.CHEST);
+        packed.set(net.minecraft.core.component.DataComponents.CONTAINER,
+                net.minecraft.world.item.component.ItemContainerContents.fromItems(List.of(new ItemStack(Items.DIAMOND))));
+        check(!heap.accepts(packed), "but a chest carrying what was in it should not");
+
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        CarriedHeap carried = CarriedHeap.of(registries, new ItemStack(AcervusRegistry.HEAP_ITEM.get()));
+        check(!carried.accepts(new ItemStack(AcervusRegistry.HEAP_ITEM.get())), "nor should a carried one");
+        helper.succeed();
+    }
+
     private static boolean kept(CompoundTag tag) {
         return "nonexistent:thing".equals(tag.getCompound("Sample").getString("id")) && tag.getLong("Amount") == 500L;
     }

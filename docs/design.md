@@ -2760,6 +2760,18 @@ Which of the three the player is holding, or null.
 The gas one is asked for last and through its own package, so that a game
 without Mekanism never loads a class that mentions a chemical.
 
+## `Storable.java`
+
+**`public final class Storable`**
+
+What an item heap may hold. A heap that took heaps would hold 9.2E heaps of 9.2E
+each, and the capacity would mean nothing; a shulker box or a bundle is the same
+trick one step removed. So anything that is made to keep contents is refused by its
+kind, whether or not it is empty: every `ContentsBlockItem`, whatever the game will
+not let into a container, and whatever is a bundle. A chest is only refused while
+it is carrying something, because as an item it is usually just a chest — 1.21 gives
+every container block a `CONTAINER` component, so that alone cannot decide it.
+
 ## `VesselSlot.java`
 
 **`public class VesselSlot extends Slot`**
