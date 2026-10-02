@@ -91,10 +91,10 @@ public class HeapContentsTooltip implements ClientTooltipComponent {
         if (kind == AcervusRegistry.HEAP_ITEM.get()) {
             CarriedHeap held = CarriedHeap.of(registries, heap);
             if (held.unreadable()) {
-                return unreadable(held.unreadableId(), Counts.exact(held.count()));
+                return unreadable(held.unreadableId(), Counts.brief(held.count()));
             }
             return held.isEmpty() ? null : new Row(held.sample(), FluidStack.EMPTY, null, false, 0,
-                    held.sample().getHoverName(), Counts.exact(held.count()));
+                    held.sample().getHoverName(), Counts.brief(held.count()));
         }
         if (kind == AcervusRegistry.FLUID_HEAP_ITEM.get()) {
             HeldFluidHeap held = HeldFluidHeap.of(registries, heap);

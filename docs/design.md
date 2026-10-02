@@ -2787,6 +2787,10 @@ What turns `HeapContents` into something drawn.
 
 Draws `HeapContents`: one row per heap, an icon then a name then an amount.
 
+Every amount is in the short form, items included. A tooltip is looked over, not
+read, and a rack's nine rows of nineteen-digit numbers would not line up; the exact
+figure is one screen away.
+
 The icon is whatever stands for the contents where they are usually seen — the
 item itself, or a fluid's or a chemical's own sprite off the block atlas. Energy has
 no kinds, so its row has no icon and says so by being a number on its own.
