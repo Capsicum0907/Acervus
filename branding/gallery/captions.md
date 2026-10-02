@@ -3,11 +3,11 @@
 Upload in this order; the first is the card image. None of these has been taken yet.
 
 ## 01-card.png
-**Four heaps and a Horreum**
+**Four heaps**
 
-An Item, Fluid, Energy and Gas Heap in a row, each holding something, with a Horreum beside them.
+An Item, Fluid, Energy and Gas Heap in a row, each holding something.
 
-Item・Fluid・Energy・Gas Heap に中身を入れて並べ、横に Horreum を置いたものです。
+Item・Fluid・Energy・Gas Heap に中身を入れて並べたものです。
 
 ## 02-item-screen.png
 **The screen**
