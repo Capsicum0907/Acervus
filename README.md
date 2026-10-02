@@ -25,6 +25,12 @@ picks up the item it holds.
 | [Config](docs/config.md) | Every setting |
 | [Design notes](docs/design.md) | Notes on the source, file by file |
 
+## Screenshots
+
+![Four heaps](branding/gallery/01-card.png)
+
+More in [branding/gallery](branding/gallery).
+
 ## Requirements
 
 | | |

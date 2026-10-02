@@ -24,6 +24,12 @@ Heap は壊しても中身を保ちます。Item Heap をインベントリに�
 | [設定](docs/config.ja.md) | すべての設定項目 |
 | [設計メモ](docs/design.ja.md) | ソースについてのメモ（ファイルごと） |
 
+## スクリーンショット
+
+![4種類の Heap](branding/gallery/01-card.png)
+
+ほかの画像は [branding/gallery](branding/gallery) にあります。
+
 ## 動作環境
 
 | | |

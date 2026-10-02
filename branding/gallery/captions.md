@@ -1,6 +1,6 @@
 # Gallery
 
-Upload in this order; the first is the card image. None of these has been taken yet.
+Upload in this order; the first is the card image.
 
 ## 01-card.png
 **Four heaps**
@@ -12,9 +12,9 @@ Item・Fluid・Energy・Gas Heap に中身を入れて並べたものです。
 ## 02-item-screen.png
 **The screen**
 
-An Item Heap's screen with billions of something in it.
+An Item Heap's screen with 123.5P golden carrots in it, out of 9.2E.
 
-何十億個も入った Item Heap の画面です。
+金のニンジンが 123.5P 個入った Item Heap の画面です。容量は 9.2E です。
 
 ## 03-fluid-screen.png
 **Fluids, energy and chemicals**
