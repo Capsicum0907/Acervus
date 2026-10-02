@@ -16,8 +16,8 @@ slots and is not bounded by a stack.
 
 **The care is all at the edge.** An item stack can carry a count past 64, but most
 of the paths that touch one — vanilla's and other mods' alike — round it back down
-at the far end. That is where every mod of this kind breaks. So the number is kept
-inside, and what leaves is always an ordinary stack.
+at the far end. That is where every mod of this kind breaks. So the whole number is
+kept inside, and the outside is only ever shown as much of it as an int can hold.
 
 Because of that, the count is a **long**. Nothing outside ever holds it, so nothing
 outside has to be able to; the only care needed is at the three places the game asks
@@ -1717,7 +1717,7 @@ Keeping the two apart is what stops a stack size from leaking into the total.
 
 **The count is a long, and that costs nothing.** An item stack counts with
 an int, but no item stack ever carries this number: what leaves a heap is a stack
-of at most a stack, worked out from the total rather than being it. The total is
+of at most an int, worked out from the total rather than being it. The total is
 therefore free to be as wide as it likes, and the only care needed is at the three
 places the outside world asks in ints, where the answer is clamped on the way out.
 
