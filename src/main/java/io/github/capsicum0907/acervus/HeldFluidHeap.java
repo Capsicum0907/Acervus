@@ -38,7 +38,7 @@ public final class HeldFluidHeap extends Held {
 
     @Override
     public long amount() {
-        return tag().getLong(AMOUNT);
+        return Counts.stored(tag(), AMOUNT);
     }
 
     @Override

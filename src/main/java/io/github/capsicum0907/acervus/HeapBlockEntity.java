@@ -67,6 +67,11 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         return Math.max(0L, Compression.times(capacity(), unit) - amount) / unit;
     }
 
+    @Override
+    public long limit() {
+        return Compression.times(capacity(), unit) / unit;
+    }
+
     public HeapItemHandler handler() {
         return handler;
     }
@@ -297,7 +302,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         boolean known = !sample.isEmpty() || unreadable != null;
         locked = tag.getBoolean(LOCKED) && known;
         amount = !known ? 0L
-                : tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
+                : Counts.stored(tag, AMOUNT, LEGACY_COUNT);
         unit = Math.max(1L, tag.contains(UNIT) ? tag.getLong(UNIT) : 1L);
         ResourceLocation least = tag.contains(SMALLEST) ? ResourceLocation.tryParse(tag.getString(SMALLEST)) : null;
         smallest = least == null ? null : BuiltInRegistries.ITEM.getOptional(least).orElse(null);

@@ -42,7 +42,7 @@ public class ChemicalHeapBlockItem extends ContentsBlockItem {
         super.appendHoverText(stack, context, lines, flag);
 
         CompoundTag tag = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
-        long amount = tag.getLong("Amount");
+        long amount = Counts.stored(tag, "Amount");
 
         if (!tag.contains("Sample") || amount <= 0) {
             lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));

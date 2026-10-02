@@ -90,7 +90,7 @@ public final class CarriedHeap implements Pile {
     }
 
     private static long amount(CompoundTag tag) {
-        return tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_COUNT);
+        return Counts.stored(tag, AMOUNT, LEGACY_COUNT);
     }
 
     private static long unit(CompoundTag tag) {
@@ -121,6 +121,11 @@ public final class CarriedHeap implements Pile {
         CompoundTag tag = tag();
         long unit = unit(tag);
         return Math.max(0L, Compression.times(capacity(), unit) - amount(tag)) / unit;
+    }
+
+    @Override
+    public long limit() {
+        return Compression.times(capacity(), unit(tag())) / unit(tag());
     }
 
     @Override

@@ -1,5 +1,11 @@
 package io.github.capsicum0907.acervus;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.FloatTag;
+import net.minecraft.nbt.NumericTag;
+import net.minecraft.nbt.Tag;
+
 public final class Counts {
     private static final long SMALLEST_UNIT = 1_000L;
 
@@ -9,6 +15,19 @@ public final class Counts {
     private static final String[] SUFFIXES = { "E", "P", "T", "G", "M", "K" };
 
     private Counts() {
+    }
+
+    public static long stored(CompoundTag tag, String key) {
+        return stored(tag, key, key);
+    }
+
+    public static long stored(CompoundTag tag, String key, String legacy) {
+        Tag value = tag.contains(key) ? tag.get(key) : tag.get(legacy);
+        if (!(value instanceof NumericTag number)) {
+            return 0L;
+        }
+        boolean fraction = value instanceof DoubleTag || value instanceof FloatTag;
+        return Math.max(0L, fraction ? (long) number.getAsDouble() : number.getAsLong());
     }
 
     public static long beyondAnInt(long count) {

@@ -42,7 +42,7 @@ public class FluidHeapBlockItem extends ContentsBlockItem {
         CompoundTag tag = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
         FluidStack sample = registries == null || !tag.contains("Sample") ? FluidStack.EMPTY
                 : FluidStack.parse(registries, tag.getCompound("Sample")).orElse(FluidStack.EMPTY);
-        long amount = tag.getLong("Amount");
+        long amount = Counts.stored(tag, "Amount");
 
         if (sample.isEmpty() || amount <= 0) {
             lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));

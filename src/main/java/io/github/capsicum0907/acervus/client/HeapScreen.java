@@ -71,7 +71,7 @@ public class HeapScreen extends ReadoutPanel<HeapMenu> {
 
         @Override
         public long capacity() {
-            return pile.count() + pile.room();
+            return pile.limit();
         }
 
         @Override

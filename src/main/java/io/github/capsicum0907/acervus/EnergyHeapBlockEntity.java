@@ -218,7 +218,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        stored = tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_STORED);
+        stored = Counts.stored(tag, AMOUNT, LEGACY_STORED);
         in.load(tag, registries);
         out.load(tag, registries);
     }

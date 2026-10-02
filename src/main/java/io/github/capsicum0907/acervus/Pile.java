@@ -11,6 +11,8 @@ public interface Pile {
 
     long room();
 
+    long limit();
+
     ItemStack stack();
 
     boolean accepts(ItemStack stack);
@@ -85,6 +87,11 @@ public interface Pile {
 
         @Override
         public long room() {
+            return 0L;
+        }
+
+        @Override
+        public long limit() {
             return 0L;
         }
 

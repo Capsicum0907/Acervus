@@ -32,7 +32,7 @@ public final class HeldEnergyHeap extends Held {
     @Override
     public long amount() {
         CompoundTag tag = tag();
-        return tag.contains(AMOUNT) ? tag.getLong(AMOUNT) : tag.getLong(LEGACY_STORED);
+        return Counts.stored(tag, AMOUNT, LEGACY_STORED);
     }
 
     @Override

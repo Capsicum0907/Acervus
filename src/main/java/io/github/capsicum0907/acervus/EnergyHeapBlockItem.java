@@ -37,7 +37,7 @@ public class EnergyHeapBlockItem extends ContentsBlockItem {
         super.appendHoverText(stack, context, lines, flag);
 
         CompoundTag tag = stack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY).copyTag();
-        long stored = tag.contains("Amount") ? tag.getLong("Amount") : tag.getLong("Stored");
+        long stored = Counts.stored(tag, "Amount", "Stored");
         if (stored <= 0) {
             lines.add(Component.translatable("gui.acervus.empty").withStyle(ChatFormatting.GRAY));
             return;

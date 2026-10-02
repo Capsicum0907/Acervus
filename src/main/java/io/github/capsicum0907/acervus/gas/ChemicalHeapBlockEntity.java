@@ -221,7 +221,7 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements Heaped, HasV
         super.loadAdditional(tag, registries);
         kind = tag.contains(SAMPLE) ? tag.getCompound(SAMPLE).copy() : null;
         locked = tag.getBoolean(LOCKED) && kind != null;
-        amount = kind == null ? 0L : tag.getLong(AMOUNT);
+        amount = kind == null ? 0L : Counts.stored(tag, AMOUNT);
         in.load(tag, registries);
         out.load(tag, registries);
     }

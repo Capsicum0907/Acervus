@@ -1340,6 +1340,44 @@ public final class AcervusTests {
         return tag;
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void theScreenReadsTheLimitRatherThanAddingItUp(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        HeapBlockEntity heap = place(helper);
+        heap.loadWithComponents(goldTag(registries, 10L, 9L), registries);
+        long limit = Compression.times(AcervusConfig.CAPACITY.get(), 9L) / 9L;
+        check(heap.limit() == limit, "the limit should be what fits, counted in ingots, not " + heap.limit());
+
+        heap.loadWithComponents(goldTag(registries, -100L, 9L), registries);
+        check(heap.limit() == limit, "nor when the amount is below zero, not " + heap.limit());
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void anAmountIsReadAsAWholeNumberAtLeastZero(GameTestHelper helper) {
+        CompoundTag tag = new CompoundTag();
+        tag.putLong("Amount", -100L);
+        check(Counts.stored(tag, "Amount") == 0L, "below zero should read as zero");
+        tag.putString("Amount", "0123L");
+        check(Counts.stored(tag, "Amount") == 0L, "text should read as zero");
+        tag.putDouble("Amount", 1.5D);
+        check(Counts.stored(tag, "Amount") == 1L, "a fraction should lose what is after the point");
+        tag.putDouble("Amount", 1e30D);
+        check(Counts.stored(tag, "Amount") == Long.MAX_VALUE, "a fraction too large should stop at the largest long");
+        tag.putDouble("Amount", Double.NaN);
+        check(Counts.stored(tag, "Amount") == 0L, "not a number should read as zero");
+        tag.putInt("Amount", 100);
+        check(Counts.stored(tag, "Amount") == 100L, "a whole number without its L should still count");
+        tag.putLong("Amount", Long.MAX_VALUE);
+        check(Counts.stored(tag, "Amount") == Long.MAX_VALUE, "the largest long should be kept");
+
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        HeapBlockEntity heap = place(helper);
+        heap.loadWithComponents(goldTag(registries, -100L, 9L), registries);
+        check(heap.count() == 0L && heap.isEmpty(), "a placed heap should come out empty, not " + heap.count());
+        helper.succeed();
+    }
+
     private static boolean kept(CompoundTag tag) {
         return "nonexistent:thing".equals(tag.getCompound("Sample").getString("id")) && tag.getLong("Amount") == 500L;
     }

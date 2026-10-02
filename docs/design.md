@@ -1349,6 +1349,14 @@ Both live here rather than at the two places that draw them, because a block
 and its screen disagreeing about the same contents is the kind of thing nobody
 notices and everybody distrusts.
 
+**`public static long stored(CompoundTag tag, String key, String legacy)`**
+
+The one way a saved amount is read, by every heap, placed or carried. An amount
+can be written by hand with `/data`, so what is found there is not trusted: a
+whole number is taken as it is, a fraction loses what is after the point, and
+anything below zero, or not a number at all, is zero. A heap below zero used to
+look empty while swallowing whatever was put into it.
+
 **`private static final long SMALLEST_UNIT`**
 
 Below the smallest unit the number is already three digits, which is the target.
@@ -2617,6 +2625,14 @@ and the same screen work over either.
 It is deliberately not a common base class. The two differ entirely in how they
 persist, how they reach the client and what may be taken out of them; what they
 share is the arithmetic, and that is all this says.
+
+**`long limit()`**
+
+The most this heap can hold, counted in the form it shows. The screen used to add
+`count()` and `room()` to get it, and the sum broke whenever `room()` did — an
+amount below zero overflowed it to nothing and the screen read `-100 / -100`. It
+is not simply the configured capacity: a heap counts in its smallest form, and a
+capacity in ingots that does not fit a long in nuggets stops where the long does.
 
 **`ItemStack sample()`**
 

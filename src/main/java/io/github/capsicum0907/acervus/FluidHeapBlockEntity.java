@@ -281,7 +281,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         unreadable = tag.contains(SAMPLE) && sample.isEmpty() ? tag.getCompound(SAMPLE).copy() : null;
         boolean known = !sample.isEmpty() || unreadable != null;
         locked = tag.getBoolean(LOCKED) && known;
-        amount = known ? tag.getLong(AMOUNT) : 0L;
+        amount = known ? Counts.stored(tag, AMOUNT) : 0L;
         in.load(tag, registries);
         out.load(tag, registries);
     }
