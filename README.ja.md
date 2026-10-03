@@ -8,25 +8,25 @@
 
 | ブロック | |
 |---|---|
-| Item Heap | 1種類のアイテムを入れます。既定で 2,000,000,000 個 |
-| Fluid Heap | 1種類の液体を入れます。既定で 1,000,000,000 バケツ |
-| Energy Heap | Forge Energy（FE）を入れます。既定で 1,000,000,000,000 FE |
-| Gas Heap | Mekanism の化学物質を1種類入れます。既定で 1,000,000,000,000 mB |
-| Horreum | どの種類の Heap でも9個入る棚です。パイプから中の Heap すべてに届きます |
+| 超容量チェスト | 1種類のアイテムを入れます。既定で 2,000,000,000 個 |
+| 超容量タンク | 1種類の液体を入れます。既定で 1,000,000,000 バケツ |
+| 超容量蓄電器 | Forge Energy（FE）を入れます。既定で 1,000,000,000,000 FE |
+| 超容量ガスタンク | Mekanism の化学物質を1種類入れます。既定で 1,000,000,000,000 mB |
+| 超容量ラック | どの種類の超容量ストレージでも9個入る棚です。パイプから中のすべてに届きます |
 
-Heap は壊しても中身を保ちます。Item Heap をインベントリに入れて持ち歩くと、入っているのと同じアイテムを拾い集めます。
+超容量ストレージは壊しても中身を保ちます。超容量チェストをインベントリに入れて持ち歩くと、入っているのと同じアイテムを拾い集めます。
 
 ## 資料
 
 | | |
 |---|---|
-| [Heap と Horreum](docs/heaps.ja.md) | 各ブロックの働きと使い方 |
+| [超容量ストレージと超容量ラック](docs/heaps.ja.md) | 各ブロックの働きと使い方 |
 | [設定](docs/config.ja.md) | すべての設定項目 |
 | [設計メモ](docs/design.ja.md) | ソースについてのメモ（ファイルごと） |
 
 ## スクリーンショット
 
-![4種類の Heap](branding/gallery/01-card.png)
+![4種類の超容量ストレージ](branding/gallery/01-card.png)
 
 ほかの画像は [branding/gallery](branding/gallery) にあります。
 
@@ -38,7 +38,7 @@ Heap は壊しても中身を保ちます。Item Heap をインベントリに�
 | NeoForge | 21.1.248 |
 | Java | 21 |
 
-任意：[Mekanism](https://www.curseforge.com/minecraft/mc-mods/mekanism) を入れると Gas Heap が使えます。[Refined Storage](https://www.curseforge.com/minecraft/mc-mods/refined-storage) を入れると 2,147,483,647 を超える量もそのまま読めます。
+任意：[Mekanism](https://www.curseforge.com/minecraft/mc-mods/mekanism) を入れると超容量ガスタンクが使えます。[Refined Storage](https://www.curseforge.com/minecraft/mc-mods/refined-storage) を入れると 2,147,483,647 を超える量もそのまま読めます。
 
 ## ビルド
 
