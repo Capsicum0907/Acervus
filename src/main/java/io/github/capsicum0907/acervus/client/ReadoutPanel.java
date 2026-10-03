@@ -40,11 +40,11 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
     protected static final int CONTENT_Y = 38;
     protected static final int CONTENT_SIZE = 16;
 
-    private static final int COLUMN_X = 52;
+    private static final int COLUMN_X = 51;
     private static final int NAME_Y = 31;
-    private static final int BAR_X = 52;
+    private static final int BAR_X = 51;
     private static final int BAR_Y = 41;
-    private static final int BAR_W = 94;
+    private static final int BAR_W = 93;
     private static final int BAR_H = 6;
     private static final int BAR_INSET = 1;
     private static final int CAPTION_Y = 50;

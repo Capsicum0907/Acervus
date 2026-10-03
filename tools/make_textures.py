@@ -295,7 +295,7 @@ def draw_rack_screen() -> bytes:
 
 IN_SLOT = (8, 38)
 OUT_SLOT = (150, 38)
-BAR = (52, 41, 94, 6)
+BAR = (51, 41, 93, 6)
 
 
 def draw_readout() -> bytes:
