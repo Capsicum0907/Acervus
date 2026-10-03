@@ -1564,7 +1564,7 @@ public final class AcervusTests {
     }
 
     @GameTest(template = TestStructures.FLOOR)
-    public static void aDroppedHeapSurvivesFireLavaAndExplosions(GameTestHelper helper) {
+    public static void aDroppedHeapSurvivesFireLavaExplosionsAndCacti(GameTestHelper helper) {
         BlockPos pos = helper.absolutePos(WHERE);
         net.minecraft.world.damagesource.DamageSources sources = helper.getLevel().damageSources();
         List<ItemStack> kept = new java.util.ArrayList<>();
@@ -1577,11 +1577,15 @@ public final class AcervusTests {
             check(!dropped.hurt(sources.lava(), 100.0F), stack.getItem() + " should not be hurt by lava");
             check(!dropped.hurt(sources.inFire(), 100.0F), "nor by fire");
             check(!dropped.hurt(sources.explosion(null, null), 100.0F), "nor by an explosion");
+            check(!dropped.hurt(sources.cactus(), 100.0F), "nor by a cactus");
             check(dropped.isAlive(), "and should still be there");
         }
         ItemEntity diamond = new ItemEntity(helper.getLevel(), pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5,
                 new ItemStack(Items.DIAMOND));
         check(diamond.hurt(sources.explosion(null, null), 100.0F), "an ordinary item is still destroyed, as a check on the test");
+        ItemEntity emerald = new ItemEntity(helper.getLevel(), pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5,
+                new ItemStack(Items.EMERALD));
+        check(emerald.hurt(sources.cactus(), 100.0F), "and so is one on a cactus");
         helper.succeed();
     }
 

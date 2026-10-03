@@ -1326,7 +1326,7 @@ to keep.
 Every item in this mod: one that carries, on the item, what its block was holding.
 
 **Fire and explosions do not destroy one.** The constructor adds `fireResistant()` to
-whatever properties it is given, and `canBeHurtBy` refuses explosion damage. Losing a
+whatever properties it is given, and `canBeHurtBy` refuses explosion and cactus damage. Losing a
 heap is not losing an item but losing everything in it, so this is not a setting; it
 lives here so that no heap, Horreum or creative heap can be registered without it.
 

@@ -125,7 +125,7 @@ you are carrying; its heaps can be moved, but nothing can be taken out of them.
 ## Dropped heaps
 
 A dropped heap or Horreum does not burn in fire or lava, and floats on lava like
-netherite. Explosions do not destroy it either.
+netherite. Explosions and cacti do not destroy it either.
 
 It still disappears, with everything in it, if it is left on the ground for five
 minutes like any other item. Pick it up before then.

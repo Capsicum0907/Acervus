@@ -2,6 +2,7 @@ package io.github.capsicum0907.acervus;
 
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -18,7 +19,8 @@ public abstract class ContentsBlockItem extends BlockItem {
 
     @Override
     public boolean canBeHurtBy(ItemStack stack, DamageSource source) {
-        return !source.is(DamageTypeTags.IS_EXPLOSION) && super.canBeHurtBy(stack, source);
+        return !source.is(DamageTypeTags.IS_EXPLOSION) && !source.is(DamageTypes.CACTUS)
+                && super.canBeHurtBy(stack, source);
     }
 
     public static boolean holdsSomething(ItemStack stack) {
