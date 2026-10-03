@@ -737,6 +737,13 @@ everything it is compared against is not.
 Underneath, the heap is unaffected: the count is right, and draining works
 because each extraction can take another two billion.
 
+The window stops one short of `Integer.MAX_VALUE` while there is room left, and
+reaches it only when the heap is full. PipeZ, and any pipe that checks a slot the
+same way, takes a slot whose count equals its limit as full and sends nothing; with
+the limit also saturated at `Integer.MAX_VALUE`, a heap past two billion stopped
+taking from such a pipe for good. How much goes in is still decided by
+`insertItem`, so the pipe sends as much as before.
+
 **`public static void aFluidHeapFillsPastWhatItCanSay(GameTestHelper helper)`**
 
 A fluid heap holds far past what a fluid stack can count, and says so as far as
@@ -2532,9 +2539,9 @@ reported, and extraction is bounded by what was asked for rather than by a stack
 
 The heap in that slot, ready to give, or null if there is not one.
 
-**inside, at `return heap.sample().copyWithCount((int) Math.min(heap.count(), Integer.MAX_VALUE))`**
+**inside, at `return heap.sample().copyWithCount(Counts.inAnInt(heap.count(), heap.room() > 0))`**
 
-The whole count, saturated at what a stack can carry. Rounding it down to sixty-four is what makes an external storage misreport a heap.
+The whole count, saturated at what a stack can carry — one short of it while the heap has room, so a pipe does not take it for full. Rounding it down to sixty-four is what makes an external storage misreport a heap.
 
 **inside, at `return taken >`**
 
@@ -3366,8 +3373,9 @@ RS combines every provider whose factory answers for a block and sums what they
 report, without removing duplicates. Its own item handler provider answers for every
 heap, because a heap has an item handler for hoppers and pipes, and it reports each
 slot capped at an int. Reporting the whole count here as well counted every heap
-twice. So this provider reports `Counts.beyondAnInt(count)`, the part the item handler
-cannot carry, and the sum is the real count. Fluid heaps are read the same way, in
+twice. So this provider reports `Counts.beyondAnInt(count, room > 0)`, the part the item
+handler does not show, and the sum is the real count. It must subtract exactly what the
+handler shows, which is one short of an int while there is room, or the sum is off by one. Fluid heaps are read the same way, in
 millibuckets, against RS's fluid handler provider. A game test pins the heap's side of that:
 what a pipe sees plus what only a long can carry is the whole count.
 ## `rs/RefinedStorage.java`

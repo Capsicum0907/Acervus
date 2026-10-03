@@ -39,7 +39,7 @@ public class FluidHeapHandler implements IFluidHandler {
 
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action) {
-        return heap.holds(resource) ? heap.extract(resource.getAmount(), action.simulate())
+        return heap.offers(resource) ? heap.extract(resource.getAmount(), action.simulate())
                 : FluidStack.EMPTY;
     }
 

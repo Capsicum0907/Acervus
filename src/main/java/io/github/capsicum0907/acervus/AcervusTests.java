@@ -386,8 +386,9 @@ public final class AcervusTests {
             long held = each * 3;
             check(heap.count() == held, "the heap should be holding " + held + ", not " + heap.count());
 
-            check(handler.getStackInSlot(0).getCount() == Integer.MAX_VALUE,
-                    "the window should saturate, and read " + handler.getStackInSlot(0).getCount());
+            check(handler.getStackInSlot(0).getCount() == Integer.MAX_VALUE - 1,
+                    "the window should saturate one short of the limit while there is room, and read "
+                            + handler.getStackInSlot(0).getCount());
             check(handler.getSlotLimit(0) == Integer.MAX_VALUE,
                     "so should the limit, and read " + handler.getSlotLimit(0));
 
@@ -1286,8 +1287,14 @@ public final class AcervusTests {
             tag.putLong("Amount", held);
             heap.loadWithComponents(tag, registries);
             long seenByAPipe = heap.handler().getStackInSlot(0).getCount();
-            long seenInLongs = Counts.beyondAnInt(heap.count());
-            check(seenByAPipe == Math.min(held, Integer.MAX_VALUE), "a pipe should see at most an int, not " + seenByAPipe);
+            long seenInLongs = Counts.beyondAnInt(heap.count(), heap.room() > 0);
+            long expected = held < Integer.MAX_VALUE ? held
+                    : heap.room() > 0 ? Integer.MAX_VALUE - 1 : Integer.MAX_VALUE;
+            check(seenByAPipe == expected, "a pipe should see " + expected + ", not " + seenByAPipe);
+            if (heap.room() > 0) {
+                check(seenByAPipe < heap.handler().getSlotLimit(0),
+                        "a heap with room left should never look full to a pipe that compares the two");
+            }
             check(seenByAPipe + seenInLongs == held, "and with what only longs can carry, all " + held
                     + ", not " + (seenByAPipe + seenInLongs));
         }
@@ -1300,7 +1307,8 @@ public final class AcervusTests {
         BlockItem.setBlockEntityData(big, AcervusRegistry.HEAP_ENTITY.get(), tag);
         rack.heaps().set(0, big);
         long rackPipe = rack.items().getStackInSlot(0).getCount();
-        long rackLong = Counts.beyondAnInt(CarriedHeap.stored(registries, big).count());
+        CarriedHeap stored = CarriedHeap.stored(registries, big);
+        long rackLong = Counts.beyondAnInt(stored.count(), stored.room() > 0);
         check(rackPipe + rackLong == 5_000_000_000L, "a rack's heap should add up the same way, not " + (rackPipe + rackLong));
         helper.succeed();
     }
@@ -1370,6 +1378,10 @@ public final class AcervusTests {
         check(Counts.stored(tag, "Amount") == 100L, "a whole number without its L should still count");
         tag.putLong("Amount", Long.MAX_VALUE);
         check(Counts.stored(tag, "Amount") == Long.MAX_VALUE, "the largest long should be kept");
+
+        check(Counts.inAnInt(100L, true) == 100, "a count that fits an int is shown as it is");
+        check(Counts.inAnInt(5_000_000_000L, true) == Integer.MAX_VALUE - 1, "past an int with room left, one short");
+        check(Counts.inAnInt(5_000_000_000L, false) == Integer.MAX_VALUE, "and the limit itself only when full");
 
         HolderLookup.Provider registries = helper.getLevel().registryAccess();
         HeapBlockEntity heap = place(helper);
@@ -1487,6 +1499,8 @@ public final class AcervusTests {
         for (int i = 0; i < 3; i++) {
             check(heap.handler().drain(5_000, IFluidHandler.FluidAction.EXECUTE).getAmount() == 5_000,
                     "a pipe should get all it asks for, every time");
+            check(heap.handler().drain(new FluidStack(Fluids.LAVA, 5_000), IFluidHandler.FluidAction.EXECUTE)
+                    .getAmount() == 5_000, "including one that names the fluid it wants");
         }
         heap.vessel(Vessel.Flow.OUT).hold(new ItemStack(Items.BUCKET));
         FluidHeapBlockEntity.serverTick(helper.getLevel(), pos, heap.getBlockState(), heap);

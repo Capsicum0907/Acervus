@@ -91,6 +91,10 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         return sample.isEmpty() || FluidStack.isSameFluidSameComponents(sample, stack);
     }
 
+    public boolean offers(FluidStack stack) {
+        return unreadable == null && !isEmpty() && !stack.isEmpty() && FluidStack.isSameFluidSameComponents(sample, stack);
+    }
+
     public boolean holds(FluidStack stack) {
         return !infinite() && unreadable == null && !isEmpty() && !stack.isEmpty() && FluidStack.isSameFluidSameComponents(sample, stack);
     }

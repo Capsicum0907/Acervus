@@ -25,7 +25,7 @@ public class HorreumItemHandler implements IItemHandler {
         if (heap == null || heap.isEmpty()) {
             return ItemStack.EMPTY;
         }
-        return heap.sample().copyWithCount((int) Math.min(heap.count(), Integer.MAX_VALUE));
+        return heap.sample().copyWithCount(Counts.inAnInt(heap.count(), heap.room() > 0));
     }
 
     @Override

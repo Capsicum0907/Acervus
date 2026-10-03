@@ -77,7 +77,7 @@ public class HeapStorage implements ExternalStorageProvider {
     public Iterator<ResourceAmount> iterator() {
         List<ResourceAmount> amounts = new ArrayList<>();
         for (Pile pile : piles()) {
-            long beyond = Counts.beyondAnInt(pile.count());
+            long beyond = Counts.beyondAnInt(pile.count(), pile.room() > 0);
             if (beyond > 0 && !pile.sample().isEmpty()) {
                 amounts.add(new ResourceAmount(ItemResource.ofItemStack(pile.sample()), beyond));
             }
@@ -172,6 +172,8 @@ public class HeapStorage implements ExternalStorageProvider {
 
         long count();
 
+        long room();
+
         int insert(ItemStack stack, boolean simulate);
 
         int extract(int amount, boolean simulate);
@@ -199,6 +201,11 @@ public class HeapStorage implements ExternalStorageProvider {
         }
 
         @Override
+        public long room() {
+            return heap.room();
+        }
+
+        @Override
         public int insert(ItemStack stack, boolean simulate) {
             return heap.insert(stack, simulate);
         }
@@ -218,6 +225,11 @@ public class HeapStorage implements ExternalStorageProvider {
         @Override
         public long count() {
             return heap.count();
+        }
+
+        @Override
+        public long room() {
+            return heap.room();
         }
 
         @Override

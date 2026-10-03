@@ -92,7 +92,10 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public ItemStack contents() {
-        return portion(Integer.MAX_VALUE);
+        if (isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        return sample.copyWithCount(Counts.inAnInt(count(), room() > 0));
     }
 
     private ItemStack portion(long most) {

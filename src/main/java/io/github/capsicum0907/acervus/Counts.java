@@ -72,6 +72,17 @@ public final class Counts {
         return Math.max(0L, fraction ? (long) number.getAsDouble() : number.getAsLong());
     }
 
+    public static int inAnInt(long count, boolean roomLeft) {
+        if (count < Integer.MAX_VALUE) {
+            return (int) Math.max(0L, count);
+        }
+        return roomLeft ? Integer.MAX_VALUE - 1 : Integer.MAX_VALUE;
+    }
+
+    public static long beyondAnInt(long count, boolean roomLeft) {
+        return count - inAnInt(count, roomLeft);
+    }
+
     public static long beyondAnInt(long count) {
         return Math.max(0L, count - Integer.MAX_VALUE);
     }
