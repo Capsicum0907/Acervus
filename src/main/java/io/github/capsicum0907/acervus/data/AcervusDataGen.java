@@ -209,7 +209,7 @@ public final class AcervusDataGen {
             add("gui.acervus.scale.linear", "割合");
             add("gui.acervus.scale.log", "対数");
             add("gui.acervus.scale.decade", "桁の割合");
-            add("gui.acervus.exact", "収納中: %s");
+            add("gui.acervus.exact", "収納: %s");
             add("gui.acervus.intake_only", "入力のみ");
             add("gui.acervus.energy", "エネルギー");
             add("block.acervus.horreum.holding", "%s / %s");

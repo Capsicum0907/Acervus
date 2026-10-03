@@ -14,7 +14,7 @@
   "block.acervus.item_heap.holding": "%s ×%s",
   "gui.acervus.empty": "空",
   "gui.acervus.energy": "エネルギー",
-  "gui.acervus.exact": "収納中: %s",
+  "gui.acervus.exact": "収納: %s",
   "gui.acervus.flow.in": "入",
   "gui.acervus.flow.out": "出",
   "gui.acervus.free": "固定なし",
