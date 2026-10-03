@@ -21,4 +21,4 @@
 
 | 設定 | 既定値 | |
 |---|---|---|
-| `screen.barScale` | `LINEAR` | バーの表し方。`LINEAR`（割合）・`LOG`（対数）・`DECADE`（桁の中）のどれか。バーをクリックしても変わります |
+| `screen.barScale` | `LINEAR` | バーの表し方。`LINEAR`（割合）・`LOG`（対数）・`DECADE`（桁の割合）のどれか。バーをクリックしても変わります |
