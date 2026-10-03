@@ -164,7 +164,12 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
     private static Component caption(Heaped heap) {
         String amount = heap.brief(heap.amount());
         String capacity = heap.brief(heap.capacity());
-        return Component.translatable("gui.acervus.of", withoutSharedUnit(amount, capacity), capacity);
+        return Component.translatable("gui.acervus.of", tight(withoutSharedUnit(amount, capacity)), tight(capacity));
+    }
+
+    private static String tight(String brief) {
+        int space = brief.lastIndexOf(' ');
+        return space < 0 ? brief : brief.substring(0, space) + brief.substring(space + 1);
     }
 
     private static String withoutSharedUnit(String amount, String capacity) {

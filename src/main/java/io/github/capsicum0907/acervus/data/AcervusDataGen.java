@@ -164,7 +164,7 @@ public final class AcervusDataGen {
             add("gui.acervus.room", "%s more will fit");
             add("gui.acervus.flow.in", "In");
             add("gui.acervus.flow.out", "Out");
-            add("gui.acervus.of", "%s / %s");
+            add("gui.acervus.of", "%s/%s");
             add("gui.acervus.locked", "Locked");
             add("gui.acervus.free", "Free");
             add("gui.acervus.switch_form", "Click to switch what comes out");
@@ -204,7 +204,7 @@ public final class AcervusDataGen {
             add("gui.acervus.room", "空き: %s");
             add("gui.acervus.flow.in", "入");
             add("gui.acervus.flow.out", "出");
-            add("gui.acervus.of", "%s / %s");
+            add("gui.acervus.of", "%s/%s");
             add("gui.acervus.locked", "固定中");
             add("gui.acervus.free", "固定なし");
             add("gui.acervus.switch_form", "クリックで出力を切り替え");

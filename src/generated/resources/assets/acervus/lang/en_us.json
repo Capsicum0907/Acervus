@@ -22,7 +22,7 @@
   "gui.acervus.free": "Free",
   "gui.acervus.intake_only": "Deposit only",
   "gui.acervus.locked": "Locked",
-  "gui.acervus.of": "%s / %s",
+  "gui.acervus.of": "%s/%s",
   "gui.acervus.room": "%s more will fit",
   "gui.acervus.scale": "%s - click to change",
   "gui.acervus.scale.decade": "Within the decade",

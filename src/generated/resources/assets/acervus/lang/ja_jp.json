@@ -22,7 +22,7 @@
   "gui.acervus.free": "固定なし",
   "gui.acervus.intake_only": "入力のみ",
   "gui.acervus.locked": "固定中",
-  "gui.acervus.of": "%s / %s",
+  "gui.acervus.of": "%s/%s",
   "gui.acervus.room": "空き: %s",
   "gui.acervus.scale": "%s（クリックで切り替え）",
   "gui.acervus.scale.decade": "桁の割合",
