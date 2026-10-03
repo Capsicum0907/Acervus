@@ -68,7 +68,9 @@ metal and glass invites `requiresCorrectToolForDrops`, and this one had it — w
 the block in no mining tag, which meant no tool was ever correct and a heap dropped
 nothing at all. Even done properly it is the wrong trade: the contents are not
 replaceable, and forgetting a pickaxe is not a reason to destroy two billion items.
-So the block is in `mineable/pickaxe` for speed and requires nothing for drops.
+So the block is in `mineable/pickaxe` for speed and requires nothing for drops. It is
+also in `needs_diamond_tool`, because netherite goes into one: that names the proper
+tool, for anything that shows it, and changes neither the speed nor the drop.
 
 **What is inside rides on the dropped block.** Not a setting, and not a choice: at
 capacity the contents are two billion items, and spilling those on the floor is

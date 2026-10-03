@@ -1,0 +1,19 @@
+{
+  "values": [
+    "acervus:item_heap",
+    "acervus:fluid_heap",
+    "acervus:energy_heap",
+    "acervus:horreum",
+    "acervus:creative_item_heap",
+    "acervus:creative_fluid_heap",
+    "acervus:creative_energy_heap",
+    {
+      "id": "acervus:chemical_heap",
+      "required": false
+    },
+    {
+      "id": "acervus:creative_chemical_heap",
+      "required": false
+    }
+  ]
+}

@@ -122,6 +122,11 @@ same 3 by 3 order as its screen, lit in the colour of the heap in it.
 Breaking a Horreum keeps its heaps inside it. Sneak + right-click the air to open one
 you are carrying; its heaps can be moved, but nothing can be taken out of them.
 
+## Breaking one
+
+A diamond pickaxe or better is the proper tool. Any pickaxe breaks one just as fast,
+and it drops whatever it is broken with, so nothing inside is lost to the wrong tool.
+
 ## Dropped heaps
 
 A dropped heap or Horreum does not burn in fire or lava, and floats on lava like

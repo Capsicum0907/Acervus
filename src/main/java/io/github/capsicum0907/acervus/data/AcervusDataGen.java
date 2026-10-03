@@ -1,5 +1,8 @@
 package io.github.capsicum0907.acervus.data;
 
+import java.util.List;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.tags.TagKey;
 import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.tags.ItemTags;
@@ -68,7 +71,13 @@ public final class AcervusDataGen {
 
         @Override
         protected void addTags(HolderLookup.Provider registries) {
-            tag(BlockTags.MINEABLE_WITH_PICKAXE)
+            for (TagKey<Block> tag : List.of(BlockTags.MINEABLE_WITH_PICKAXE, BlockTags.NEEDS_DIAMOND_TOOL)) {
+                everyBlock(tag);
+            }
+        }
+
+        private void everyBlock(TagKey<Block> key) {
+            tag(key)
                     .add(AcervusRegistry.HEAP.get())
                     .add(AcervusRegistry.FLUID_HEAP.get())
                     .add(AcervusRegistry.ENERGY_HEAP.get())

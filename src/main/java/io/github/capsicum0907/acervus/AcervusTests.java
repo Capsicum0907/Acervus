@@ -242,6 +242,18 @@ public final class AcervusTests {
                 "a heap must drop whatever it is broken with, or being wrong about the tool destroys everything inside");
         check(state.is(BlockTags.MINEABLE_WITH_PICKAXE),
                 "and a pickaxe should still be the quick way to break one");
+        check(state.is(BlockTags.NEEDS_DIAMOND_TOOL), "a diamond pickaxe or better is the proper tool");
+        ItemStack iron = new ItemStack(Items.IRON_PICKAXE);
+        ItemStack diamond = new ItemStack(Items.DIAMOND_PICKAXE);
+        check(!iron.isCorrectToolForDrops(state) && diamond.isCorrectToolForDrops(state),
+                "an iron pickaxe is not the proper tool, a diamond one is");
+        check(iron.getDestroySpeed(state) == new ItemStack(Items.IRON_PICKAXE).getDestroySpeed(Blocks.STONE.defaultBlockState()),
+                "but an iron pickaxe still breaks it at its usual speed");
+        for (net.minecraft.world.level.ItemLike item : AcervusRegistry.shown()) {
+            if (item instanceof net.minecraft.world.item.BlockItem block) {
+                check(block.getBlock().defaultBlockState().is(BlockTags.NEEDS_DIAMOND_TOOL), block + " should need diamond too");
+            }
+        }
         helper.succeed();
     }
 
