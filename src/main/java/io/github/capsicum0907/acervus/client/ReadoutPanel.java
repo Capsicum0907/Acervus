@@ -162,7 +162,18 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
     }
 
     private static Component caption(Heaped heap) {
-        return Component.translatable("gui.acervus.of", heap.brief(heap.amount()), heap.brief(heap.capacity()));
+        String amount = heap.brief(heap.amount());
+        String capacity = heap.brief(heap.capacity());
+        return Component.translatable("gui.acervus.of", withoutSharedUnit(amount, capacity), capacity);
+    }
+
+    private static String withoutSharedUnit(String amount, String capacity) {
+        int cut = amount.lastIndexOf(' ');
+        int other = capacity.lastIndexOf(' ');
+        if (cut < 0 || other < 0 || !amount.substring(cut).equals(capacity.substring(other))) {
+            return amount;
+        }
+        return amount.substring(0, cut);
     }
 
     @Override
