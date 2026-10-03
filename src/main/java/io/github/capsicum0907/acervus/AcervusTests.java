@@ -1452,6 +1452,12 @@ public final class AcervusTests {
         check(heap.count() == Long.MAX_VALUE && !heap.isEmpty(), "and never run down");
         check(!heap.canLock(), "and has nothing to lock");
 
+        Player player = helper.makeMockPlayer(GameType.CREATIVE);
+        BlockPos at = helper.absolutePos(WHERE);
+        player.moveTo(at.getX() + 0.5, at.getY() + 1.0, at.getZ() + 0.5);
+        check(HeapMenu.at(0, player.getInventory(), at).stillValid(player),
+                "its screen should stay open, as an item heap's does");
+
         BlockPos pos = helper.absolutePos(WHERE);
         helper.getLevel().destroyBlock(pos, true);
         List<ItemEntity> loose = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(pos).inflate(4.0));

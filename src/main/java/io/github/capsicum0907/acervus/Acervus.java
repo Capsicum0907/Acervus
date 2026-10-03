@@ -33,6 +33,7 @@ public class Acervus {
         AcervusRegistry.ITEMS.register(modEventBus);
         AcervusRegistry.BLOCK_ENTITIES.register(modEventBus);
         AcervusRegistry.MENUS.register(modEventBus);
+        AcervusRegistry.TABS.register(modEventBus);
 
         io.github.capsicum0907.acervus.gas.GasHeap.register(modEventBus);
         if (Mods.refinedStorage()) {
@@ -79,14 +80,11 @@ public class Acervus {
 
     private static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
-            event.accept(AcervusRegistry.HEAP_ITEM);
-            event.accept(AcervusRegistry.FLUID_HEAP_ITEM);
-            event.accept(AcervusRegistry.ENERGY_HEAP_ITEM);
-            event.accept(AcervusRegistry.HORREUM_ITEM);
-            if (Mods.mekanism()) {
-                event.accept(io.github.capsicum0907.acervus.gas.GasHeap.ITEM);
+            for (net.minecraft.world.level.ItemLike item : AcervusRegistry.shown()) {
+                if (!(item instanceof CreativeBlockItem)) {
+                    event.accept(item);
+                }
             }
-            event.accept(AcervusRegistry.CREATIVE_HEAP_ITEM);
         }
     }
 

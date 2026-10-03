@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 
 public class HeapMenu extends AbstractContainerMenu {
     private static final int IN_X = 8;
@@ -153,7 +154,8 @@ public class HeapMenu extends AbstractContainerMenu {
 
         @Override
         public boolean stillValid(Player player) {
-            return AbstractContainerMenu.stillValid(access, player, AcervusRegistry.HEAP.get());
+            Block block = level.getBlockState(pos).getBlock();
+            return block instanceof HeapBlock && AbstractContainerMenu.stillValid(access, player, block);
         }
     }
 

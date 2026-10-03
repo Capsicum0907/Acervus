@@ -29,5 +29,6 @@
   "gui.acervus.scale.decade": "桁の割合",
   "gui.acervus.scale.linear": "割合",
   "gui.acervus.scale.log": "対数",
-  "gui.acervus.switch_form": "クリックで出力を切り替え"
+  "gui.acervus.switch_form": "クリックで出力を切り替え",
+  "itemGroup.acervus": "Acervus"
 }

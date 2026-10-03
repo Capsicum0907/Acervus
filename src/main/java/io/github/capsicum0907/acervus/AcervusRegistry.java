@@ -1,11 +1,17 @@
 package io.github.capsicum0907.acervus;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -89,6 +95,32 @@ public final class AcervusRegistry {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HorreumBlockEntity>>
             HORREUM_ENTITY = BLOCK_ENTITIES.register("horreum",
                     horreumType(HorreumBlockEntity::new, HORREUM));
+
+    public static final DeferredRegister<CreativeModeTab> TABS =
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Acervus.MODID);
+
+    public static final String TAB_TITLE = "itemGroup.acervus";
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("acervus",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable(TAB_TITLE))
+                    .icon(() -> new ItemStack(HEAP_ITEM.get()))
+                    .displayItems((parameters, output) -> {
+                        for (ItemLike item : shown()) {
+                            output.accept(item);
+                        }
+                    })
+                    .build());
+
+    public static List<ItemLike> shown() {
+        List<ItemLike> items = new ArrayList<>(List.of(HEAP_ITEM.get(), FLUID_HEAP_ITEM.get(), ENERGY_HEAP_ITEM.get()));
+        if (Mods.mekanism()) {
+            items.add(io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get());
+        }
+        items.add(HORREUM_ITEM.get());
+        items.add(CREATIVE_HEAP_ITEM.get());
+        return items;
+    }
 
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(Registries.MENU, Acervus.MODID);

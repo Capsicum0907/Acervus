@@ -154,6 +154,7 @@ public final class AcervusDataGen {
         protected void addTranslations() {
             add(AcervusRegistry.HEAP.get(), "Item Heap");
             add(AcervusRegistry.CREATIVE_HEAP.get(), "Creative Item Heap");
+            add(AcervusRegistry.TAB_TITLE, "Acervus");
             add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
             add(AcervusRegistry.ENERGY_HEAP.get(), "Energy Heap");
             add(AcervusRegistry.HORREUM.get(), "Horreum");
@@ -195,6 +196,7 @@ public final class AcervusDataGen {
         protected void addTranslations() {
             add(AcervusRegistry.HEAP.get(), "超容量チェスト");
             add(AcervusRegistry.CREATIVE_HEAP.get(), "クリエイティブ超容量チェスト");
+            add(AcervusRegistry.TAB_TITLE, "Acervus");
             add(AcervusRegistry.FLUID_HEAP.get(), "超容量タンク");
             add(AcervusRegistry.ENERGY_HEAP.get(), "超容量蓄電器");
             add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "超容量ガスタンク");
