@@ -30,6 +30,12 @@ import snownee.jade.api.view.HideThingsExtensionProvider;
 public class AcervusJade implements IWailaPlugin {
     private static final ResourceLocation CONTENTS = ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "contents");
 
+    private static final java.util.List<ResourceLocation> OTHERS = java.util.List.of(
+            ResourceLocation.fromNamespaceAndPath("mekanism", "tooltip_renderer"),
+            ResourceLocation.fromNamespaceAndPath("mekanism", "chemical"),
+            ResourceLocation.fromNamespaceAndPath("mekanism", "fluid"),
+            ResourceLocation.fromNamespaceAndPath("mekanism", "energy"));
+
     private static final java.util.List<Class<? extends Block>> BLOCKS = java.util.List.of(
             HeapBlock.class, FluidHeapBlock.class, EnergyHeapBlock.class, ChemicalHeapBlock.class, HorreumBlock.class);
 
@@ -51,6 +57,12 @@ public class AcervusJade implements IWailaPlugin {
         for (Class<? extends Block> block : BLOCKS) {
             registration.registerBlockComponent(Contents.INSTANCE, block);
         }
+        registration.addTooltipCollectedCallback((box, accessor) -> {
+            if (accessor instanceof BlockAccessor block && block.getBlockEntity() != null
+                    && Readout.covers(block.getBlockEntity())) {
+                OTHERS.forEach(box.getTooltip()::remove);
+            }
+        });
     }
 
     private enum Contents implements IBlockComponentProvider {

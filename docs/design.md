@@ -3418,7 +3418,9 @@ The factory is asked about every external storage in the world, ours or not, and
 Jade, found by its `@WailaPlugin` annotation and loaded only when Jade is there. It
 adds a `Readout` line per heap, and registers `HideThingsExtensionProvider` as these
 blocks' item, fluid and energy storage, because Jade's own readouts go through the
-standard windows and stop at an int.
+standard windows and stop at an int. Mekanism adds its own chemical bars and labels to
+every block that has a chemical handler, a gas heap and a Horreum included; a tooltip
+callback removes those lines, by Mekanism's tags, from Acervus blocks only.
 
 ## `top/AcervusProbe.java`, `top/TheOneProbe.java`
 

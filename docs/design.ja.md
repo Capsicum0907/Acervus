@@ -2445,7 +2445,7 @@ Acervus が Refined Storage について知っていることのすべてです�
 
 **`public class AcervusJade implements IWailaPlugin`**
 
-Jade 用の組み込みです。`@WailaPlugin` の印で見つけてもらうので、Jade があるときだけ読み込まれます。Heap ごとに `Readout` の行を足します。さらに、これらのブロックのアイテム・液体・電力の表示として `HideThingsExtensionProvider` を登録します。Jade 自身の表示は標準の窓口を通るので、int で止まるからです。
+Jade 用の組み込みです。`@WailaPlugin` の印で見つけてもらうので、Jade があるときだけ読み込まれます。Heap ごとに `Readout` の行を足します。さらに、これらのブロックのアイテム・液体・電力の表示として `HideThingsExtensionProvider` を登録します。Jade 自身の表示は標準の窓口を通るので、int で止まるからです。Mekanism は化学物質の窓口を持つすべてのブロックに、自分のバーと名前を足します。Gas Heap と Horreum も含まれます。ツールチップを集め終えたところで、Acervus のブロックに限り、Mekanism の印の付いた行を取り除きます。
 
 ## `top/AcervusProbe.java`・`top/TheOneProbe.java`
 
