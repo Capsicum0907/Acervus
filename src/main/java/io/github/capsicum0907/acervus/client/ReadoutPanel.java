@@ -10,6 +10,9 @@ import io.github.capsicum0907.acervus.BarScale;
 import io.github.capsicum0907.acervus.Heaped;
 import io.github.capsicum0907.acervus.MenuButtons;
 
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.locale.Language;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -54,6 +57,7 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
     private static final int LOCK_GAP = 3;
 
     private static final int TEXT = 0x404040;
+    private static final Component ELLIPSIS = Component.literal("…");
     private static final int NOTE = 0x808080;
 
     protected ReadoutPanel(M menu, Inventory inventory, Component title) {
@@ -146,7 +150,7 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
             graphics.drawString(font, note, right - font.width(note), NOTE_Y, NOTE, false);
         }
 
-        graphics.drawString(font, name(heap), COLUMN_X, NAME_Y, TEXT, false);
+        graphics.drawString(font, fitted(name(heap), BAR_X + BAR_W - COLUMN_X), COLUMN_X, NAME_Y, TEXT, false);
         graphics.drawString(font, caption(heap), COLUMN_X, CAPTION_Y, TEXT, false);
     }
 
@@ -159,6 +163,14 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
             return Component.translatable("gui.acervus.empty");
         }
         return heap.hasKinds() ? heap.contentName() : Component.translatable("gui.acervus.energy");
+    }
+
+    private FormattedCharSequence fitted(Component text, int width) {
+        if (font.width(text) <= width) {
+            return text.getVisualOrderText();
+        }
+        FormattedText kept = font.substrByWidth(text, width - font.width(ELLIPSIS));
+        return Language.getInstance().getVisualOrder(FormattedText.composite(kept, ELLIPSIS));
     }
 
     private static Component caption(Heaped heap) {
