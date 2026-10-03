@@ -12,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.AcervusRegistry;
+import io.github.capsicum0907.acervus.Counts;
 import io.github.capsicum0907.acervus.EnergyHeapBlock;
 
 import net.minecraft.core.HolderLookup;
@@ -175,6 +176,8 @@ public final class AcervusDataGen {
             add("gui.acervus.intake_only", "Deposit only");
             add("gui.acervus.energy", "Energy");
             add("block.acervus.horreum.holding", "%s of %s heaps");
+            add(Counts.GROUP_KEY, Counts.GROUP);
+            add(Counts.UNITS_KEY, Counts.UNITS);
             add("acervus.stacked.open", "%s cannot be opened while stacked.");
             add("acervus.stacked.place", "Stacked %s holding something cannot be placed.");
         }
@@ -213,6 +216,8 @@ public final class AcervusDataGen {
             add("gui.acervus.intake_only", "入力のみ");
             add("gui.acervus.energy", "エネルギー");
             add("block.acervus.horreum.holding", "%s / %s");
+            add(Counts.GROUP_KEY, "4");
+            add(Counts.UNITS_KEY, "万 億 兆 京");
             add("acervus.stacked.open", "%sはスタックしていると開けません。");
             add("acervus.stacked.place", "中身の入った%sが重なっているので置けません");
         }

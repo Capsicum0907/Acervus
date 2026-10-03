@@ -1,4 +1,6 @@
 {
+  "acervus.count.group": "4",
+  "acervus.count.units": "万 億 兆 京",
   "acervus.stacked.open": "%sはスタックしていると開けません。",
   "acervus.stacked.place": "中身の入った%sが重なっているので置けません",
   "block.acervus.chemical_heap": "超容量ガスタンク",

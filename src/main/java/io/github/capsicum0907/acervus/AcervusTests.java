@@ -1405,6 +1405,26 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aNotationGroupsDigitsTheWayItsLanguageCounts(GameTestHelper helper) {
+        Counts.Notation english = Counts.Notation.of(3, "K M G T P E");
+        check(Counts.brief(999L, english).equals("999"), "below a thousand stays as it is");
+        check(Counts.brief(2_100_000_000L, english).equals("2.1G"), "not " + Counts.brief(2_100_000_000L, english));
+        check(Counts.brief(999_960L, english).equals("1M"), "rounding up should move to the next unit, not "
+                + Counts.brief(999_960L, english));
+        check(Counts.brief(Long.MAX_VALUE, english).equals("9.2E"), "not " + Counts.brief(Long.MAX_VALUE, english));
+
+        Counts.Notation japanese = Counts.Notation.of(4, "万 億 兆 京");
+        check(Counts.brief(9_999L, japanese).equals("9999"), "below ten thousand stays as it is");
+        check(Counts.brief(12_345L, japanese).equals("1.2万"), "not " + Counts.brief(12_345L, japanese));
+        check(Counts.brief(12_340_000L, japanese).equals("1234万"), "four digits before a unit, not "
+                + Counts.brief(12_340_000L, japanese));
+        check(Counts.brief(99_999_999L, japanese).equals("1億"), "rounding up should move to 億, not "
+                + Counts.brief(99_999_999L, japanese));
+        check(Counts.brief(Long.MAX_VALUE, japanese).equals("922.3京"), "not " + Counts.brief(Long.MAX_VALUE, japanese));
+        helper.succeed();
+    }
+
     private static boolean kept(CompoundTag tag) {
         return "nonexistent:thing".equals(tag.getCompound("Sample").getString("id")) && tag.getLong("Amount") == 500L;
     }

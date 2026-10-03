@@ -1,4 +1,6 @@
 {
+  "acervus.count.group": "3",
+  "acervus.count.units": "K M G T P E",
   "acervus.stacked.open": "%s cannot be opened while stacked.",
   "acervus.stacked.place": "Stacked %s holding something cannot be placed.",
   "block.acervus.chemical_heap": "Gas Heap",

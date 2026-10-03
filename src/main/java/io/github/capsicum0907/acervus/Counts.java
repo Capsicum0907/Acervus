@@ -1,5 +1,9 @@
 package io.github.capsicum0907.acervus;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import net.minecraft.locale.Language;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.FloatTag;
@@ -7,14 +11,51 @@ import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.Tag;
 
 public final class Counts {
-    private static final long SMALLEST_UNIT = 1_000L;
+    public static final String GROUP_KEY = "acervus.count.group";
+    public static final String UNITS_KEY = "acervus.count.units";
+    public static final String GROUP = "3";
+    public static final String UNITS = "K M G T P E";
 
-    private static final long[] UNITS = {
-            1_000_000_000_000_000_000L, 1_000_000_000_000_000L, 1_000_000_000_000L,
-            1_000_000_000L, 1_000_000L, 1_000L };
-    private static final String[] SUFFIXES = { "E", "P", "T", "G", "M", "K" };
+    private static Language read;
+    private static Notation notation;
 
     private Counts() {
+    }
+
+    public record Notation(long base, List<Long> sizes, List<String> suffixes) {
+        public static Notation of(int digits, String units) {
+            long base = 1L;
+            for (int i = 0; i < digits; i++) {
+                base *= 10L;
+            }
+            List<Long> sizes = new ArrayList<>();
+            List<String> suffixes = new ArrayList<>();
+            long size = base;
+            for (String suffix : units.trim().split("\\s+")) {
+                sizes.add(size);
+                suffixes.add(suffix);
+                if (size > Long.MAX_VALUE / base) {
+                    break;
+                }
+                size *= base;
+            }
+            return new Notation(base, List.copyOf(sizes), List.copyOf(suffixes));
+        }
+    }
+
+    public static Notation notation() {
+        Language language = Language.getInstance();
+        if (language != read || notation == null) {
+            int digits;
+            try {
+                digits = Integer.parseInt(language.getOrDefault(GROUP_KEY, GROUP).trim());
+            } catch (NumberFormatException e) {
+                digits = Integer.parseInt(GROUP);
+            }
+            notation = Notation.of(digits, language.getOrDefault(UNITS_KEY, UNITS));
+            read = language;
+        }
+        return notation;
     }
 
     public static long stored(CompoundTag tag, String key) {
@@ -39,19 +80,22 @@ public final class Counts {
     }
 
     public static String brief(long count) {
-        if (count < SMALLEST_UNIT) {
+        return brief(count, notation());
+    }
+
+    public static String brief(long count, Notation notation) {
+        List<Long> sizes = notation.sizes();
+        if (sizes.isEmpty() || count < sizes.get(0)) {
             return Long.toString(count);
         }
-        for (int unit = 0; unit < UNITS.length; unit++) {
-            if (count < UNITS[unit]) {
-                continue;
-            }
-            if (tenths((double) count / UNITS[unit]) >= 10_000L && unit > 0) {
-                unit--;
-            }
-            return mantissa((double) count / UNITS[unit]) + SUFFIXES[unit];
+        int unit = 0;
+        while (unit + 1 < sizes.size() && count >= sizes.get(unit + 1)) {
+            unit++;
         }
-        return Long.toString(count);
+        if (unit + 1 < sizes.size() && tenths((double) count / sizes.get(unit)) >= notation.base() * 10L) {
+            unit++;
+        }
+        return mantissa((double) count / sizes.get(unit)) + notation.suffixes().get(unit);
     }
 
     private static final long PER_BUCKET = 1_000L;

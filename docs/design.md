@@ -1357,13 +1357,23 @@ whole number is taken as it is, a fraction loses what is after the point, and
 anything below zero, or not a number at all, is zero. A heap below zero used to
 look empty while swallowing whatever was put into it.
 
-**`private static final long SMALLEST_UNIT`**
+**`public record Notation(long base, List<Long> sizes, List<String> suffixes)`**
 
-Below the smallest unit the number is already three digits, which is the target.
+How a language writes a large number: how many digits make one step, and the name
+of each step. It is read from the language file, `acervus.count.group` and
+`acervus.count.units`, so the code names no unit of any language. English steps by
+three digits, `K M G T P E`; Japanese by four, `万 億 兆 京`, because that is how it
+counts — and `Long.MAX_VALUE` is 922京, so 京 is the last step it needs. The rule
+is the same for both: at most as many digits as a step, at most one decimal. That
+makes English `999.9T` and Japanese `9999.9万`, one character wider, which is still
+far shorter than writing it out.
 
-**`private static final long[] UNITS`**
+**`public static Notation notation()`**
 
-SI, largest first, and the whole range of a long is covered by six single
+The notation of the language in use, read again whenever the language changes. A
+server without the language file falls back to the English one.
+
+The English units are SI, and the whole range of a long is covered by six single
 letters — `Long.MAX_VALUE` is about 9.2E. The English short scale would
 read more naturally at the low end, but it runs out at T and continues into
 spellings nobody knows; these are also what AE2 puts on stored item counts, so
