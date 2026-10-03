@@ -45,6 +45,7 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
     private static final int BAR_X = 51;
     private static final int BAR_Y = 41;
     private static final int BAR_W = 93;
+    private static final int NAME_W = BAR_X + BAR_W - COLUMN_X;
     private static final int BAR_H = 6;
     private static final int BAR_INSET = 1;
     private static final int CAPTION_Y = 50;
@@ -150,7 +151,7 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
             graphics.drawString(font, note, right - font.width(note), NOTE_Y, NOTE, false);
         }
 
-        graphics.drawString(font, fitted(name(heap), BAR_X + BAR_W - COLUMN_X), COLUMN_X, NAME_Y, TEXT, false);
+        graphics.drawString(font, fitted(name(heap), NAME_W), COLUMN_X, NAME_Y, TEXT, false);
         graphics.drawString(font, caption(heap), COLUMN_X, CAPTION_Y, TEXT, false);
     }
 
@@ -208,6 +209,11 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
         int y = mouseY - topPos;
         if (outSwitches() && overOut(x, y)) {
             graphics.renderTooltip(font, Component.translatable("gui.acervus.switch_form"), mouseX, mouseY);
+            return;
+        }
+        Component name = name(heap);
+        if (font.width(name) > NAME_W && within(x, y, COLUMN_X, NAME_Y, NAME_W, font.lineHeight)) {
+            graphics.renderTooltip(font, name, mouseX, mouseY);
             return;
         }
         if (within(x, y, COLUMN_X, CAPTION_Y, font.width(caption(heap)), font.lineHeight)) {
