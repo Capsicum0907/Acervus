@@ -1563,6 +1563,28 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aDroppedHeapSurvivesFireLavaAndExplosions(GameTestHelper helper) {
+        BlockPos pos = helper.absolutePos(WHERE);
+        net.minecraft.world.damagesource.DamageSources sources = helper.getLevel().damageSources();
+        List<ItemStack> kept = new java.util.ArrayList<>();
+        for (net.minecraft.world.level.ItemLike item : AcervusRegistry.shown()) {
+            kept.add(new ItemStack(item));
+        }
+        for (ItemStack stack : kept) {
+            ItemEntity dropped = new ItemEntity(helper.getLevel(), pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, stack);
+            check(dropped.fireImmune(), stack.getItem() + " should not burn");
+            check(!dropped.hurt(sources.lava(), 100.0F), stack.getItem() + " should not be hurt by lava");
+            check(!dropped.hurt(sources.inFire(), 100.0F), "nor by fire");
+            check(!dropped.hurt(sources.explosion(null, null), 100.0F), "nor by an explosion");
+            check(dropped.isAlive(), "and should still be there");
+        }
+        ItemEntity diamond = new ItemEntity(helper.getLevel(), pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5,
+                new ItemStack(Items.DIAMOND));
+        check(diamond.hurt(sources.explosion(null, null), 100.0F), "an ordinary item is still destroyed, as a check on the test");
+        helper.succeed();
+    }
+
     private static boolean kept(CompoundTag tag) {
         return "nonexistent:thing".equals(tag.getCompound("Sample").getString("id")) && tag.getLong("Amount") == 500L;
     }

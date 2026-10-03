@@ -1325,6 +1325,11 @@ to keep.
 
 Every item in this mod: one that carries, on the item, what its block was holding.
 
+**Fire and explosions do not destroy one.** The constructor adds `fireResistant()` to
+whatever properties it is given, and `canBeHurtBy` refuses explosion damage. Losing a
+heap is not losing an item but losing everything in it, so this is not a setting; it
+lives here so that no heap, Horreum or creative heap can be registered without it.
+
 **Why they share a class at all.** Components belong to the `ItemStack`,
 not to each item in it, so two of these in one stack are not two containers — they
 are one set of contents with a count of two beside it. Filling that stack fills
