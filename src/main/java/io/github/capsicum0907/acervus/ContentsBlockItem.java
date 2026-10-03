@@ -33,7 +33,7 @@ public abstract class ContentsBlockItem extends BlockItem {
         if (holdsSomething(stack) && !alone(stack)) {
             Player player = context.getPlayer();
             if (player != null) {
-                player.displayClientMessage(Component.translatable("acervus.stacked.place"), true);
+                player.displayClientMessage(Component.translatable("acervus.stacked.place", stack.getHoverName()), true);
             }
             return InteractionResult.FAIL;
         }

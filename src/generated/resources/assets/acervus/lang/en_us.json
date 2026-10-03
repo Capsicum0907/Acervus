@@ -1,6 +1,6 @@
 {
-  "acervus.stacked.open": "One at a time: take a single one out of the stack.",
-  "acervus.stacked.place": "This stack is holding something and cannot be placed.",
+  "acervus.stacked.open": "%s cannot be opened while stacked.",
+  "acervus.stacked.place": "Stacked %s holding something cannot be placed.",
   "block.acervus.chemical_heap": "Gas Heap",
   "block.acervus.chemical_heap.holding": "%s, %s",
   "block.acervus.energy_heap": "Energy Heap",
@@ -26,6 +26,5 @@
   "gui.acervus.scale.decade": "Within the decade",
   "gui.acervus.scale.linear": "Linear",
   "gui.acervus.scale.log": "Logarithmic",
-  "gui.acervus.switch_form": "Click to switch what comes out",
-  "gui.acervus.vessel": "Put a container here"
+  "gui.acervus.switch_form": "Click to switch what comes out"
 }

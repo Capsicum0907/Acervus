@@ -111,7 +111,7 @@ public final class Carried {
             return InteractionResultHolder.pass(held);
         }
         if (!ContentsBlockItem.alone(held)) {
-            player.displayClientMessage(Component.translatable("acervus.stacked.open"), true);
+            player.displayClientMessage(Component.translatable("acervus.stacked.open", held.getHoverName()), true);
             return InteractionResultHolder.fail(held);
         }
         if (player instanceof ServerPlayer server) {

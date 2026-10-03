@@ -52,6 +52,7 @@ public final class AcervusDataGen {
         generator.addProvider(event.includeClient(),
                 new Models(output, event.getExistingFileHelper()));
         generator.addProvider(event.includeClient(), new Language(output));
+        generator.addProvider(event.includeClient(), new Japanese(output));
         generator.addProvider(event.includeServer(), new Recipes(output, event.getLookupProvider()));
         generator.addProvider(event.includeServer(), new TestStructures(output));
         generator.addProvider(event.includeServer(),
@@ -160,7 +161,6 @@ public final class AcervusDataGen {
             add("block.acervus.item_heap.absorbing", "Collecting what you pick up");
             add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "Gas Heap");
             add("gui.acervus.room", "%s more will fit");
-            add("gui.acervus.vessel", "Put a container here");
             add("gui.acervus.flow.in", "In");
             add("gui.acervus.flow.out", "Out");
             add("gui.acervus.of", "%s / %s");
@@ -175,8 +175,46 @@ public final class AcervusDataGen {
             add("gui.acervus.intake_only", "Deposit only");
             add("gui.acervus.energy", "Energy");
             add("block.acervus.horreum.holding", "%s of %s heaps");
-            add("acervus.stacked.open", "One at a time: take a single one out of the stack.");
-            add("acervus.stacked.place", "This stack is holding something and cannot be placed.");
+            add("acervus.stacked.open", "%s cannot be opened while stacked.");
+            add("acervus.stacked.place", "Stacked %s holding something cannot be placed.");
+        }
+    }
+
+    private static class Japanese extends LanguageProvider {
+        Japanese(PackOutput output) {
+            super(output, Acervus.MODID, "ja_jp");
+        }
+
+        @Override
+        protected void addTranslations() {
+            add(AcervusRegistry.HEAP.get(), "超容量チェスト");
+            add(AcervusRegistry.FLUID_HEAP.get(), "超容量タンク");
+            add(AcervusRegistry.ENERGY_HEAP.get(), "超容量蓄電器");
+            add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "超容量ガスタンク");
+            add(AcervusRegistry.HORREUM.get(), "超容量ラック");
+            add("gui.acervus.empty", "空");
+            add("block.acervus.item_heap.holding", "%s ×%s");
+            add("block.acervus.fluid_heap.holding", "%s %s");
+            add("block.acervus.energy_heap.holding", "%s FE");
+            add("block.acervus.chemical_heap.holding", "%s %s");
+            add("block.acervus.item_heap.absorbing", "拾った物を取り込みます");
+            add("gui.acervus.room", "空き: %s");
+            add("gui.acervus.flow.in", "入");
+            add("gui.acervus.flow.out", "出");
+            add("gui.acervus.of", "%s / %s");
+            add("gui.acervus.locked", "固定中");
+            add("gui.acervus.free", "固定なし");
+            add("gui.acervus.switch_form", "クリックで出力を切り替え");
+            add("gui.acervus.scale", "%s（クリックで切り替え）");
+            add("gui.acervus.scale.linear", "割合");
+            add("gui.acervus.scale.log", "対数");
+            add("gui.acervus.scale.decade", "桁の割合");
+            add("gui.acervus.exact", "収納中: %s");
+            add("gui.acervus.intake_only", "入力のみ");
+            add("gui.acervus.energy", "エネルギー");
+            add("block.acervus.horreum.holding", "%s / %s");
+            add("acervus.stacked.open", "%sはスタックしていると開けません。");
+            add("acervus.stacked.place", "中身の入った%sが重なっているので置けません");
         }
     }
 
