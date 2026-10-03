@@ -1468,6 +1468,87 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aCreativeFluidHeapPoursForeverAndLearnsFromItsInSlot(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.CREATIVE_FLUID_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof FluidHeapBlockEntity heap)) {
+            throw new GameTestAssertException("placing a creative fluid heap should have made a fluid heap");
+        }
+        check(heap.infinite() && heap.isEmpty(), "a new one should hold nothing yet");
+        check(heap.handler().fill(new FluidStack(Fluids.WATER, 1_000), IFluidHandler.FluidAction.EXECUTE) == 0,
+                "nothing should go in from a pipe");
+
+        BlockPos pos = helper.absolutePos(WHERE);
+        heap.vessel(Vessel.Flow.IN).hold(new ItemStack(Items.LAVA_BUCKET));
+        FluidHeapBlockEntity.serverTick(helper.getLevel(), pos, heap.getBlockState(), heap);
+        check(heap.sample().getFluid() == Fluids.LAVA, "a bucket in the In slot should set what it gives");
+        check(heap.vessel(Vessel.Flow.IN).held().is(Items.BUCKET), "and be emptied");
+
+        for (int i = 0; i < 3; i++) {
+            check(heap.handler().drain(5_000, IFluidHandler.FluidAction.EXECUTE).getAmount() == 5_000,
+                    "a pipe should get all it asks for, every time");
+        }
+        heap.vessel(Vessel.Flow.OUT).hold(new ItemStack(Items.BUCKET));
+        FluidHeapBlockEntity.serverTick(helper.getLevel(), pos, heap.getBlockState(), heap);
+        check(heap.vessel(Vessel.Flow.OUT).held().is(Items.LAVA_BUCKET), "the Out slot should fill a bucket");
+        check(heap.amount() == Long.MAX_VALUE && !heap.canLock(), "and it should never run down or lock");
+
+        Player player = helper.makeMockPlayer(GameType.CREATIVE);
+        player.moveTo(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+        check(ReadoutMenu.at(0, player.getInventory(), pos).stillValid(player), "its screen should stay open");
+
+        helper.getLevel().destroyBlock(pos, true);
+        List<ItemEntity> loose = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(pos).inflate(4.0));
+        check(loose.stream().anyMatch(e -> e.getItem().is(AcervusRegistry.CREATIVE_FLUID_HEAP_ITEM.get())
+                && !e.getItem().has(DataComponents.BLOCK_ENTITY_DATA)), "breaking it should leave it empty");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aCreativeEnergyHeapGivesForeverAndTakesNothing(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.CREATIVE_ENERGY_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof EnergyHeapBlockEntity heap)) {
+            throw new GameTestAssertException("placing a creative energy heap should have made an energy heap");
+        }
+        check(heap.infinite() && !heap.isEmpty() && !heap.takes(), "it should be full from the start and take nothing");
+        check(heap.handler().receiveEnergy(1_000, false) == 0, "no energy should go in");
+        for (int i = 0; i < 3; i++) {
+            check(heap.handler().extractEnergy(1_000_000, false) == 1_000_000, "and all that is asked should come out");
+        }
+        check(heap.stored() == Long.MAX_VALUE, "without running down");
+
+        BlockPos pos = helper.absolutePos(WHERE);
+        EnergyHeapBlockEntity.serverTick(helper.getLevel(), pos, heap.getBlockState(), heap);
+        check(helper.getBlockState(WHERE).getValue(EnergyHeapBlock.LAMPS) == EnergyHeapBlock.MAX_LAMPS,
+                "every lamp should be lit");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aCreativeGasHeapGivesForeverOnceItKnowsWhat(GameTestHelper helper) {
+        helper.setBlock(WHERE, io.github.capsicum0907.acervus.gas.GasHeap.CREATIVE_BLOCK.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof io.github.capsicum0907.acervus.gas.ChemicalHeapBlockEntity gas)) {
+            throw new GameTestAssertException("placing a creative gas heap should have made a gas heap");
+        }
+        CompoundTag hydrogen = new CompoundTag();
+        hydrogen.putString("id", "mekanism:hydrogen");
+        hydrogen.putLong("amount", 1L);
+        check(gas.infinite() && gas.isEmpty(), "a new one should hold nothing yet");
+        check(gas.insertKind(hydrogen, 1_000L, false) == 0L, "nothing should go in from outside");
+        check(gas.intakeKind(hydrogen, 1_000L) == 1_000L, "the In slot takes all it is given");
+        if (!Mods.mekanism()) {
+            check(gas.unreadable() && gas.extractAmount(1_000L, false) == 0L,
+                    "without Mekanism what it holds cannot be read, so nothing comes out");
+            helper.succeed();
+            return;
+        }
+        for (int i = 0; i < 3; i++) {
+            check(gas.extractAmount(1_000_000L, false) == 1_000_000L, "and it gives all that is asked");
+        }
+        check(gas.amount() == Long.MAX_VALUE && !gas.canLock(), "without running down or locking");
+        helper.succeed();
+    }
+
     private static boolean kept(CompoundTag tag) {
         return "nonexistent:thing".equals(tag.getCompound("Sample").getString("id")) && tag.getLong("Amount") == 500L;
     }

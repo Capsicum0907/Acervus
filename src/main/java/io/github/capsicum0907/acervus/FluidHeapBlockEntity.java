@@ -36,7 +36,12 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     }
 
     public boolean isEmpty() {
-        return (sample.isEmpty() && unreadable == null) || amount <= 0;
+        return (sample.isEmpty() && unreadable == null) || (amount <= 0 && !infinite());
+    }
+
+    @Override
+    public boolean infinite() {
+        return Creative.is(this);
     }
 
     @Override
@@ -54,15 +59,18 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     }
 
     public long amount() {
+        if (infinite()) {
+            return sample.isEmpty() ? 0L : Long.MAX_VALUE;
+        }
         return amount;
     }
 
     public long capacity() {
-        return AcervusConfig.FLUID_CAPACITY.get();
+        return infinite() ? Long.MAX_VALUE : AcervusConfig.FLUID_CAPACITY.get();
     }
 
     public long room() {
-        return Math.max(0L, capacity() - amount);
+        return infinite() ? 0L : Math.max(0L, capacity() - amount);
     }
 
     public FluidHeapHandler handler() {
@@ -73,18 +81,18 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
         if (isEmpty()) {
             return FluidStack.EMPTY;
         }
-        return sample.copyWithAmount((int) Math.min(amount, Integer.MAX_VALUE));
+        return sample.copyWithAmount((int) Math.min(amount(), Integer.MAX_VALUE));
     }
 
     public boolean accepts(FluidStack stack) {
-        if (stack.isEmpty() || unreadable != null) {
+        if (infinite() || stack.isEmpty() || unreadable != null) {
             return false;
         }
         return sample.isEmpty() || FluidStack.isSameFluidSameComponents(sample, stack);
     }
 
     public boolean holds(FluidStack stack) {
-        return unreadable == null && !isEmpty() && !stack.isEmpty() && FluidStack.isSameFluidSameComponents(sample, stack);
+        return !infinite() && unreadable == null && !isEmpty() && !stack.isEmpty() && FluidStack.isSameFluidSameComponents(sample, stack);
     }
 
     public int insert(FluidStack stack, boolean simulate) {
@@ -108,6 +116,9 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
     public FluidStack extract(int wanted, boolean simulate) {
         if (unreadable != null || isEmpty() || wanted <= 0) {
             return FluidStack.EMPTY;
+        }
+        if (infinite()) {
+            return sample.copyWithAmount(wanted);
         }
         int taken = (int) Math.min(Math.min(wanted, amount), Integer.MAX_VALUE);
         FluidStack out = sample.copyWithAmount(taken);
@@ -177,6 +188,12 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
 
     private static boolean pourIn(FluidHeapBlockEntity heap, IFluidHandlerItem container) {
         FluidStack offered = container.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+        if (!offered.isEmpty() && heap.infinite()) {
+            heap.sample = offered.copyWithAmount(1);
+            heap.unreadable = null;
+            container.drain(offered, IFluidHandler.FluidAction.EXECUTE);
+            return true;
+        }
         if (offered.isEmpty() || !heap.accepts(offered)) {
             return false;
         }
@@ -236,7 +253,7 @@ public class FluidHeapBlockEntity extends BlockEntity implements Heaped, HasVess
 
     @Override
     public boolean canLock() {
-        return !isEmpty();
+        return !infinite() && !isEmpty();
     }
 
     @Override

@@ -46,7 +46,7 @@ public class FluidHeapRenderer implements BlockEntityRenderer<FluidHeapBlockEnti
         }
 
         BlockSurface.onEachSide(pose, heap.getLevel(), heap.getBlockPos(), packedLight,
-                (side, light) -> draw(Counts.buckets(heap.amount()), side, buffers, light));
+                (side, light) -> draw(heap.infinite() ? Counts.INFINITE : Counts.buckets(heap.amount()), side, buffers, light));
     }
 
     private void draw(String text, PoseStack pose, MultiBufferSource buffers, int packedLight) {

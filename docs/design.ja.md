@@ -836,11 +836,21 @@ Heap は壊しても中身を保つので、インベントリ内の Heap は既
 Item Heap は、その種類の一番小さい形で数えます。あわせて、登録した形がその何個分かを `Unit` として覚えます。金インゴットの Heap なら、`Amount` はナゲットの数で、`Unit` は9です。画面・パイプ・容量など Heap の外から見える数は、すべてインゴット単位（`Amount / Unit`）です。容量は登録した形で数えるので、小さい形で数えても容量は減りません。
 
 単位は一番小さいアイテムの名前ではなく、登録した形との比です。なので一番小さい形を足している Mod を抜いても壊れません。紐づけが変わったときは、次に出し入れしたときに数を新しい単位へ合わせ直します。小さい形が増えたなら掛け算です。減ったなら割り算で、新しい単位1個に満たない分だけが失われます。`Unit` を持つ前に書かれた Heap は、単位1として読みます。
+## `Creative.java`
+
+**`public interface Creative`**
+
+クリエイティブ用のブロックの印です。Heap の種類ごとにブロックエンティティは1つで、`Creative.is(this)`（置かれたブロックがこの印を持つか）を見て、いくらでも出すかどうかを決めます。種類ごとに旗を持たせず印を1つにしたので、5つ目の種類を足しても付け忘れません。
+
 ## `CreativeBlockItem.java`
 
 **`public class CreativeBlockItem extends ContentsBlockItem`**
 
 クリエイティブ用の Heap のアイテムです。何も持ちませんが `ContentsBlockItem` にしてあります。そうすれば `Storable` がほかの Heap と同じように弾きます。`everyItemHasARecipe` は、これにレシピが無いことを確かめます。
+
+## `CreativeEnergyHeapBlock.java`・`CreativeFluidHeapBlock.java`・`gas/CreativeChemicalHeapBlock.java`
+
+残り3つのクリエイティブ用の Heap です。それぞれの Heap のブロックに `Creative` の印と専用のコーデックを付けたものです。Heap 側の `getDrops` と `getCloneItemStack` は、クリエイティブ用のブロックなら空のアイテムを返します。Creative Energy Heap の「入」のスロットは何も受け付けません（`Heaped.takes()`）。電力には決める種類が無いからです。
 
 ## `CreativeHeapBlock.java`
 

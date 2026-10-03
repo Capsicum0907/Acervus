@@ -58,7 +58,12 @@ public class ReadoutMenu extends AbstractContainerMenu {
         super(type, id);
         this.source = source;
 
-        addSlot(new VesselSlot(source.vessel(Vessel.Flow.IN), IN_X, VESSEL_Y, source::vesselChanged));
+        addSlot(new VesselSlot(source.vessel(Vessel.Flow.IN), IN_X, VESSEL_Y, source::vesselChanged) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return source.heap().takes() && super.mayPlace(stack);
+            }
+        });
         addSlot(new VesselSlot(source.vessel(Vessel.Flow.OUT), OUT_X, VESSEL_Y, source::vesselChanged) {
             @Override
             public boolean mayPlace(ItemStack stack) {

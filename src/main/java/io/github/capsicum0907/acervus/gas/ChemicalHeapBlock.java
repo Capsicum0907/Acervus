@@ -71,6 +71,9 @@ public class ChemicalHeapBlock extends BaseEntityBlock {
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         ItemStack dropped = new ItemStack(this);
+        if (this instanceof io.github.capsicum0907.acervus.Creative) {
+            return List.of(dropped);
+        }
         if (params.getOptionalParameter(LootContextParams.BLOCK_ENTITY) instanceof ChemicalHeapBlockEntity heap
                 && (!heap.isEmpty() || heap.locked())) {
             heap.saveToItem(dropped, params.getLevel().registryAccess());
@@ -82,6 +85,9 @@ public class ChemicalHeapBlock extends BaseEntityBlock {
     public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos,
             Player player) {
         ItemStack picked = new ItemStack(this);
+        if (this instanceof io.github.capsicum0907.acervus.Creative) {
+            return picked;
+        }
         if (level.getBlockEntity(pos) instanceof ChemicalHeapBlockEntity heap && (!heap.isEmpty() || heap.locked())) {
             heap.saveToItem(picked, level.registryAccess());
         }

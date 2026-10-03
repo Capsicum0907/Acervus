@@ -2,6 +2,7 @@ package io.github.capsicum0907.acervus.gas;
 
 import io.github.capsicum0907.acervus.AcervusConfig;
 import io.github.capsicum0907.acervus.Counts;
+import io.github.capsicum0907.acervus.Creative;
 import io.github.capsicum0907.acervus.HasVessel;
 import io.github.capsicum0907.acervus.HeapColors;
 import io.github.capsicum0907.acervus.Heaped;
@@ -48,7 +49,12 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements Heaped, HasV
 
     @Override
     public boolean isEmpty() {
-        return kind == null || amount <= 0;
+        return kind == null || (amount <= 0 && !infinite());
+    }
+
+    @Override
+    public boolean infinite() {
+        return Creative.is(this);
     }
 
     @Override
@@ -64,21 +70,24 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements Heaped, HasV
 
     @Override
     public long amount() {
+        if (infinite()) {
+            return kind == null ? 0L : Long.MAX_VALUE;
+        }
         return amount;
     }
 
     @Override
     public long capacity() {
-        return AcervusConfig.CHEMICAL_CAPACITY.get();
+        return infinite() ? Long.MAX_VALUE : AcervusConfig.CHEMICAL_CAPACITY.get();
     }
 
     @Override
     public long room() {
-        return Math.max(0L, capacity() - amount);
+        return infinite() ? 0L : Math.max(0L, capacity() - amount);
     }
 
     public boolean accepts(CompoundTag offered) {
-        if (offered == null || unreadable()) {
+        if (infinite() || offered == null || unreadable()) {
             return false;
         }
         return kind == null || kind.getString(ID).equals(offered.getString(ID));
@@ -101,9 +110,24 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements Heaped, HasV
         return taken;
     }
 
+    public long intakeKind(CompoundTag offered, long wanted) {
+        if (!infinite()) {
+            return insertKind(offered, wanted, false);
+        }
+        if (offered == null || wanted <= 0L) {
+            return 0L;
+        }
+        kind = offered.copy();
+        changed();
+        return wanted;
+    }
+
     public long extractAmount(long wanted, boolean simulate) {
         if (unreadable() || isEmpty() || wanted <= 0L) {
             return 0L;
+        }
+        if (infinite()) {
+            return wanted;
         }
         long taken = Math.min(wanted, amount);
         if (simulate) {
@@ -182,7 +206,7 @@ public class ChemicalHeapBlockEntity extends BlockEntity implements Heaped, HasV
 
     @Override
     public boolean canLock() {
-        return !isEmpty() && !unreadable();
+        return !infinite() && !isEmpty() && !unreadable();
     }
 
     @Override

@@ -43,7 +43,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
 
     @Override
     public boolean infinite() {
-        return getBlockState().getBlock() instanceof CreativeHeapBlock;
+        return Creative.is(this);
     }
 
     @Override

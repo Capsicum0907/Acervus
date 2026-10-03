@@ -74,7 +74,10 @@ public final class AcervusDataGen {
                     .add(AcervusRegistry.ENERGY_HEAP.get())
                     .add(AcervusRegistry.HORREUM.get())
                     .add(AcervusRegistry.CREATIVE_HEAP.get())
-                    .addOptional(ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "chemical_heap"));
+                    .add(AcervusRegistry.CREATIVE_FLUID_HEAP.get())
+                    .add(AcervusRegistry.CREATIVE_ENERGY_HEAP.get())
+                    .addOptional(ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "chemical_heap"))
+                    .addOptional(ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "creative_chemical_heap"));
         }
     }
 
@@ -89,7 +92,9 @@ public final class AcervusDataGen {
             glassBox(AcervusRegistry.CREATIVE_HEAP);
             glassBox(AcervusRegistry.FLUID_HEAP);
             drawnItem(AcervusRegistry.FLUID_HEAP);
-            energyBox();
+            glassBox(AcervusRegistry.CREATIVE_FLUID_HEAP);
+            energyBox(AcervusRegistry.ENERGY_HEAP, false);
+            energyBox(AcervusRegistry.CREATIVE_ENERGY_HEAP, true);
             String rack = AcervusRegistry.HORREUM.getId().getPath();
             ResourceLocation casing = modLoc("block/" + AcervusRegistry.ENERGY_HEAP.getId().getPath() + "_side");
             ModelFile rackModel = models().orientable(rack, casing, modLoc("block/" + rack + "_front"), casing);
@@ -97,6 +102,7 @@ public final class AcervusDataGen {
             itemModels().withExistingParent(rack, modLoc("block/" + rack));
             glassBox(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
             drawnItem(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK);
+            glassBox(io.github.capsicum0907.acervus.gas.GasHeap.CREATIVE_BLOCK);
         }
 
         private void drawnItem(DeferredBlock<?> block) {
@@ -113,18 +119,22 @@ public final class AcervusDataGen {
                     .end();
         }
 
-        private void energyBox() {
-            String name = AcervusRegistry.ENERGY_HEAP.getId().getPath();
+        private void energyBox(DeferredBlock<?> block, boolean alwaysLit) {
+            String name = block.getId().getPath();
             ResourceLocation side = modLoc("block/" + name + "_side");
             ModelFile[] lit = new ModelFile[EnergyHeapBlock.MAX_LAMPS + 1];
             for (int lamps = 0; lamps < lit.length; lamps++) {
                 lit[lamps] = models().orientable(name + "_" + lamps, side,
                         modLoc("block/" + name + "_front_" + lamps), side);
             }
-            getVariantBuilder(AcervusRegistry.ENERGY_HEAP.get()).forAllStates(state -> ConfiguredModel.builder()
+            getVariantBuilder(block.get()).forAllStates(state -> ConfiguredModel.builder()
                     .modelFile(lit[state.getValue(EnergyHeapBlock.LAMPS)])
                     .rotationY(((int) state.getValue(EnergyHeapBlock.FACING).toYRot() + 180) % 360)
                     .build());
+            if (alwaysLit) {
+                itemModels().withExistingParent(name, modLoc("block/" + name + "_" + EnergyHeapBlock.MAX_LAMPS));
+                return;
+            }
             ItemModelBuilder item = itemModels().withExistingParent(name, modLoc("block/" + name + "_0"));
             for (int lamps = 1; lamps < lit.length; lamps++) {
                 item.override()
@@ -154,6 +164,9 @@ public final class AcervusDataGen {
         protected void addTranslations() {
             add(AcervusRegistry.HEAP.get(), "Item Heap");
             add(AcervusRegistry.CREATIVE_HEAP.get(), "Creative Item Heap");
+            add(AcervusRegistry.CREATIVE_FLUID_HEAP.get(), "Creative Fluid Heap");
+            add(AcervusRegistry.CREATIVE_ENERGY_HEAP.get(), "Creative Energy Heap");
+            add(io.github.capsicum0907.acervus.gas.GasHeap.CREATIVE_BLOCK.get(), "Creative Gas Heap");
             add(AcervusRegistry.TAB_TITLE, "Acervus");
             add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
             add(AcervusRegistry.ENERGY_HEAP.get(), "Energy Heap");
@@ -196,6 +209,9 @@ public final class AcervusDataGen {
         protected void addTranslations() {
             add(AcervusRegistry.HEAP.get(), "超容量チェスト");
             add(AcervusRegistry.CREATIVE_HEAP.get(), "クリエイティブ超容量チェスト");
+            add(AcervusRegistry.CREATIVE_FLUID_HEAP.get(), "クリエイティブ超容量タンク");
+            add(AcervusRegistry.CREATIVE_ENERGY_HEAP.get(), "クリエイティブ超容量蓄電器");
+            add(io.github.capsicum0907.acervus.gas.GasHeap.CREATIVE_BLOCK.get(), "クリエイティブ超容量ガスタンク");
             add(AcervusRegistry.TAB_TITLE, "Acervus");
             add(AcervusRegistry.FLUID_HEAP.get(), "超容量タンク");
             add(AcervusRegistry.ENERGY_HEAP.get(), "超容量蓄電器");

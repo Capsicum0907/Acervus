@@ -1277,6 +1277,15 @@ changes, the count is rebased to the new unit the next time something goes in or
 out: a smaller form appearing multiplies it, and losing one divides it, dropping only
 the part that was less than one of the new unit. A heap written before `Unit` existed
 reads as a unit of 1.
+## `Creative.java`
+
+**`public interface Creative`**
+
+The mark of a creative block. Each kind of heap has one block entity, and asks
+`Creative.is(this)` — whether the block it sits in carries the mark — to decide
+whether it gives without end. One mark rather than a flag per kind, so a fifth kind
+cannot forget it.
+
 ## `CreativeBlockItem.java`
 
 **`public class CreativeBlockItem extends ContentsBlockItem`**
@@ -1284,6 +1293,13 @@ reads as a unit of 1.
 The item of a creative heap. It carries nothing, but it is a `ContentsBlockItem` so
 that `Storable` refuses it like any other heap, and `everyItemHasARecipe` checks that
 it has none.
+
+## `CreativeEnergyHeapBlock.java`, `CreativeFluidHeapBlock.java`, `gas/CreativeChemicalHeapBlock.java`
+
+The other three creative heaps: their heap's block with the `Creative` mark and a codec
+of their own. Their heaps' `getDrops` and `getCloneItemStack` return an empty item for
+a creative block. A Creative Energy Heap's In slot takes nothing (`Heaped.takes()`),
+since energy has no kind to set.
 
 ## `CreativeHeapBlock.java`
 

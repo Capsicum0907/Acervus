@@ -42,7 +42,7 @@ public class ChemicalHeapRenderer implements BlockEntityRenderer<ChemicalHeapBlo
         }
 
         String name = heap.contentName().getString();
-        String amount = Counts.brief(heap.amount());
+        String amount = heap.infinite() ? Counts.INFINITE : Counts.brief(heap.amount());
 
         net.minecraft.resources.ResourceLocation texture = heap.contentTexture();
         if (heap.unreadable()) {

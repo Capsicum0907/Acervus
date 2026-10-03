@@ -30,19 +30,29 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
     }
 
     public boolean isEmpty() {
-        return stored <= 0;
+        return !infinite() && stored <= 0;
+    }
+
+    @Override
+    public boolean infinite() {
+        return Creative.is(this);
+    }
+
+    @Override
+    public boolean takes() {
+        return !infinite();
     }
 
     public long stored() {
-        return stored;
+        return infinite() ? Long.MAX_VALUE : stored;
     }
 
     public long capacity() {
-        return AcervusConfig.ENERGY_CAPACITY.get();
+        return infinite() ? Long.MAX_VALUE : AcervusConfig.ENERGY_CAPACITY.get();
     }
 
     public long room() {
-        return Math.max(0L, capacity() - stored);
+        return infinite() ? 0L : Math.max(0L, capacity() - stored);
     }
 
     public EnergyHeapHandler handler() {
@@ -65,6 +75,9 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         if (wanted <= 0 || isEmpty()) {
             return 0;
         }
+        if (infinite()) {
+            return wanted;
+        }
         int given = (int) Math.min(Math.min(wanted, stored), Integer.MAX_VALUE);
         if (given > 0 && !simulate) {
             stored -= given;
@@ -85,7 +98,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
 
     @Override
     public long amount() {
-        return stored;
+        return stored();
     }
 
     @Override
@@ -137,7 +150,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         }
         IEnergyStorage filling = battery(out);
         if (filling != null) {
-            int given = filling.receiveEnergy((int) Math.min(rate, stored), false);
+            int given = filling.receiveEnergy((int) Math.min(rate, stored()), false);
             if (given > 0) {
                 give(given, false);
             }
@@ -164,7 +177,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
             if (neighbour == null || !neighbour.canReceive()) {
                 continue;
             }
-            int offered = (int) Math.min(Math.min(rate, heap.stored), Integer.MAX_VALUE);
+            int offered = (int) Math.min(Math.min(rate, heap.stored()), Integer.MAX_VALUE);
             int taken = neighbour.receiveEnergy(offered, false);
             if (taken > 0) {
                 heap.give(taken, false);
@@ -180,7 +193,7 @@ public class EnergyHeapBlockEntity extends BlockEntity implements Heaped, HasVes
         if (level == null || !state.hasProperty(EnergyHeapBlock.LAMPS)) {
             return;
         }
-        int lit = EnergyHeapBlock.lamps(stored, capacity());
+        int lit = EnergyHeapBlock.lamps(stored(), capacity());
         if (state.getValue(EnergyHeapBlock.LAMPS) != lit) {
             level.setBlock(getBlockPos(), state.setValue(EnergyHeapBlock.LAMPS, lit), Block.UPDATE_CLIENTS);
         }

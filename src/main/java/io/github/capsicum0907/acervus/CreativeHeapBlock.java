@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.HitResult;
 
-public class CreativeHeapBlock extends HeapBlock {
+public class CreativeHeapBlock extends HeapBlock implements Creative {
     public static final MapCodec<CreativeHeapBlock> CODEC = simpleCodec(CreativeHeapBlock::new);
 
     public CreativeHeapBlock(Properties properties) {

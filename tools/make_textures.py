@@ -12,6 +12,10 @@ FRAME = 2
 ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures"
 OUT = ASSETS / "block/item_heap.png"
 CREATIVE_OUT = ASSETS / "block/creative_item_heap.png"
+CREATIVE_FLUID_OUT = ASSETS / "block/creative_fluid_heap.png"
+CREATIVE_CHEMICAL_OUT = ASSETS / "block/creative_chemical_heap.png"
+CREATIVE_ENERGY_SIDE_OUT = ASSETS / "block/creative_energy_heap_side.png"
+CREATIVE_ENERGY_FRONT_OUT = ASSETS / "block/creative_energy_heap_front_{}.png"
 FLUID_OUT = ASSETS / "block/fluid_heap.png"
 ENERGY_SIDE_OUT = ASSETS / "block/energy_heap_side.png"
 ENERGY_FRONT_OUT = ASSETS / "block/energy_heap_front_{}.png"
@@ -82,11 +86,11 @@ def draw(glass: str = GLASS_BODY, sheen: str = GLASS_SHEEN, tones: tuple[str, st
     return _png(pixels)
 
 
-def draw_casing(lit: int, show_lamps: bool = True) -> bytes:
+def draw_casing(lit: int, show_lamps: bool = True, tones: tuple[str, str, str] = METAL_TONES) -> bytes:
     scale = FRONT_SCALE if show_lamps else 1
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     for (x, y) in METAL | GLASS:
-        colour = _tone((x, y), METAL, METAL_TONES) if (x, y) in METAL else CASING
+        colour = _tone((x, y), METAL, tones) if (x, y) in METAL else CASING
         for dx in range(scale):
             for dy in range(scale):
                 pixels[(x * scale + dx, y * scale + dy)] = _rgb(colour) + (255,)
@@ -333,6 +337,17 @@ def main() -> None:
 
     CHEMICAL_OUT.write_bytes(draw(CHEMICAL_GLASS, CHEMICAL_SHEEN))
     print(f"wrote {CHEMICAL_OUT}")
+
+    CREATIVE_FLUID_OUT.write_bytes(draw(FLUID_GLASS, FLUID_SHEEN, CREATIVE_TONES))
+    print(f"wrote {CREATIVE_FLUID_OUT}")
+    CREATIVE_CHEMICAL_OUT.write_bytes(draw(CHEMICAL_GLASS, CHEMICAL_SHEEN, CREATIVE_TONES))
+    print(f"wrote {CREATIVE_CHEMICAL_OUT}")
+    CREATIVE_ENERGY_SIDE_OUT.write_bytes(draw_casing(0, show_lamps=False, tones=CREATIVE_TONES))
+    print(f"wrote {CREATIVE_ENERGY_SIDE_OUT}")
+    for lit in range(LAMPS + 1):
+        out = pathlib.Path(str(CREATIVE_ENERGY_FRONT_OUT).format(lit))
+        out.write_bytes(draw_casing(lit, tones=CREATIVE_TONES))
+        print(f"wrote {out}")
 
 
     READOUT_OUT.write_bytes(draw_readout())

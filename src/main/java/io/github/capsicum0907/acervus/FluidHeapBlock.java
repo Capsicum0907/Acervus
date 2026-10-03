@@ -91,6 +91,9 @@ public class FluidHeapBlock extends BaseEntityBlock {
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         ItemStack dropped = new ItemStack(this);
+        if (this instanceof Creative) {
+            return List.of(dropped);
+        }
         if (params.getOptionalParameter(LootContextParams.BLOCK_ENTITY) instanceof FluidHeapBlockEntity heap
                 && (!heap.isEmpty() || heap.locked())) {
             heap.saveToItem(dropped, params.getLevel().registryAccess());
@@ -102,6 +105,9 @@ public class FluidHeapBlock extends BaseEntityBlock {
     public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos,
             Player player) {
         ItemStack picked = new ItemStack(this);
+        if (this instanceof Creative) {
+            return picked;
+        }
         if (level.getBlockEntity(pos) instanceof FluidHeapBlockEntity heap && (!heap.isEmpty() || heap.locked())) {
             heap.saveToItem(picked, level.registryAccess());
         }

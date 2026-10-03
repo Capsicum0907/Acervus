@@ -1,0 +1,199 @@
+{
+  "variants": {
+    "facing=east,lamps=0": {
+      "model": "acervus:block/creative_energy_heap_0",
+      "y": 90
+    },
+    "facing=east,lamps=1": {
+      "model": "acervus:block/creative_energy_heap_1",
+      "y": 90
+    },
+    "facing=east,lamps=10": {
+      "model": "acervus:block/creative_energy_heap_10",
+      "y": 90
+    },
+    "facing=east,lamps=11": {
+      "model": "acervus:block/creative_energy_heap_11",
+      "y": 90
+    },
+    "facing=east,lamps=12": {
+      "model": "acervus:block/creative_energy_heap_12",
+      "y": 90
+    },
+    "facing=east,lamps=2": {
+      "model": "acervus:block/creative_energy_heap_2",
+      "y": 90
+    },
+    "facing=east,lamps=3": {
+      "model": "acervus:block/creative_energy_heap_3",
+      "y": 90
+    },
+    "facing=east,lamps=4": {
+      "model": "acervus:block/creative_energy_heap_4",
+      "y": 90
+    },
+    "facing=east,lamps=5": {
+      "model": "acervus:block/creative_energy_heap_5",
+      "y": 90
+    },
+    "facing=east,lamps=6": {
+      "model": "acervus:block/creative_energy_heap_6",
+      "y": 90
+    },
+    "facing=east,lamps=7": {
+      "model": "acervus:block/creative_energy_heap_7",
+      "y": 90
+    },
+    "facing=east,lamps=8": {
+      "model": "acervus:block/creative_energy_heap_8",
+      "y": 90
+    },
+    "facing=east,lamps=9": {
+      "model": "acervus:block/creative_energy_heap_9",
+      "y": 90
+    },
+    "facing=north,lamps=0": {
+      "model": "acervus:block/creative_energy_heap_0"
+    },
+    "facing=north,lamps=1": {
+      "model": "acervus:block/creative_energy_heap_1"
+    },
+    "facing=north,lamps=10": {
+      "model": "acervus:block/creative_energy_heap_10"
+    },
+    "facing=north,lamps=11": {
+      "model": "acervus:block/creative_energy_heap_11"
+    },
+    "facing=north,lamps=12": {
+      "model": "acervus:block/creative_energy_heap_12"
+    },
+    "facing=north,lamps=2": {
+      "model": "acervus:block/creative_energy_heap_2"
+    },
+    "facing=north,lamps=3": {
+      "model": "acervus:block/creative_energy_heap_3"
+    },
+    "facing=north,lamps=4": {
+      "model": "acervus:block/creative_energy_heap_4"
+    },
+    "facing=north,lamps=5": {
+      "model": "acervus:block/creative_energy_heap_5"
+    },
+    "facing=north,lamps=6": {
+      "model": "acervus:block/creative_energy_heap_6"
+    },
+    "facing=north,lamps=7": {
+      "model": "acervus:block/creative_energy_heap_7"
+    },
+    "facing=north,lamps=8": {
+      "model": "acervus:block/creative_energy_heap_8"
+    },
+    "facing=north,lamps=9": {
+      "model": "acervus:block/creative_energy_heap_9"
+    },
+    "facing=south,lamps=0": {
+      "model": "acervus:block/creative_energy_heap_0",
+      "y": 180
+    },
+    "facing=south,lamps=1": {
+      "model": "acervus:block/creative_energy_heap_1",
+      "y": 180
+    },
+    "facing=south,lamps=10": {
+      "model": "acervus:block/creative_energy_heap_10",
+      "y": 180
+    },
+    "facing=south,lamps=11": {
+      "model": "acervus:block/creative_energy_heap_11",
+      "y": 180
+    },
+    "facing=south,lamps=12": {
+      "model": "acervus:block/creative_energy_heap_12",
+      "y": 180
+    },
+    "facing=south,lamps=2": {
+      "model": "acervus:block/creative_energy_heap_2",
+      "y": 180
+    },
+    "facing=south,lamps=3": {
+      "model": "acervus:block/creative_energy_heap_3",
+      "y": 180
+    },
+    "facing=south,lamps=4": {
+      "model": "acervus:block/creative_energy_heap_4",
+      "y": 180
+    },
+    "facing=south,lamps=5": {
+      "model": "acervus:block/creative_energy_heap_5",
+      "y": 180
+    },
+    "facing=south,lamps=6": {
+      "model": "acervus:block/creative_energy_heap_6",
+      "y": 180
+    },
+    "facing=south,lamps=7": {
+      "model": "acervus:block/creative_energy_heap_7",
+      "y": 180
+    },
+    "facing=south,lamps=8": {
+      "model": "acervus:block/creative_energy_heap_8",
+      "y": 180
+    },
+    "facing=south,lamps=9": {
+      "model": "acervus:block/creative_energy_heap_9",
+      "y": 180
+    },
+    "facing=west,lamps=0": {
+      "model": "acervus:block/creative_energy_heap_0",
+      "y": 270
+    },
+    "facing=west,lamps=1": {
+      "model": "acervus:block/creative_energy_heap_1",
+      "y": 270
+    },
+    "facing=west,lamps=10": {
+      "model": "acervus:block/creative_energy_heap_10",
+      "y": 270
+    },
+    "facing=west,lamps=11": {
+      "model": "acervus:block/creative_energy_heap_11",
+      "y": 270
+    },
+    "facing=west,lamps=12": {
+      "model": "acervus:block/creative_energy_heap_12",
+      "y": 270
+    },
+    "facing=west,lamps=2": {
+      "model": "acervus:block/creative_energy_heap_2",
+      "y": 270
+    },
+    "facing=west,lamps=3": {
+      "model": "acervus:block/creative_energy_heap_3",
+      "y": 270
+    },
+    "facing=west,lamps=4": {
+      "model": "acervus:block/creative_energy_heap_4",
+      "y": 270
+    },
+    "facing=west,lamps=5": {
+      "model": "acervus:block/creative_energy_heap_5",
+      "y": 270
+    },
+    "facing=west,lamps=6": {
+      "model": "acervus:block/creative_energy_heap_6",
+      "y": 270
+    },
+    "facing=west,lamps=7": {
+      "model": "acervus:block/creative_energy_heap_7",
+      "y": 270
+    },
+    "facing=west,lamps=8": {
+      "model": "acervus:block/creative_energy_heap_8",
+      "y": 270
+    },
+    "facing=west,lamps=9": {
+      "model": "acervus:block/creative_energy_heap_9",
+      "y": 270
+    }
+  }
+}

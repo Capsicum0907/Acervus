@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "acervus:block/creative_energy_heap_front_2",
+    "side": "acervus:block/creative_energy_heap_side",
+    "top": "acervus:block/creative_energy_heap_side"
+  }
+}

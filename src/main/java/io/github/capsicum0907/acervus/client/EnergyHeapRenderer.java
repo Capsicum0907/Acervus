@@ -30,7 +30,7 @@ public class EnergyHeapRenderer implements BlockEntityRenderer<EnergyHeapBlockEn
             return;
         }
 
-        String text = Counts.brief(heap.stored()) + " FE";
+        String text = heap.infinite() ? Counts.INFINITE : Counts.brief(heap.stored()) + " FE";
 
         BlockState state = heap.getBlockState();
         if (!state.hasProperty(EnergyHeapBlock.FACING)) {

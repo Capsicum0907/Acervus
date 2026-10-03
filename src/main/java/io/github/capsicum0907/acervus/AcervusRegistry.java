@@ -66,9 +66,19 @@ public final class AcervusRegistry {
     public static final DeferredItem<BlockItem> FLUID_HEAP_ITEM = ITEMS.register("fluid_heap",
             () -> new FluidHeapBlockItem(FLUID_HEAP.get(), carriesItsOwnContents()));
 
+    public static final DeferredBlock<CreativeFluidHeapBlock> CREATIVE_FLUID_HEAP = BLOCKS.register(
+            "creative_fluid_heap", () -> new CreativeFluidHeapBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
+
+    public static final DeferredItem<BlockItem> CREATIVE_FLUID_HEAP_ITEM = ITEMS.register("creative_fluid_heap",
+            () -> new CreativeBlockItem(CREATIVE_FLUID_HEAP.get(), new Item.Properties()));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FluidHeapBlockEntity>>
             FLUID_HEAP_ENTITY = BLOCK_ENTITIES.register("fluid_heap",
-                    fluidHeapType(FluidHeapBlockEntity::new, FLUID_HEAP));
+                    fluidHeapType(FluidHeapBlockEntity::new, FLUID_HEAP, CREATIVE_FLUID_HEAP));
 
     public static final DeferredBlock<EnergyHeapBlock> ENERGY_HEAP = BLOCKS.register("energy_heap",
             () -> new EnergyHeapBlock(BlockBehaviour.Properties.of()
@@ -79,9 +89,18 @@ public final class AcervusRegistry {
     public static final DeferredItem<BlockItem> ENERGY_HEAP_ITEM = ITEMS.register("energy_heap",
             () -> new EnergyHeapBlockItem(ENERGY_HEAP.get(), carriesItsOwnContents()));
 
+    public static final DeferredBlock<CreativeEnergyHeapBlock> CREATIVE_ENERGY_HEAP = BLOCKS.register(
+            "creative_energy_heap", () -> new CreativeEnergyHeapBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)));
+
+    public static final DeferredItem<BlockItem> CREATIVE_ENERGY_HEAP_ITEM = ITEMS.register("creative_energy_heap",
+            () -> new CreativeBlockItem(CREATIVE_ENERGY_HEAP.get(), new Item.Properties()));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EnergyHeapBlockEntity>>
             ENERGY_HEAP_ENTITY = BLOCK_ENTITIES.register("energy_heap",
-                    energyHeapType(EnergyHeapBlockEntity::new, ENERGY_HEAP));
+                    energyHeapType(EnergyHeapBlockEntity::new, ENERGY_HEAP, CREATIVE_ENERGY_HEAP));
 
     public static final DeferredBlock<HorreumBlock> HORREUM = BLOCKS.register("horreum",
             () -> new HorreumBlock(BlockBehaviour.Properties.of()
@@ -119,6 +138,11 @@ public final class AcervusRegistry {
         }
         items.add(HORREUM_ITEM.get());
         items.add(CREATIVE_HEAP_ITEM.get());
+        items.add(CREATIVE_FLUID_HEAP_ITEM.get());
+        items.add(CREATIVE_ENERGY_HEAP_ITEM.get());
+        if (Mods.mekanism()) {
+            items.add(io.github.capsicum0907.acervus.gas.GasHeap.CREATIVE_ITEM.get());
+        }
         return items;
     }
 
@@ -159,20 +183,26 @@ public final class AcervusRegistry {
     @SafeVarargs
     private static Supplier<BlockEntityType<HeapBlockEntity>> blockEntityType(
             BlockEntityType.BlockEntitySupplier<HeapBlockEntity> factory, Supplier<? extends Block>... blocks) {
-        return () -> BlockEntityType.Builder.of(factory,
-                java.util.Arrays.stream(blocks).map(Supplier::get).toArray(Block[]::new)).build(null);
+        return () -> BlockEntityType.Builder.of(factory, all(blocks)).build(null);
     }
 
     @SuppressWarnings("DataFlowIssue")
+    @SafeVarargs
     private static Supplier<BlockEntityType<FluidHeapBlockEntity>> fluidHeapType(
-            BlockEntityType.BlockEntitySupplier<FluidHeapBlockEntity> factory, Supplier<? extends Block> block) {
-        return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
+            BlockEntityType.BlockEntitySupplier<FluidHeapBlockEntity> factory, Supplier<? extends Block>... blocks) {
+        return () -> BlockEntityType.Builder.of(factory, all(blocks)).build(null);
+    }
+
+    @SafeVarargs
+    public static Block[] all(Supplier<? extends Block>... blocks) {
+        return java.util.Arrays.stream(blocks).map(Supplier::get).toArray(Block[]::new);
     }
 
     @SuppressWarnings("DataFlowIssue")
+    @SafeVarargs
     private static Supplier<BlockEntityType<EnergyHeapBlockEntity>> energyHeapType(
-            BlockEntityType.BlockEntitySupplier<EnergyHeapBlockEntity> factory, Supplier<? extends Block> block) {
-        return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
+            BlockEntityType.BlockEntitySupplier<EnergyHeapBlockEntity> factory, Supplier<? extends Block>... blocks) {
+        return () -> BlockEntityType.Builder.of(factory, all(blocks)).build(null);
     }
 
     @SuppressWarnings("DataFlowIssue")

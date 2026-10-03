@@ -88,18 +88,21 @@ per tick to each.
 Sneak + right-click the air to open a heap in your hand. Its In slot still empties a
 container into it. Its Out slot takes nothing while it is carried.
 
-## Creative Item Heap
+## Creative heaps
 
-An Item Heap with no recipe, found in the creative inventory. It gives the item it holds
-without end: take as much as you like, by hand or by pipe, and it never runs down.
+Creative Item, Fluid, Energy and Gas Heaps have no recipe; they are in the Acervus tab
+of the creative inventory. Each gives what it holds without end: take as much as you
+like, by hand or by pipe, and it never runs down. Their frames are purple.
 
-| | |
-|---|---|
-| **In** | sets what it gives to whatever is put there; the stack is used up |
-| **Out** | takes as many as you like |
-| pipes and hoppers | take as many as they ask for; nothing goes in from outside |
+| | Creative Item Heap | Creative Fluid and Gas Heap | Creative Energy Heap |
+|---|---|---|---|
+| **In** | sets what it gives to the item put there; the stack is used up | sets what it gives to what a container holds; the container is emptied | takes nothing |
+| **Out** | takes as many as you like | fills a container | charges a battery |
+| pipes | take as many as they ask for | take as much as they ask for | take as much as they ask for |
 
-Its amount reads `∞`. It has no lock. Broken, it drops as an empty Creative Item Heap.
+Nothing goes in from outside. The amount reads `∞`, and there is no lock. A Creative
+Energy Heap has every lamp lit and pushes energy like an Energy Heap. Broken, a
+creative heap drops empty. Neither a heap nor a Horreum takes one.
 
 ## Horreum
 

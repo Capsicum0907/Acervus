@@ -147,7 +147,7 @@ public final class MekanismChemistry implements Chemistry {
             if (inside.isEmpty()) {
                 continue;
             }
-            long taken = heap.insertKind(kind(inside, registries), inside.getAmount(), false);
+            long taken = heap.intakeKind(kind(inside, registries), inside.getAmount());
             if (taken > 0) {
                 container.extractChemical(tank, taken, Action.EXECUTE);
                 return true;
