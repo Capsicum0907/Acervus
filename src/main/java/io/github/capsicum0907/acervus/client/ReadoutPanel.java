@@ -10,17 +10,17 @@ import io.github.capsicum0907.acervus.BarScale;
 import io.github.capsicum0907.acervus.Heaped;
 import io.github.capsicum0907.acervus.MenuButtons;
 
-import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.locale.Language;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
