@@ -92,10 +92,8 @@ public final class Counts {
         while (unit + 1 < sizes.size() && count >= sizes.get(unit + 1)) {
             unit++;
         }
-        if (unit + 1 < sizes.size() && tenths((double) count / sizes.get(unit)) >= notation.base() * 10L) {
-            unit++;
-        }
-        return mantissa((double) count / sizes.get(unit)) + notation.suffixes().get(unit);
+        long tenths = count / (sizes.get(unit) / 10L);
+        return mantissa(tenths) + notation.suffixes().get(unit);
     }
 
     private static final long PER_BUCKET = 1_000L;
@@ -146,12 +144,7 @@ public final class Counts {
         return out.toString();
     }
 
-    private static long tenths(double value) {
-        return Math.round(value * 10.0);
-    }
-
-    private static String mantissa(double value) {
-        long tenths = tenths(value);
+    private static String mantissa(long tenths) {
         return tenths % 10 == 0 ? Long.toString(tenths / 10) : (tenths / 10) + "." + (tenths % 10);
     }
 }

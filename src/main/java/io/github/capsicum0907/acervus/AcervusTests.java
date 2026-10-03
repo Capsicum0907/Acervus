@@ -254,7 +254,7 @@ public final class AcervusTests {
         brief(12_345L, "12.3K");
         brief(100_000_000L, "100M");
         brief(2_100_000_000L, "2.1G");
-        brief(999_999_999_999L, "1T");
+        brief(999_999_999_999L, "999.9G");
         brief(Long.MAX_VALUE, "9.2E");
 
         check(Counts.exact(2_000_000_000L).equals("2,000,000,000"),
@@ -1410,7 +1410,7 @@ public final class AcervusTests {
         Counts.Notation english = Counts.Notation.of(3, "K M G T P E");
         check(Counts.brief(999L, english).equals("999"), "below a thousand stays as it is");
         check(Counts.brief(2_100_000_000L, english).equals("2.1G"), "not " + Counts.brief(2_100_000_000L, english));
-        check(Counts.brief(999_960L, english).equals("1M"), "rounding up should move to the next unit, not "
+        check(Counts.brief(999_960L, english).equals("999.9K"), "a short form should never show more than there is, not "
                 + Counts.brief(999_960L, english));
         check(Counts.brief(Long.MAX_VALUE, english).equals("9.2E"), "not " + Counts.brief(Long.MAX_VALUE, english));
 
@@ -1419,8 +1419,9 @@ public final class AcervusTests {
         check(Counts.brief(12_345L, japanese).equals("1.2万"), "not " + Counts.brief(12_345L, japanese));
         check(Counts.brief(12_340_000L, japanese).equals("1234万"), "four digits before a unit, not "
                 + Counts.brief(12_340_000L, japanese));
-        check(Counts.brief(99_999_999L, japanese).equals("1億"), "rounding up should move to 億, not "
+        check(Counts.brief(99_999_999L, japanese).equals("9999.9万"), "nor round up into 億, not "
                 + Counts.brief(99_999_999L, japanese));
+        check(Counts.brief(9_999_900_000_000L, japanese).equals("9.9兆"), "not " + Counts.brief(9_999_900_000_000L, japanese));
         check(Counts.brief(Long.MAX_VALUE, japanese).equals("922.3京"), "not " + Counts.brief(Long.MAX_VALUE, japanese));
         helper.succeed();
     }

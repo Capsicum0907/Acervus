@@ -671,10 +671,9 @@ are not replaceable and a forgotten pickaxe is not a reason to destroy them.
 
 Three digits, one decimal, one unit — and the awkward case in the middle.
 
-Rounding is where a rule like this goes wrong: 999,999,999,999 is not far
-enough to be a trillion, but rounded to one decimal it reads as 1000.0 of the
-unit below, which is four digits and the wrong unit. It has to grow into the
-next one instead.
+999,999,999,999 is `999.9G`, not `1T`. The short form is cut, not rounded, so it
+never shows more than there is: a heap that reads `1T` holds at least a trillion.
+Cutting also keeps the number inside its unit, so it never reaches four digits.
 
 **`public static void anEmptyHeapWaitsForAPipeNotAGlance(GameTestHelper helper)`**
 
@@ -1392,13 +1391,11 @@ Three digits is the point of it: a number that fits in a glance. It is also
 what makes grouping unnecessary here — there is never a fourth digit to
 separate — while `exact` keeps its commas.
 
-**inside, at `if (tenths((double) count / UNITS[unit]) >= 10_000L && unit > 0)`**
+**`long tenths = count / (sizes.get(unit) / 10L)`**
 
-Rounding can push 999.97G up to 1000.0G, which is four digits and the wrong unit. When it does, the number has grown into the next one.
-
-**beside `return Long.toString(count);`**
-
-unreachable: anything at or above a unit found one
+Tenths of the unit, cut rather than rounded, in whole numbers so a long never
+passes through a double. It is what makes the short form never larger than the
+amount, and never more digits than a step.
 
 **`private static final long PER_BUCKET`**
 
