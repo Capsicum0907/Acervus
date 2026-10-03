@@ -2718,6 +2718,15 @@ Answering with this rather than with null is what lets the screen and the menu
 be written without a null check at every reading — an empty heap and a missing
 one look the same to a reader, and should.
 
+## `Readout.java`
+
+**`public final class Readout`**
+
+What a block holds, as lines of a name and a short amount, for anything that reads
+blocks from outside — Jade and The One Probe. One heap gives one line, a Horreum one
+per heap, a creative heap `∞`. It names nothing of either mod, so both adapters are a
+few lines each and say the same thing.
+
 ## `ReadoutMenu.java`
 
 **`public class ReadoutMenu extends AbstractContainerMenu`**
@@ -3401,6 +3410,21 @@ own construction, and mod constructors run in an order nobody should rely on.
 **inside, at `event.enqueueWork(() -> RefinedStorageApi.INSTANCE.addExternalStorageProviderFactory(`**
 
 The factory is asked about every external storage in the world, ours or not, and must answer with something either way. HeapStorage answers "nothing here" when the block is somebody else's.
+
+## `jade/AcervusJade.java`
+
+**`public class AcervusJade implements IWailaPlugin`**
+
+Jade, found by its `@WailaPlugin` annotation and loaded only when Jade is there. It
+adds a `Readout` line per heap, and registers `HideThingsExtensionProvider` as these
+blocks' item, fluid and energy storage, because Jade's own readouts go through the
+standard windows and stop at an int.
+
+## `top/AcervusProbe.java`, `top/TheOneProbe.java`
+
+The One Probe, handed the provider through `InterModComms` only when it is loaded.
+`Contents` adds the `Readout` lines; `Defaults` turns off the probe's energy, tank and
+chest readouts for these blocks, for the same reason as Jade.
 
 ## `tools/make_textures.py`
 

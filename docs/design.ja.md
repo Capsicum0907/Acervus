@@ -1905,6 +1905,12 @@ Heap の本当の合計を伝えられるストレージネットワークがあ
 
 `null` ではなくこれで答えるので、画面とメニューは読むたびに `null` を確かめずに書けます。空の Heap と存在しない Heap は読み手から同じに見えますし、そうあるべきです。
 
+## `Readout.java`
+
+**`public final class Readout`**
+
+ブロックが持っている物を、名前と省略形の量の行にします。外からブロックを読むもの（Jade と The One Probe）のためです。Heap は1行、Horreum は Heap ごとに1行、クリエイティブ用は `∞` です。どちらの Mod の名前も出てこないので、両方の組み込みは数行で済み、同じことを言います。
+
 ## `ReadoutMenu.java`
 
 **`public class ReadoutMenu extends AbstractContainerMenu`**
@@ -2434,6 +2440,16 @@ Acervus が Refined Storage について知っていることのすべてです�
 **`event.enqueueWork(() -> RefinedStorageApi.INSTANCE.addExternalStorageProviderFactory(` の中**
 
 ファクトリは自分のものかどうかにかかわらず、ワールド中のすべての外部ストレージについて問われます。そしてどちらの場合も何かを返す必要があります。HeapStorage はブロックが他人のものなら「ここには何もない」と答えます。
+
+## `jade/AcervusJade.java`
+
+**`public class AcervusJade implements IWailaPlugin`**
+
+Jade 用の組み込みです。`@WailaPlugin` の印で見つけてもらうので、Jade があるときだけ読み込まれます。Heap ごとに `Readout` の行を足します。さらに、これらのブロックのアイテム・液体・電力の表示として `HideThingsExtensionProvider` を登録します。Jade 自身の表示は標準の窓口を通るので、int で止まるからです。
+
+## `top/AcervusProbe.java`・`top/TheOneProbe.java`
+
+The One Probe 用の組み込みです。The One Probe があるときだけ、`InterModComms` で渡します。`Contents` が `Readout` の行を足し、`Defaults` がこれらのブロックでの電力・タンク・チェストの中身の表示を消します。理由は Jade と同じです。
 
 ## `tools/make_textures.py`
 

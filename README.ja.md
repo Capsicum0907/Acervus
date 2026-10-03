@@ -38,7 +38,7 @@
 | NeoForge | 21.1.248 |
 | Java | 21 |
 
-任意：[Mekanism](https://www.curseforge.com/minecraft/mc-mods/mekanism) を入れると超容量ガスタンクが使えます。[Refined Storage](https://www.curseforge.com/minecraft/mc-mods/refined-storage) を入れると 2,147,483,647 を超える量もそのまま読めます。
+任意：[Mekanism](https://www.curseforge.com/minecraft/mc-mods/mekanism) を入れると超容量ガスタンクが使えます。[Refined Storage](https://www.curseforge.com/minecraft/mc-mods/refined-storage) を入れると 2,147,483,647 を超える量もそのまま読めます。[Jade](https://www.curseforge.com/minecraft/mc-mods/jade) か [The One Probe](https://www.curseforge.com/minecraft/mc-mods/the-one-probe) を入れると、照準を合わせるだけで中身が見えます。
 
 ## ビルド
 

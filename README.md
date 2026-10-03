@@ -41,7 +41,9 @@ More in [branding/gallery](branding/gallery).
 
 Optional: [Mekanism](https://www.curseforge.com/minecraft/mc-mods/mekanism) for the Gas
 Heap, [Refined Storage](https://www.curseforge.com/minecraft/mc-mods/refined-storage) to
-read heaps past 2,147,483,647.
+read heaps past 2,147,483,647, [Jade](https://www.curseforge.com/minecraft/mc-mods/jade) or
+[The One Probe](https://www.curseforge.com/minecraft/mc-mods/the-one-probe) to see what a
+heap holds by looking at it.
 
 ## Building
 

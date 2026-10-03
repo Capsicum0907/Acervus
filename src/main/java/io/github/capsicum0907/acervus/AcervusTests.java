@@ -1589,6 +1589,33 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aReadoutSaysWhatEveryKindOfHeapHolds(GameTestHelper helper) {
+        HolderLookup.Provider registries = helper.getLevel().registryAccess();
+        HeapBlockEntity heap = place(helper);
+        CompoundTag tag = new CompoundTag();
+        tag.put("Sample", new ItemStack(Items.DIAMOND).save(registries));
+        tag.putLong("Amount", 5_000_000_000L);
+        heap.loadWithComponents(tag, registries);
+        List<Readout.Line> lines = Readout.of(heap);
+        check(lines.size() == 1 && lines.get(0).amount().equals(Counts.brief(5_000_000_000L)),
+                "a heap past an int should read its real amount, not " + lines);
+
+        helper.setBlock(OTHER, AcervusRegistry.CREATIVE_HEAP.get());
+        HeapBlockEntity creative = (HeapBlockEntity) helper.getBlockEntity(OTHER);
+        creative.intake(new ItemStack(Items.EMERALD), false);
+        check(Readout.of(creative).get(0).amount().equals(Counts.INFINITE), "a creative one should read infinite");
+
+        helper.setBlock(WHERE, AcervusRegistry.HORREUM.get());
+        HorreumBlockEntity rack = (HorreumBlockEntity) helper.getBlockEntity(WHERE);
+        ItemStack stored = new ItemStack(AcervusRegistry.HEAP_ITEM.get());
+        BlockItem.setBlockEntityData(stored, AcervusRegistry.HEAP_ENTITY.get(), tag);
+        rack.heaps().set(0, stored);
+        rack.heaps().set(1, stored.copy());
+        check(Readout.of(rack).size() == 2, "a rack should read one line per heap, not " + Readout.of(rack).size());
+        helper.succeed();
+    }
+
     private static boolean kept(CompoundTag tag) {
         return "nonexistent:thing".equals(tag.getCompound("Sample").getString("id")) && tag.getLong("Amount") == 500L;
     }

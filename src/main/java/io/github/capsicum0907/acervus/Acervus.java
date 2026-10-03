@@ -36,6 +36,9 @@ public class Acervus {
         AcervusRegistry.TABS.register(modEventBus);
 
         io.github.capsicum0907.acervus.gas.GasHeap.register(modEventBus);
+        if (Mods.theOneProbe()) {
+            io.github.capsicum0907.acervus.top.TheOneProbe.register(modEventBus);
+        }
         if (Mods.refinedStorage()) {
             io.github.capsicum0907.acervus.rs.RefinedStorage.register(modEventBus);
         }
