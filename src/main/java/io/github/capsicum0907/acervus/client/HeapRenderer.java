@@ -43,7 +43,7 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
             BlockSurface.fillWindows(pose, buffers, heap.getLevel(), heap.getBlockPos(), Missing.sprite(),
                     0xFFFFFFFF, packedLight);
             BlockSurface.onEachSide(pose, heap.getLevel(), heap.getBlockPos(), packedLight,
-                    (side, light) -> drawCount(heap.count(), side, buffers, light));
+                    (side, light) -> drawCount(heap.infinite() ? Counts.INFINITE : Counts.brief(heap.count()), side, buffers, light));
             return;
         }
 
@@ -60,11 +60,10 @@ public class HeapRenderer implements BlockEntityRenderer<HeapBlockEntity> {
         pose.popPose();
 
         BlockSurface.onEachSide(pose, heap.getLevel(), heap.getBlockPos(), packedLight,
-                (side, light) -> drawCount(heap.count(), side, buffers, light));
+                (side, light) -> drawCount(heap.infinite() ? Counts.INFINITE : Counts.brief(heap.count()), side, buffers, light));
     }
 
-    private void drawCount(long count, PoseStack pose, MultiBufferSource buffers, int packedLight) {
-        String text = Counts.brief(count);
+    private void drawCount(String text, PoseStack pose, MultiBufferSource buffers, int packedLight) {
 
         pose.pushPose();
         pose.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);

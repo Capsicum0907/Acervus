@@ -7,6 +7,7 @@ import java.util.Locale;
 import io.github.capsicum0907.acervus.Acervus;
 import io.github.capsicum0907.acervus.AcervusClientConfig;
 import io.github.capsicum0907.acervus.BarScale;
+import io.github.capsicum0907.acervus.Counts;
 import io.github.capsicum0907.acervus.Heaped;
 import io.github.capsicum0907.acervus.MenuButtons;
 
@@ -175,6 +176,9 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
     }
 
     private static Component caption(Heaped heap) {
+        if (heap.infinite()) {
+            return Component.literal(heap.isEmpty() ? "" : Counts.INFINITE);
+        }
         String amount = heap.brief(heap.amount());
         String capacity = heap.brief(heap.capacity());
         return Component.translatable("gui.acervus.of", tight(withoutSharedUnit(amount, capacity)), tight(capacity));
@@ -217,16 +221,18 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
             return;
         }
         if (within(x, y, COLUMN_X, CAPTION_Y, font.width(caption(heap)), font.lineHeight)) {
-            graphics.renderComponentTooltip(font, List.of(
-                    Component.literal(heap.exact(heap.amount())),
-                    Component.literal(heap.exact(heap.capacity())).withStyle(ChatFormatting.DARK_GRAY)),
+            graphics.renderComponentTooltip(font, heap.infinite()
+                    ? List.of(Component.literal(Counts.INFINITE))
+                    : List.of(Component.literal(heap.exact(heap.amount())),
+                            Component.literal(heap.exact(heap.capacity())).withStyle(ChatFormatting.DARK_GRAY)),
                     mouseX, mouseY);
             return;
         }
         if (!heap.isEmpty() && within(x, y, CONTENT_X, CONTENT_Y, CONTENT_SIZE, CONTENT_SIZE)) {
             graphics.renderComponentTooltip(font, List.of(
                     name(heap),
-                    Component.literal(heap.exact(heap.amount())).withStyle(ChatFormatting.GRAY)),
+                    Component.literal(heap.infinite() ? Counts.INFINITE : heap.exact(heap.amount()))
+                            .withStyle(ChatFormatting.GRAY)),
                     mouseX, mouseY);
             return;
         }
@@ -242,6 +248,10 @@ public abstract class ReadoutPanel<M extends AbstractContainerMenu> extends Abst
         long amount = heap.amount();
         long capacity = heap.capacity();
         List<Component> lines = new ArrayList<>();
+        if (heap.infinite()) {
+            lines.add(Component.literal(Counts.INFINITE));
+            return lines;
+        }
         lines.add(Component.literal(heap.exact(amount)));
         if (scale == BarScale.DECADE && amount > 0L && amount < capacity) {
             lines.add(Component.literal(heap.power(BarScale.decadeFloor(amount))

@@ -15,6 +15,7 @@ public final class Counts {
     public static final String UNITS_KEY = "acervus.count.units";
     public static final String GROUP = "3";
     public static final String UNITS = "K M G T P E";
+    public static final String INFINITE = "∞";
 
     private static Language read;
     private static Notation notation;

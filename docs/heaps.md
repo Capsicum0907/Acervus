@@ -88,6 +88,19 @@ per tick to each.
 Sneak + right-click the air to open a heap in your hand. Its In slot still empties a
 container into it. Its Out slot takes nothing while it is carried.
 
+## Creative Item Heap
+
+An Item Heap with no recipe, found in the creative inventory. It gives the item it holds
+without end: take as much as you like, by hand or by pipe, and it never runs down.
+
+| | |
+|---|---|
+| **In** | sets what it gives to whatever is put there; the stack is used up |
+| **Out** | takes as many as you like |
+| pipes and hoppers | take as many as they ask for; nothing goes in from outside |
+
+Its amount reads `∞`. It has no lock. Broken, it drops as an empty Creative Item Heap.
+
 ## Horreum
 
 A rack with 9 slots for heaps of any kind, mixed. Pipes and cables connected to it

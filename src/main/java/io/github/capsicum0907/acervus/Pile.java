@@ -27,6 +27,14 @@ public interface Pile {
         return true;
     }
 
+    default boolean infinite() {
+        return false;
+    }
+
+    default int intake(ItemStack stack, boolean simulate) {
+        return insert(stack, simulate);
+    }
+
     default boolean unreadable() {
         return false;
     }

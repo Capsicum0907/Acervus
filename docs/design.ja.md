@@ -836,6 +836,18 @@ Heap は壊しても中身を保つので、インベントリ内の Heap は既
 Item Heap は、その種類の一番小さい形で数えます。あわせて、登録した形がその何個分かを `Unit` として覚えます。金インゴットの Heap なら、`Amount` はナゲットの数で、`Unit` は9です。画面・パイプ・容量など Heap の外から見える数は、すべてインゴット単位（`Amount / Unit`）です。容量は登録した形で数えるので、小さい形で数えても容量は減りません。
 
 単位は一番小さいアイテムの名前ではなく、登録した形との比です。なので一番小さい形を足している Mod を抜いても壊れません。紐づけが変わったときは、次に出し入れしたときに数を新しい単位へ合わせ直します。小さい形が増えたなら掛け算です。減ったなら割り算で、新しい単位1個に満たない分だけが失われます。`Unit` を持つ前に書かれた Heap は、単位1として読みます。
+## `CreativeBlockItem.java`
+
+**`public class CreativeBlockItem extends ContentsBlockItem`**
+
+クリエイティブ用の Heap のアイテムです。何も持ちませんが `ContentsBlockItem` にしてあります。そうすれば `Storable` がほかの Heap と同じように弾きます。`everyItemHasARecipe` は、これにレシピが無いことを確かめます。
+
+## `CreativeHeapBlock.java`
+
+**`public class CreativeHeapBlock extends HeapBlock`**
+
+いくらでも出す Item Heap です。ブロックエンティティは Item Heap と同じです。`HeapBlockEntity.infinite()` が置かれているブロックを見て、数・空き・取り出しはすべてそれを読みます。外からは何も入りません（`insert` が断ります）。「入」のスロットは `Pile.intake` を通り、ここでは出す物を上書きしてスタックを使い切ります。落としても拾っても空のアイテムです。作られただけで詰められたわけではないので、持つものがありません。
+
 ## `ContentsBlockItem.java`
 
 **`public abstract class ContentsBlockItem extends BlockItem`**

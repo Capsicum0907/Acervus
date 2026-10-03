@@ -73,6 +73,7 @@ public final class AcervusDataGen {
                     .add(AcervusRegistry.FLUID_HEAP.get())
                     .add(AcervusRegistry.ENERGY_HEAP.get())
                     .add(AcervusRegistry.HORREUM.get())
+                    .add(AcervusRegistry.CREATIVE_HEAP.get())
                     .addOptional(ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "chemical_heap"));
         }
     }
@@ -85,6 +86,7 @@ public final class AcervusDataGen {
         @Override
         protected void registerStatesAndModels() {
             glassBox(AcervusRegistry.HEAP);
+            glassBox(AcervusRegistry.CREATIVE_HEAP);
             glassBox(AcervusRegistry.FLUID_HEAP);
             drawnItem(AcervusRegistry.FLUID_HEAP);
             energyBox();
@@ -151,6 +153,7 @@ public final class AcervusDataGen {
         @Override
         protected void addTranslations() {
             add(AcervusRegistry.HEAP.get(), "Item Heap");
+            add(AcervusRegistry.CREATIVE_HEAP.get(), "Creative Item Heap");
             add(AcervusRegistry.FLUID_HEAP.get(), "Fluid Heap");
             add(AcervusRegistry.ENERGY_HEAP.get(), "Energy Heap");
             add(AcervusRegistry.HORREUM.get(), "Horreum");
@@ -191,6 +194,7 @@ public final class AcervusDataGen {
         @Override
         protected void addTranslations() {
             add(AcervusRegistry.HEAP.get(), "超容量チェスト");
+            add(AcervusRegistry.CREATIVE_HEAP.get(), "クリエイティブ超容量チェスト");
             add(AcervusRegistry.FLUID_HEAP.get(), "超容量タンク");
             add(AcervusRegistry.ENERGY_HEAP.get(), "超容量蓄電器");
             add(io.github.capsicum0907.acervus.gas.GasHeap.BLOCK.get(), "超容量ガスタンク");

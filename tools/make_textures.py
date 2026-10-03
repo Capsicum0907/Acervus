@@ -11,6 +11,7 @@ FRAME = 2
 
 ASSETS = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/acervus/textures"
 OUT = ASSETS / "block/item_heap.png"
+CREATIVE_OUT = ASSETS / "block/creative_item_heap.png"
 FLUID_OUT = ASSETS / "block/fluid_heap.png"
 ENERGY_SIDE_OUT = ASSETS / "block/energy_heap_side.png"
 ENERGY_FRONT_OUT = ASSETS / "block/energy_heap_front_{}.png"
@@ -30,6 +31,7 @@ GLASS = ALL - METAL
 SHEEN = {(4, 5), (5, 4), (5, 5), (6, 4), (9, 10), (10, 9), (10, 10)}
 
 METAL_TONES = ("#8A8F9C", "#5C6270", "#3A3F4A")
+CREATIVE_TONES = ("#846D9C", "#5F4F70", "#3F344A")
 
 GLASS_BODY = "#D4D8DC"
 GLASS_SHEEN = "#F2F4F6"
@@ -71,10 +73,10 @@ def _png(pixels: dict[tuple[int, int], tuple[int, int, int, int]], size: int = S
     )
 
 
-def draw(glass: str = GLASS_BODY, sheen: str = GLASS_SHEEN) -> bytes:
+def draw(glass: str = GLASS_BODY, sheen: str = GLASS_SHEEN, tones: tuple[str, str, str] = METAL_TONES) -> bytes:
     pixels: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     for pixel in METAL:
-        pixels[pixel] = _rgb(_tone(pixel, METAL, METAL_TONES)) + (255,)
+        pixels[pixel] = _rgb(_tone(pixel, METAL, tones)) + (255,)
     for pixel in GLASS:
         pixels[pixel] = _rgb(sheen if pixel in SHEEN else glass) + (GLASS_ALPHA,)
     return _png(pixels)
@@ -315,6 +317,9 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_bytes(draw())
     print(f"wrote {OUT}")
+
+    CREATIVE_OUT.write_bytes(draw(tones=CREATIVE_TONES))
+    print(f"wrote {CREATIVE_OUT}")
 
     FLUID_OUT.write_bytes(draw(FLUID_GLASS, FLUID_SHEEN))
     print(f"wrote {FLUID_OUT}")

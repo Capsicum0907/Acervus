@@ -1426,6 +1426,42 @@ public final class AcervusTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestStructures.FLOOR)
+    public static void aCreativeHeapGivesForeverAndTakesOnlyThroughItsSlot(GameTestHelper helper) {
+        helper.setBlock(WHERE, AcervusRegistry.CREATIVE_HEAP.get());
+        if (!(helper.getBlockEntity(WHERE) instanceof HeapBlockEntity heap)) {
+            throw new GameTestAssertException("placing a creative heap should have made a heap block entity");
+        }
+        check(heap.infinite() && heap.isEmpty(), "a new creative heap should hold nothing yet");
+
+        ItemStack offered = new ItemStack(Items.DIAMOND, 5);
+        check(heap.handler().insertItem(0, offered, false).getCount() == 5, "a pipe should not get anything in");
+        check(heap.insert(offered, false) == 0, "nor should anything else from outside");
+        check(heap.sample().isEmpty(), "and none of that should have set what it gives");
+
+        check(heap.intake(new ItemStack(Items.DIAMOND, 5), false) == 5, "the In slot takes the whole stack");
+        check(heap.sample().is(Items.DIAMOND), "and gives what was put there");
+        check(heap.intake(new ItemStack(Items.EMERALD, 1), false) == 1, "the next thing put there");
+        check(heap.sample().is(Items.EMERALD), "replaces it");
+        check(heap.intake(new ItemStack(AcervusRegistry.HEAP_ITEM.get()), false) == 0, "a heap is still refused");
+
+        for (int i = 0; i < 3; i++) {
+            check(heap.extract(64, false).getCount() == 64, "it should give a full stack every time");
+        }
+        check(heap.handler().extractItem(0, 1000, false).getCount() == 1000, "and to a pipe as much as asked");
+        check(heap.count() == Long.MAX_VALUE && !heap.isEmpty(), "and never run down");
+        check(!heap.canLock(), "and has nothing to lock");
+
+        BlockPos pos = helper.absolutePos(WHERE);
+        helper.getLevel().destroyBlock(pos, true);
+        List<ItemEntity> loose = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(pos).inflate(4.0));
+        check(loose.size() == 1 && loose.get(0).getItem().is(AcervusRegistry.CREATIVE_HEAP_ITEM.get()),
+                "breaking it should leave the block itself");
+        check(!loose.get(0).getItem().has(DataComponents.BLOCK_ENTITY_DATA), "and nothing of what it gave");
+        check(!Storable.allowed(loose.get(0).getItem()), "which no heap will take");
+        helper.succeed();
+    }
+
     private static boolean kept(CompoundTag tag) {
         return "nonexistent:thing".equals(tag.getCompound("Sample").getString("id")) && tag.getLong("Amount") == 500L;
     }
@@ -1695,6 +1731,10 @@ public final class AcervusTests {
                 continue;
             }
             if (item == io.github.capsicum0907.acervus.gas.GasHeap.ITEM.get() && !Mods.mekanism()) {
+                continue;
+            }
+            if (item instanceof CreativeBlockItem) {
+                check(!craftable.contains(item), id + " is creative only, and should have no recipe");
                 continue;
             }
             check(craftable.contains(item), id + " has no recipe");

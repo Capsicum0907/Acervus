@@ -52,7 +52,7 @@ public class IntakeSlot extends Slot {
     @Override
     public void set(ItemStack stack) {
         if (!stack.isEmpty() && mayPlace(stack)) {
-            heap.get().insert(stack, false);
+            heap.get().intake(stack, false);
         }
     }
 
@@ -61,7 +61,7 @@ public class IntakeSlot extends Slot {
         if (stack.isEmpty() || !mayPlace(stack)) {
             return stack;
         }
-        int taken = heap.get().insert(stack.copyWithCount(Math.min(increment, stack.getCount())), false);
+        int taken = heap.get().intake(stack.copyWithCount(Math.min(increment, stack.getCount())), false);
         stack.shrink(taken);
         return stack;
     }

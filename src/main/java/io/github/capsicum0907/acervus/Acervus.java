@@ -86,6 +86,7 @@ public class Acervus {
             if (Mods.mekanism()) {
                 event.accept(io.github.capsicum0907.acervus.gas.GasHeap.ITEM);
             }
+            event.accept(AcervusRegistry.CREATIVE_HEAP_ITEM);
         }
     }
 

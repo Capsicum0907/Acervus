@@ -4,6 +4,7 @@
     "acervus:fluid_heap",
     "acervus:energy_heap",
     "acervus:horreum",
+    "acervus:creative_item_heap",
     {
       "id": "acervus:chemical_heap",
       "required": false

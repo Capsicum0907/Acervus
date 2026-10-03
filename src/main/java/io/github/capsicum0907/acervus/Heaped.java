@@ -41,6 +41,10 @@ public interface Heaped {
         return true;
     }
 
+    default boolean infinite() {
+        return false;
+    }
+
     default boolean unreadable() {
         return false;
     }

@@ -55,15 +55,24 @@ public class HeapScreen extends ReadoutPanel<HeapMenu> {
             return false;
         }
         List<Component> lines = new ArrayList<>(getTooltipFromItem(minecraft, hoveredSlot.getItem()));
-        lines.add(Component.translatable("gui.acervus.exact", Counts.exact(pile.count(menu.smallest())))
-                .withStyle(ChatFormatting.GRAY));
-        lines.add(Component.translatable("gui.acervus.room", Counts.exact(pile.room()))
-                .withStyle(ChatFormatting.DARK_GRAY));
+        if (pile.infinite()) {
+            lines.add(Component.translatable("gui.acervus.exact", Counts.INFINITE).withStyle(ChatFormatting.GRAY));
+        } else {
+            lines.add(Component.translatable("gui.acervus.exact", Counts.exact(pile.count(menu.smallest())))
+                    .withStyle(ChatFormatting.GRAY));
+            lines.add(Component.translatable("gui.acervus.room", Counts.exact(pile.room()))
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
         graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
         return true;
     }
 
     private record Reading(Pile pile) implements Heaped {
+        @Override
+        public boolean infinite() {
+            return pile.infinite();
+        }
+
         @Override
         public long amount() {
             return pile.count();

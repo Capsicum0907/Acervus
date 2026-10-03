@@ -1277,6 +1277,25 @@ changes, the count is rebased to the new unit the next time something goes in or
 out: a smaller form appearing multiplies it, and losing one divides it, dropping only
 the part that was less than one of the new unit. A heap written before `Unit` existed
 reads as a unit of 1.
+## `CreativeBlockItem.java`
+
+**`public class CreativeBlockItem extends ContentsBlockItem`**
+
+The item of a creative heap. It carries nothing, but it is a `ContentsBlockItem` so
+that `Storable` refuses it like any other heap, and `everyItemHasARecipe` checks that
+it has none.
+
+## `CreativeHeapBlock.java`
+
+**`public class CreativeHeapBlock extends HeapBlock`**
+
+An item heap that gives without end. It is the same block entity as an item heap;
+`HeapBlockEntity.infinite()` asks which block it sits in, and every count, room and
+extraction reads that. Nothing goes in from outside — `insert` refuses — and the In
+slot goes through `Pile.intake`, which here replaces what it gives and uses the stack
+up. It drops and picks as an empty item: it was made, not filled, so there is nothing
+to keep.
+
 ## `ContentsBlockItem.java`
 
 **`public abstract class ContentsBlockItem extends BlockItem`**

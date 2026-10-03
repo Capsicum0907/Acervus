@@ -5,6 +5,7 @@
   "acervus.stacked.place": "Stacked %s holding something cannot be placed.",
   "block.acervus.chemical_heap": "Gas Heap",
   "block.acervus.chemical_heap.holding": "%s, %s",
+  "block.acervus.creative_item_heap": "Creative Item Heap",
   "block.acervus.energy_heap": "Energy Heap",
   "block.acervus.energy_heap.holding": "%s FE",
   "block.acervus.fluid_heap": "Fluid Heap",

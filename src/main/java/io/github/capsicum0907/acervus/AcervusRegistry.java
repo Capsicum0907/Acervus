@@ -37,8 +37,18 @@ public final class AcervusRegistry {
     public static final DeferredItem<BlockItem> HEAP_ITEM = ITEMS.register("item_heap",
             () -> new HeapBlockItem(HEAP.get(), carriesItsOwnContents()));
 
+    public static final DeferredBlock<CreativeHeapBlock> CREATIVE_HEAP = BLOCKS.register("creative_item_heap",
+            () -> new CreativeHeapBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
+
+    public static final DeferredItem<BlockItem> CREATIVE_HEAP_ITEM = ITEMS.register("creative_item_heap",
+            () -> new CreativeBlockItem(CREATIVE_HEAP.get(), new Item.Properties()));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<HeapBlockEntity>> HEAP_ENTITY =
-            BLOCK_ENTITIES.register("item_heap", blockEntityType(HeapBlockEntity::new, HEAP));
+            BLOCK_ENTITIES.register("item_heap", blockEntityType(HeapBlockEntity::new, HEAP, CREATIVE_HEAP));
 
     public static final DeferredBlock<FluidHeapBlock> FLUID_HEAP = BLOCKS.register("fluid_heap",
             () -> new FluidHeapBlock(BlockBehaviour.Properties.of()
@@ -114,9 +124,11 @@ public final class AcervusRegistry {
     }
 
     @SuppressWarnings("DataFlowIssue")
+    @SafeVarargs
     private static Supplier<BlockEntityType<HeapBlockEntity>> blockEntityType(
-            BlockEntityType.BlockEntitySupplier<HeapBlockEntity> factory, Supplier<? extends Block> block) {
-        return () -> BlockEntityType.Builder.of(factory, block.get()).build(null);
+            BlockEntityType.BlockEntitySupplier<HeapBlockEntity> factory, Supplier<? extends Block>... blocks) {
+        return () -> BlockEntityType.Builder.of(factory,
+                java.util.Arrays.stream(blocks).map(Supplier::get).toArray(Block[]::new)).build(null);
     }
 
     @SuppressWarnings("DataFlowIssue")

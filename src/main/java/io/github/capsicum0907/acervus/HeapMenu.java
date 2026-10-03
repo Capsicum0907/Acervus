@@ -132,7 +132,7 @@ public class HeapMenu extends AbstractContainerMenu {
 
     private ItemStack inward(Pile heap, Slot slot) {
         ItemStack stack = slot.getItem();
-        int taken = heap.insert(stack, false);
+        int taken = heap.intake(stack, false);
         if (taken == 0) {
             return ItemStack.EMPTY;
         }

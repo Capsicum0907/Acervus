@@ -5,6 +5,7 @@
   "acervus.stacked.place": "中身の入った%sが重なっているので置けません",
   "block.acervus.chemical_heap": "超容量ガスタンク",
   "block.acervus.chemical_heap.holding": "%s %s",
+  "block.acervus.creative_item_heap": "クリエイティブ超容量チェスト",
   "block.acervus.energy_heap": "超容量蓄電器",
   "block.acervus.energy_heap.holding": "%s FE",
   "block.acervus.fluid_heap": "超容量タンク",

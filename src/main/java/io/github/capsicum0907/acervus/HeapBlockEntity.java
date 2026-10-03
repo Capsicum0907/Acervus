@@ -38,7 +38,12 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public boolean isEmpty() {
-        return (sample.isEmpty() && unreadable == null) || amount <= 0;
+        return (sample.isEmpty() && unreadable == null) || (amount <= 0 && !infinite());
+    }
+
+    @Override
+    public boolean infinite() {
+        return getBlockState().getBlock() instanceof CreativeHeapBlock;
     }
 
     @Override
@@ -56,20 +61,26 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public long count() {
+        if (infinite()) {
+            return sample.isEmpty() ? 0L : Long.MAX_VALUE;
+        }
         return amount / unit;
     }
 
     public long capacity() {
-        return AcervusConfig.CAPACITY.get();
+        return infinite() ? Long.MAX_VALUE : AcervusConfig.CAPACITY.get();
     }
 
     public long room() {
+        if (infinite()) {
+            return 0L;
+        }
         return Math.max(0L, Compression.times(capacity(), unit) - amount) / unit;
     }
 
     @Override
     public long limit() {
-        return Compression.times(capacity(), unit) / unit;
+        return infinite() ? Long.MAX_VALUE : Compression.times(capacity(), unit) / unit;
     }
 
     public HeapItemHandler handler() {
@@ -94,14 +105,14 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     public boolean accepts(ItemStack stack) {
-        if (stack.isEmpty() || unreadable != null || !Storable.allowed(stack)) {
+        if (infinite() || stack.isEmpty() || unreadable != null || !Storable.allowed(stack)) {
             return false;
         }
         return sample.isEmpty() || Compression.sameKind(sample, stack);
     }
 
     public boolean holds(ItemStack stack) {
-        return unreadable == null && !isEmpty() && !stack.isEmpty() && Compression.sameKind(sample, stack);
+        return !infinite() && unreadable == null && !isEmpty() && !stack.isEmpty() && Compression.sameKind(sample, stack);
     }
 
     public int insert(ItemStack stack, boolean simulate) {
@@ -126,9 +137,28 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
         return taken;
     }
 
+    @Override
+    public int intake(ItemStack stack, boolean simulate) {
+        if (!infinite()) {
+            return insert(stack, simulate);
+        }
+        if (stack.isEmpty() || !Storable.allowed(stack)) {
+            return 0;
+        }
+        if (!simulate) {
+            sample = stack.copyWithCount(1);
+            unreadable = null;
+            changed();
+        }
+        return stack.getCount();
+    }
+
     public ItemStack extract(int amount, boolean simulate) {
         if (unreadable != null || isEmpty() || amount <= 0) {
             return ItemStack.EMPTY;
+        }
+        if (infinite()) {
+            return sample.copyWithCount(amount);
         }
         settleUnit();
         int taken = (int) Math.min(Math.min(amount, count()), Integer.MAX_VALUE);
@@ -156,7 +186,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
 
     @Override
     public boolean canLock() {
-        return !isEmpty();
+        return !infinite() && !isEmpty();
     }
 
     @Override
@@ -174,6 +204,9 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
 
     @Override
     public long roomFor(ItemStack stack) {
+        if (infinite()) {
+            return !stack.isEmpty() && Storable.allowed(stack) ? Integer.MAX_VALUE : 0L;
+        }
         if (!accepts(stack)) {
             return 0L;
         }
@@ -191,7 +224,7 @@ public class HeapBlockEntity extends BlockEntity implements Pile {
     }
 
     private boolean settleUnit() {
-        if (!Compression.ready() || sample.isEmpty()) {
+        if (infinite() || !Compression.ready() || sample.isEmpty()) {
             return false;
         }
         boolean changed = false;

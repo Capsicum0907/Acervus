@@ -38,7 +38,7 @@ public class LockToggle extends AbstractWidget {
 
     public void refresh() {
         Heaped current = heap.get();
-        visible = current.hasKinds();
+        visible = current.hasKinds() && !current.infinite();
         active = current.locked() || current.canLock();
         boolean locked = current.locked();
         if (shown == null || shown != locked) {
