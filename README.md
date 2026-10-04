@@ -14,8 +14,11 @@ Storage blocks that each hold one kind of thing, in amounts far beyond a chest.
 | Gas Heap | Holds one Mekanism chemical. 1,000,000,000,000 mB by default |
 | Horreum | A rack that holds nine heaps of any kind and lets pipes reach all of them |
 
-A heap keeps its contents when it is broken. Carried in the inventory, an Item Heap
-picks up the item it holds.
+A heap keeps its contents when it is broken, and a dropped one survives fire, lava,
+explosions and cacti. Carried in the inventory, an Item Heap picks up the item it holds.
+
+Creative versions of the four heaps, with no recipe, give what they hold without end.
+They are in the Acervus tab of the creative inventory.
 
 ## Documents
 

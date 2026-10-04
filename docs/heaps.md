@@ -28,7 +28,8 @@ In a Fluid, Energy or Gas Heap, a container stays in its slot until it is taken 
 and shift-clicking a container from the inventory puts an empty one in Out and any
 other in In.
 
-Point at a shortened number to see all of it.
+Point at a shortened number to see all of it. A name too long for its line is cut short
+with `…`; point at it to see all of it.
 
 **Click the bar** to change how it is drawn. The choice is kept per player.
 
@@ -137,8 +138,8 @@ minutes like any other item. Pick it up before then.
 
 ## Tooltips
 
-A heap's tooltip shows what it holds and how much. A Horreum's tooltip shows a row for
-each heap in it.
+A heap's tooltip shows what it holds, with its icon, and how much. A Horreum's tooltip
+shows a row for each heap in it.
 
 ## When a mod is removed
 
@@ -150,9 +151,9 @@ Without Mekanism a Gas Heap stays in the world the same way, and cannot be craft
 
 ## Jade and The One Probe
 
-Looking at a heap shows what it holds, with its icon, and how much, past 2,147,483,647, in the short
-form; a creative heap shows `∞`. Looking at a Horreum shows a line for each heap in
-it. Their usual item, fluid and energy readouts are hidden for these blocks, since
+Looking at a heap shows what it holds, with its icon, and how much in the short form,
+past 2,147,483,647; a creative heap shows `∞`. Looking at a Horreum shows a line for
+each heap in it. Their usual item, fluid and energy readouts are hidden for these blocks, since
 they stop at 2,147,483,647.
 
 ## Refined Storage
