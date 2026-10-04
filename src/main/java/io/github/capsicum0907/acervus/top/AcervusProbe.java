@@ -13,6 +13,7 @@ import mcjty.theoneprobe.api.IProbeInfo;
 import mcjty.theoneprobe.api.IProbeInfoProvider;
 import mcjty.theoneprobe.api.ITheOneProbe;
 import mcjty.theoneprobe.api.ProbeMode;
+import mcjty.theoneprobe.api.ElementAlignment;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -23,9 +24,11 @@ import net.minecraft.world.level.block.state.BlockState;
 public class AcervusProbe implements Function<ITheOneProbe, Void> {
     private static final ResourceLocation CONTENTS = ResourceLocation.fromNamespaceAndPath(Acervus.MODID, "contents");
     private static final int HIDDEN = 0;
+    private static final int SPACING = 4;
 
     @Override
     public Void apply(ITheOneProbe probe) {
+        probe.registerElementFactory(new IconElement.Factory());
         probe.registerProvider(new Contents());
         probe.registerProbeConfigProvider(new Defaults());
         return null;
@@ -50,7 +53,9 @@ public class AcervusProbe implements Function<ITheOneProbe, Void> {
                 return;
             }
             for (Readout.Line line : Readout.of(entity)) {
-                info.text(line.text());
+                info.horizontal(info.defaultLayoutStyle().alignment(ElementAlignment.ALIGN_CENTER).spacing(SPACING))
+                        .element(new IconElement(line.icon()))
+                        .text(line.text());
             }
         }
     }

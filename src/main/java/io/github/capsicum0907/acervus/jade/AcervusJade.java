@@ -13,6 +13,8 @@ import io.github.capsicum0907.acervus.Readout;
 import io.github.capsicum0907.acervus.gas.ChemicalHeapBlock;
 import io.github.capsicum0907.acervus.gas.ChemicalHeapBlockEntity;
 
+import snownee.jade.api.ui.IElementHelper;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -68,6 +70,8 @@ public class AcervusJade implements IWailaPlugin {
     private enum Contents implements IBlockComponentProvider {
         INSTANCE;
 
+        private static final Vec2 TEXT_OFFSET = new Vec2(4, 4);
+
         @Override
         public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
             BlockEntity entity = accessor.getBlockEntity();
@@ -75,7 +79,8 @@ public class AcervusJade implements IWailaPlugin {
                 return;
             }
             for (Readout.Line line : Readout.of(entity)) {
-                tooltip.add(line.text());
+                tooltip.add(new IconElement(line.icon()));
+                tooltip.append(IElementHelper.get().text(line.text()).translate(TEXT_OFFSET));
             }
         }
 

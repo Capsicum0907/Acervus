@@ -1625,6 +1625,26 @@ public final class AcervusTests {
         rack.heaps().set(0, stored);
         rack.heaps().set(1, stored.copy());
         check(Readout.of(rack).size() == 2, "a rack should read one line per heap, not " + Readout.of(rack).size());
+        check(Readout.of(rack).get(0).icon().kind() == Icon.Kind.ITEM
+                && Readout.of(rack).get(0).icon().item().is(Items.DIAMOND), "each line should carry its item's icon");
+        Readout.Line inHand = Readout.of(stored, registries).get(0);
+        Readout.Line onGround = Readout.of(heap).get(0);
+        check(inHand.text().getString().equals(onGround.text().getString())
+                && ItemStack.matches(inHand.icon().item(), onGround.icon().item()),
+                "a heap reads the same in a hand as on the ground");
+
+        Icon[] icons = { Icon.of(new ItemStack(Items.DIAMOND, 5)), Icon.of(new FluidStack(Fluids.LAVA, 3)),
+                Icon.ENERGY, Icon.MISSING,
+                Icon.sprite(ResourceLocation.fromNamespaceAndPath("mekanism", "chemical/hydrogen"), 0xFF112233) };
+        for (Icon icon : icons) {
+            net.minecraft.network.RegistryFriendlyByteBuf buffer = new net.minecraft.network.RegistryFriendlyByteBuf(
+                    io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+            Icon.STREAM_CODEC.encode(buffer, icon);
+            Icon back = Icon.STREAM_CODEC.decode(buffer);
+            check(back.kind() == icon.kind() && ItemStack.matches(back.item(), icon.item())
+                    && FluidStack.matches(back.fluid(), icon.fluid()) && back.sprite().equals(icon.sprite())
+                    && back.tint() == icon.tint(), "an icon should survive the trip to a client: " + icon.kind());
+        }
         helper.succeed();
     }
 

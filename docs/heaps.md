@@ -150,7 +150,7 @@ Without Mekanism a Gas Heap stays in the world the same way, and cannot be craft
 
 ## Jade and The One Probe
 
-Looking at a heap shows what it holds and how much, past 2,147,483,647, in the short
+Looking at a heap shows what it holds, with its icon, and how much, past 2,147,483,647, in the short
 form; a creative heap shows `∞`. Looking at a Horreum shows a line for each heap in
 it. Their usual item, fluid and energy readouts are hidden for these blocks, since
 they stop at 2,147,483,647.

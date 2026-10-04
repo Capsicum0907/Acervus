@@ -1909,7 +1909,7 @@ Heap の本当の合計を伝えられるストレージネットワークがあ
 
 **`public final class Readout`**
 
-ブロックが持っている物を、名前と省略形の量の行にします。外からブロックを読むもの（Jade と The One Probe）のためです。Heap は1行、Horreum は Heap ごとに1行、クリエイティブ用は `∞` です。どちらの Mod の名前も出てこないので、両方の組み込みは数行で済み、同じことを言います。
+ブロックや持ち歩く Heap が持っている物を、アイコン・名前・省略形の量の行にします。アイテムのツールチップ・Jade・The One Probe のすべてがこれを使うので、3つの表示が食い違いません。Heap は1行、Horreum は Heap ごとに1行、クリエイティブ用は `∞` です。どちらの Mod の名前も出てこないので、両方の組み込みは数行で済み、同じことを言います。
 
 ## `ReadoutMenu.java`
 
@@ -2016,6 +2016,16 @@ Heap の `Vessel` を扱うスロットです。1個だけ入る普通のスロ�
 **`public static void registerTooltips(RegisterClientTooltipComponentFactoriesEvent event)`**
 
 `HeapContents` を描画できるものに変えます。
+
+## `Icon.java`
+
+**`public record Icon(Kind kind, ItemStack item, FluidStack fluid, Optional<ResourceLocation> sprite, int tint)`**
+
+行の横に描く物を、描かずに表したものです。アイテム・液体・ブロックアトラス上の色付きスプライト・電力の稲妻・読めないときの市松模様のどれかです。The One Probe はサーバーで行を作って送るので、共通のコードに置き、ストリームコーデックを持たせています。描くのは `client/Icons` です。
+
+## `client/Icons.java`
+
+`Icon` を16ピクセルで描きます。ツールチップ・Jade・The One Probe がすべてこれを呼ぶので、Heap の絵はどこでも1つです。
 
 ## `client/HeapContentsTooltip.java`
 
@@ -2312,20 +2322,6 @@ Mekanism が登録するのと同じケイパビリティのオブジェクト�
 **`@SuppressWarnings("DataFlowIssue")` の行末**
 
 バニラのビルダーは使いもしないデータ修正器の型を求めます
-
-## `gas/GasRow.java`
-
-**`public final class GasRow`**
-
-Gas Heap をツールチップの1行として読んだものです。
-
-ほかの3つの横ではなくここに置いているのは、化学物質を名指しするのがこれだけだからです。このパッケージの外では名指ししてはいけません。呼び出し側は `Mods.mekanism()` の後でしかここに来ません。なので Mekanism のないゲームがこれを読み込むことはありません。
-
-化学物質は液体と違って自分のアイコンと色味を持っています。なので画像はここで決まり、描く側で調べるものはありません。
-
-**`public static HeapContentsTooltip.Row of(HolderLookup.Provider registries, ItemStack heap)`**
-
-ほかの種類と同じく、Heap が空なら `null` です。
 
 ## `gas/HeldChemicalHeap.java`
 

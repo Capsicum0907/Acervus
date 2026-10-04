@@ -2724,8 +2724,8 @@ one look the same to a reader, and should.
 
 **`public final class Readout`**
 
-What a block holds, as lines of a name and a short amount, for anything that reads
-blocks from outside — Jade and The One Probe. One heap gives one line, a Horreum one
+What a block or a carried heap holds, as lines of an icon, a name and a short amount —
+for the item tooltip, Jade and The One Probe alike, so the three cannot disagree. One heap gives one line, a Horreum one
 per heap, a creative heap `∞`. It names nothing of either mod, so both adapters are a
 few lines each and say the same thing.
 
@@ -2857,6 +2857,20 @@ The client half: what draws the block, and what draws its screen.
 **`public static void registerTooltips(RegisterClientTooltipComponentFactoriesEvent event)`**
 
 What turns `HeapContents` into something drawn.
+
+## `Icon.java`
+
+**`public record Icon(Kind kind, ItemStack item, FluidStack fluid, Optional<ResourceLocation> sprite, int tint)`**
+
+What to draw beside a line, said without drawing it: an item, a fluid, a sprite on the
+block atlas with a tint, the energy bolt, or the missing texture. It is common code,
+because The One Probe builds its lines on the server and sends them, so it carries a
+stream codec. `client/Icons` draws one.
+
+## `client/Icons.java`
+
+Draws an `Icon` at 16 pixels: the tooltip, Jade and The One Probe all call this, so a
+heap has one picture everywhere.
 
 ## `client/HeapContentsTooltip.java`
 
@@ -3237,23 +3251,6 @@ of its own rather than part of
 **beside `@SuppressWarnings("DataFlowIssue")`**
 
 the vanilla builder wants a data fixer type it never uses
-
-## `gas/GasRow.java`
-
-**`public final class GasRow`**
-
-A gas heap read as a tooltip row.
-
-It is here rather than beside the other three because it is the only one that
-names a chemical, and nothing outside this package may. The caller reaches it only
-after `Mods.mekanism()`, so a game without Mekanism never loads it.
-
-A chemical carries its own icon and its own tint, unlike a fluid, so the sprite
-is settled here and the drawing side has nothing to look up.
-
-**`public static HeapContentsTooltip.Row of(HolderLookup.Provider registries, ItemStack heap)`**
-
-Null when the heap is empty, as with every other kind.
 
 ## `gas/HeldChemicalHeap.java`
 
